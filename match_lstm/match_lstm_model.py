@@ -2,13 +2,13 @@ import tensorflow as tf
 import numpy as np
 
 class LSTM_encoder:
-    def __init__(self, cellName, input_size, state_size):
-        self.cellName = cellName
+    def __init__(self, scopeName, input_size, state_size):
+        self.scopeName = scopeName
         self.input_size = input_size
         self.state_size = state_size
     def add_variables(self):
         xavier_initializer = tf.contrib.layers.xavier_initializer()
-        with tf.variable_scope(self.cellName):
+        with tf.variable_scope(self.scopeName):
             self.W_i = tf.get_variable("W_i", initializer = xavier_initializer, shape =  (self.input_size, self.state_size), dtype = tf.float32)
             self.V_i = tf.get_variable("V_i", initializer = xavier_initializer, shape = (self.state_size, self.state_size), dtype = tf.float32)
             self.b_i = tf.get_variable("b_i", initializer = xavier_initializer, shape = (self.state_size,), dtype = tf.float32)
@@ -43,22 +43,29 @@ class LSTM_encoder:
             batch_states, batch_memories = new_batch_states, new_batch_memories
         return tf.transpose( tf.stack(states) , (1, 0, 2))
 
-def sanity_LSTM_encoder():
-    input_size = 3
-    state_size = 4
-    seq_len = 5
-
-    inputs_placeholder = tf.placeholder(tf.float32, shape=(None, seq_len, input_size))
-    encoder = LSTM_encoder("test", input_size, state_size)
-    encoder.add_variables()
-    predicted = encoder.encode_sequence(inputs_placeholder, seq_len)
-
-
-    sess = tf.Session()
-    sess.run( tf.global_variables_initializer() )
-    inputs = np.zeros((10, seq_len, input_size))
-    print sess.run(  tf.shape( sess.run(predicted, {inputs_placeholder : inputs}) )  )
-    print sess.run(predicted, {inputs_placeholder : inputs})
-
-if __name__ == "__main__":
-    sanity_LSTM_encoder()
+class Attention_match:
+    def __init__(self, scopeName, state_size):
+        self.state_size = state_size
+        self.scopeName = scopeName
+    def add_variables(self):
+        xavier_initializer = tf.contrib.layers.xavier_initializer()
+        with tf.variable_scope(self.scopeName):
+            self.W_q = tf.get_variable("W_q", initializer = xavier_initializer, shape = (self.state_size, self.state_size), dtype = tf.float32)
+            self.W_p = tf.get_variable("W_p", initializer = xavier_initializer, shape = (self.state_size, self.state_size), dtype = tf.float32)
+            self.W_r = tf.get_variable("W_r", initializer = xavier_initializer, shape = (self.state_size, self.state_size), dtype = tf.float32)
+            self.b_p = tf.get_variable("b_p", initializer = xavier_initializer, shape = (self.state_size, ), dtype = tf.float32)
+            self.w = tf.get_variable("w", initializer = xavier_initializer, shape = (self.state_size, ), dtype = tf.float32)
+            self.b = tf.get_variable("b", initializer = xavier_initializer, shape = (), dtype = tf.float32)
+    def attention_one_step(self, H_q, h_p, h_r):
+        '''
+        paras:
+            H_q: batch_size * question_len * state_size
+            h_p: batch_size * state_size
+            h_r: batch_size * state_size
+        return:
+            z: batch_size * (2 * state_size)
+        '''
+        G = tf.nn.tanh( tf.matmul(H_q, self.W_q) + ( tf.matmul(h_p, self.W_p) + tf.matmul(h_r, self.W_r) + self.b_p ) )#TODO: does broadcasting work?
+        alpha = tf.nn.softmax( tf.matmul(G, self.w) + self.b ) #TODO: check broadcasting; softmax on row?
+        att_v = tf.matmul( tf.transpose(H_q, (0,2,1)), alpha )
+        z = tf.concat( [h_p, att_v] , dim = 1)
