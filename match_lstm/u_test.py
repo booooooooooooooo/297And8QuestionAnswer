@@ -89,9 +89,17 @@ def test_tensorflow():
     a = tf.zeros((3,4))
     b = tf.zeros((3,4))
     print tf.concat(1, [a,b])
+
+    H_p = tf.zeros((3,4,5))
+    h_p_lst = tf.unstack(H_p, axis = 1)
+    h_r = tf.zeros(tf.shape(h_p_lst[0]))
+    print H_p
+    print h_p_lst
+    print h_p_lst[0]
+    print h_r
 if __name__ == "__main__":
     # sanity_LSTM_encoder()
     # sanity_Attention_match()
     # sanity_Attention_answer()
-    sanity_pre_layer()
-    # test_tensorflow()
+    # sanity_pre_layer()
+    test_tensorflow()

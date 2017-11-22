@@ -156,4 +156,32 @@ def match_layer(lstm_m, att_m, H_p, pass_len, H_q, ques_len):
     return
         H_r:        (None, pass_len, 2 * l)
     '''
-    return
+    h_r_lst_r = []
+    h_r_lst_l = []
+
+    h_p_lst_r = tf.unstack(H_p, axis = 1)
+    h_r_r = tf.zeros(tf.shape(h_p_lst[0]))
+    mem_r = tf.zeros(tf.shape(h_p_lst[0]))
+
+    h_p_lst_l = h_p_lst_r[::-1]
+    h_r_l = tf.zeros(tf.shape(h_p_lst[0]))
+    mem_l = tf.zeros(tf.shape(h_p_lst[0]))
+
+    for i in xrange(pass_len):
+        z_r = att_m.attention_one_step(H_q, ques_len, h_p_lst_r[i], h_r_r)
+        h_r_r_new, mem_r_new = lstm_m.encode_one_step(z_r, h_r_r, mem_r)
+        h_r_lst_r.append(h_r_r_new)
+        h_r_r = h_r_r_new
+        men_r = men_r_new
+
+        z_l = att_m.attention_one_step(H_q, ques_len, h_p_lst_l[i], h_r_l)
+        h_r_l_new, mem_l_new = lstm_m.encode_one_step(z_l, h_r_l, mem_l)
+        h_r_lst_l.append(h_r_l_new)
+        h_r_l = h_r_l_new
+        mem_l = mem_l_new
+
+    H_r_r = tf.stack(h_r_lst_r)# (pass_len, None, l)
+    H_r_l = tf.stack(h_r_lst_l)# (pass_len, None, l)
+    H_r = tf.stack(H_r_r, H_r_l, axis = 2) ## (pass_len, None, 2 * l)
+    H_r = tf.reshape(H_r, (1, 0, 2))
+    return H_r
