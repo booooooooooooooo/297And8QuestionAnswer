@@ -73,8 +73,7 @@ def sanity_pre_layer():
     encoder.add_variables()
     placeholder_pass = tf.placeholder(tf.float32, shape=(None, pass_len, input_size))
     placeholder_ques = tf.placeholder(tf.float32, shape=(None, ques_len, input_size))
-    predicted_H_p = encoder.encode_sequence(placeholder_pass, pass_len)
-    predicted_H_q = encoder.encode_sequence(placeholder_ques, ques_len)
+    predicted_H_p, predicted_H_q = pre_layer(encoder, placeholder_pass, pass_len, placeholder_ques, ques_len)
 
 
     sess = tf.Session()
