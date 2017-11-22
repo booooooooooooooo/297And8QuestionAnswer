@@ -60,6 +60,32 @@ def sanity_Attention_answer():
     print state
     print sess.run( tf.shape(beta) )
     print sess.run( tf.shape(state) )
+def sanity_pre_layer():
+    batch_size  = 10
+    pass_len = 7
+    ques_len = 5
+    state_size = 3
+    input_size = 11
+
+
+
+    encoder = LSTM_encoder("sanity", input_size, state_size)
+    encoder.add_variables()
+    placeholder_pass = tf.placeholder(tf.float32, shape=(None, pass_len, input_size))
+    placeholder_ques = tf.placeholder(tf.float32, shape=(None, ques_len, input_size))
+    predicted_H_p = encoder.encode_sequence(placeholder_pass, pass_len)
+    predicted_H_q = encoder.encode_sequence(placeholder_ques, ques_len)
+
+
+    sess = tf.Session()
+    sess.run( tf.global_variables_initializer() )
+    passage = np.zeros((batch_size, pass_len, input_size))
+    question = np.zeros((batch_size, ques_len, input_size))
+    H_p, H_q = sess.run((predicted_H_p, predicted_H_q)  , {placeholder_pass: passage, placeholder_ques : question })
+    print H_p
+    print H_q
+    print sess.run(tf.shape(H_p))
+    print sess.run(tf.shape(H_q))
 def test_tensorflow():
     a = tf.zeros((3,4))
     b = tf.zeros((3,4))
@@ -67,5 +93,6 @@ def test_tensorflow():
 if __name__ == "__main__":
     # sanity_LSTM_encoder()
     # sanity_Attention_match()
-    sanity_Attention_answer()
+    # sanity_Attention_answer()
+    sanity_pre_layer()
     # test_tensorflow()

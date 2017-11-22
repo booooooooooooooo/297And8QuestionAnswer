@@ -34,6 +34,12 @@ class LSTM_encoder:
 
         return new_batch_states, new_batch_memories
     def encode_sequence(self, batch_inputs_sequence, seq_len):
+        '''
+        paras
+            batch_inputs_sequence: (None, seq_len, input_size)
+        return
+            encoded: (None, seq_len, state_size)
+        '''
         # Assume all sequences have same length. Padding work is done in data related files.
         states = []
         batch_states = tf.zeros( ( tf.shape(batch_inputs_sequence)[0], self.state_size) ) #TODO: problem of None
@@ -42,7 +48,8 @@ class LSTM_encoder:
             new_batch_states, new_batch_memories = self.encode_one_step(batch_inputs_sequence[:,i], batch_states, batch_memories)
             states.append(new_batch_states)
             batch_states, batch_memories = new_batch_states, new_batch_memories
-        return tf.transpose( tf.stack(states) , (1, 0, 2))
+        encoded = tf.transpose( tf.stack(states) , (1, 0, 2))
+        return encoded
 
 class Attention_match:
     def __init__(self, scopeName, state_size):
@@ -116,3 +123,20 @@ class Attention_ans:
         state_lstm = tf.reshape(state_lstm, (-1, self.state_size * 2))
 
         return beta, state_lstm
+def pre_layer(lstm_pre, batch_pass, pass_len, batch_ques, ques_len):
+    '''
+    paras
+        lstm_pre: a LSTM_encoder
+        batch_pass: (None, pass_len, input_size)
+        batch_ques: (None, ques_len, input_size)
+    return
+        H_p: (None, pass_len, state_size)
+        H_q: (None, pass_len, state_size)
+
+    Note: input_size = dimension of word vector
+    '''
+    H_p = lstm_pre.encode_sequence(batch_pass, pass_len)
+    H_q = lstm_pre.encode_sequence(batch_ques, ques_len)
+    return H_p, H_q
+
+def match_layer()
