@@ -2,11 +2,11 @@ import tensorflow as tf
 
 def abc_mul_cd(op1, op2, b, c, d):
     '''
-        op1: (batch_size, b, c)
+        op1: (a, b, c)
         op2: (c, d)
 
     return
-        result: (batch_size, b, d)
+        result: (a, b, d)
     '''
     op1 = tf.reshape(op1, [-1, c])
     mid = tf.matmul(op1, op2)
@@ -15,11 +15,11 @@ def abc_mul_cd(op1, op2, b, c, d):
 
 def abc_mul_c(op1, op2, b, c):
     '''
-        op1: (batch_size, b, c)
+        op1: (a, b, c)
         op2: (c,)
 
     return
-        result: (batch_size * b)
+        result: (a * b)
     '''
     op1 = tf.reshape(op1, [-1, c])
     op2 = tf.reshape(op2, [-1, 1])
@@ -28,10 +28,10 @@ def abc_mul_c(op1, op2, b, c):
     return result
 def abc_plus_ac(op1, op2, b, c):
     '''
-        op1: (batch_size, b, c)
-        op2: (batch_size, c)
+        op1: (a, b, c)
+        op2: (a, c)
     return
-        result: (batch_size, b, c)
+        result: (a, b, c)
     '''
     op2 = tf.reshape(op2, (-1, 1, c))
     op2 = tf.tile(op2, (1, b, 1))

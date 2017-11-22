@@ -73,7 +73,46 @@ class Attention_match:
         G = tf.nn.tanh( G_sum )# batch_size * q_l * state_size
 
         alpha = tf.nn.softmax( abc_mul_c(G, self.w, q_l, self.state_size) + self.b )# batch_size * q_l
+
         att_v = tf.matmul( tf.transpose(H_q, (0,2,1)), tf.reshape(alpha, (-1, q_l, 1)) )#batch_size * state_size * 1
         att_v = tf.reshape(att_v, (-1, self.state_size))
+
         z = tf.concat(1, [h_p, att_v])
+
         return z
+
+class Attention_ans:
+    def __init__(self, scopeName, state_size):
+        self.state_size = state_size
+        self.scopeName = scopeName
+    def add_variables(self):
+        xavier_initializer = tf.contrib.layers.xavier_initializer()
+        with tf.variable_scope(self.scopeName):
+            self.V = tf.get_variable("V", initializer = xavier_initializer, shape = (self.state_size * 2, self.state_size), dtype = tf.float32)
+            self.W_a = tf.get_variable("W_a", initializer = xavier_initializer, shape = (self.state_size, self.state_size), dtype = tf.float32)
+            self.b_a = tf.get_variable("b_a", initializer = xavier_initializer, shape = (self.state_size, ), dtype = tf.float32)
+            self.v = tf.get_variable("v", initializer = xavier_initializer, shape = (self.state_size, ), dtype = tf.float32)
+            self.c = tf.get_variable("c", initializer = xavier_initializer, shape = (), dtype = tf.float32)
+    def attention_one_step(self, H_r_hat, q_l, h_a):
+        '''
+        paras:
+            H_r_hat: batch_size * q_l * (state_size * 2)
+            q_l: passage length + 1
+            h_a: batch_size * state_size
+        return:
+            beta: batch_size * q_l
+            state: batch_size * (2 * state_size)
+
+        '''
+
+        F_part1 = abc_mul_cd(H_r_hat, self.V, q_l, 2 * self.state_size, self.state_size)# batch_size * q_l * state_size
+        F_part2 = tf.matmul(h_a, self.W_a) +  self.b_a # batch_size * state_size
+        F_sum = abc_plus_ac(F_part1, F_part2, q_l, self.state_size )
+        F = tf.nn.tanh( F_sum )# batch_size * q_l * state_size
+
+        beta = tf.nn.softmax( abc_mul_c(F, self.v, q_l, self.state_size) + self.c )# batch_size * q_l
+
+        state_lstm = tf.matmul( tf.transpose(H_r_hat, (0,2,1)), tf.reshape(beta, (-1, q_l, 1)) )#batch_size * (2*state_size) * 1
+        state_lstm = tf.reshape(state_lstm, (-1, self.state_size * 2))
+
+        return beta, state_lstm

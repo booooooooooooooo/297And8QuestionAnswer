@@ -39,11 +39,33 @@ def sanity_Attention_match():
     result = sess.run(predicted, { H_q_placeholder : H_q, h_p_placeholder : h_p, h_r_placeholder : h_r })
     print result
     print sess.run( tf.shape(result) )
+
+def sanity_Attention_answer():
+    batch_size  = 10
+    question_len = 5
+    state_size = 3
+
+    att_ans = Attention_ans("sanity", state_size)
+    att_ans.add_variables()
+    H_r_hat_placeholder = tf.placeholder(tf.float32, shape = (None, question_len, state_size * 2))
+    h_a_placeholder = tf.placeholder(tf.float32, shape = (None,  state_size))
+    predicted = att_ans.attention_one_step(H_r_hat_placeholder, question_len, h_a_placeholder)
+
+    sess = tf.Session()
+    sess.run( tf.global_variables_initializer() )
+    H_r_hat = np.zeros((batch_size, question_len, state_size * 2))
+    h_a = np.zeros( (batch_size, state_size) )
+    beta, state = sess.run(predicted, { H_r_hat_placeholder : H_r_hat, h_a_placeholder : h_a })
+    print beta
+    print state
+    print sess.run( tf.shape(beta) )
+    print sess.run( tf.shape(state) )
 def test_tensorflow():
     a = tf.zeros((3,4))
     b = tf.zeros((3,4))
     print tf.concat(1, [a,b])
 if __name__ == "__main__":
     # sanity_LSTM_encoder()
-    sanity_Attention_match()
+    # sanity_Attention_match()
+    sanity_Attention_answer()
     # test_tensorflow()
