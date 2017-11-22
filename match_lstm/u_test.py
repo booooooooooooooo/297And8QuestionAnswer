@@ -85,6 +85,30 @@ def sanity_pre_layer():
     print H_q
     print sess.run(tf.shape(H_p))
     print sess.run(tf.shape(H_q))
+def sanity_match_layer():
+    batch_size = 17
+    l = 5
+    pass_len = 7
+    ques_len = 3
+
+
+    lstm_m = LSTM_encoder("sanity_match_layer_lstm_m", 2*l, l)
+    att_m = Attention_match("sanity_match_layer_att_m", l)
+    lstm_m.add_variables()
+    att_m.add_variables()
+    H_p_ph = tf.placeholder(tf.float32, shape = (None, pass_len, l))
+    H_q_ph = tf.placeholder(tf.float32, shape = (None, ques_len, l))
+    H_r_pred = match_layer(lstm_m, att_m, H_p_ph, pass_len, H_q_ph, ques_len)
+    print H_r_pred
+
+    sess = tf.Session()
+    sess.run(tf.global_variables_initializer())
+    H_p = np.zeros((batch_size, pass_len, l))
+    H_q = np.zeros((batch_size, ques_len, l))
+    H_r = sess.run(H_r_pred, {H_p_ph: H_p, H_q_ph : H_q} )
+    print H_r
+    print sess.run(tf.shape(H_r))
+
 def test_tensorflow():
     a = tf.zeros((3,4))
     b = tf.zeros((3,4))
@@ -102,4 +126,5 @@ if __name__ == "__main__":
     # sanity_Attention_match()
     # sanity_Attention_answer()
     # sanity_pre_layer()
-    test_tensorflow()
+    sanity_match_layer()
+    # test_tensorflow()
