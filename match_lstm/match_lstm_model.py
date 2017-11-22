@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+from match_lstm_model_helper import *
 
 class LSTM_encoder:
     def __init__(self, scopeName, input_size, state_size):
@@ -56,16 +57,23 @@ class Attention_match:
             self.b_p = tf.get_variable("b_p", initializer = xavier_initializer, shape = (self.state_size, ), dtype = tf.float32)
             self.w = tf.get_variable("w", initializer = xavier_initializer, shape = (self.state_size, ), dtype = tf.float32)
             self.b = tf.get_variable("b", initializer = xavier_initializer, shape = (), dtype = tf.float32)
-    def attention_one_step(self, H_q, h_p, h_r):
+    def attention_one_step(self, H_q, q_l, h_p, h_r):
         '''
         paras:
-            H_q: batch_size * question_len * state_size
+            H_q: batch_size * q_l * state_size
             h_p: batch_size * state_size
             h_r: batch_size * state_size
         return:
             z: batch_size * (2 * state_size)
         '''
-        G = tf.nn.tanh( tf.matmul(H_q, self.W_q) + ( tf.matmul(h_p, self.W_p) + tf.matmul(h_r, self.W_r) + self.b_p ) )#TODO: does broadcasting work?
-        alpha = tf.nn.softmax( tf.matmul(G, self.w) + self.b ) #TODO: check broadcasting; softmax on row?
-        att_v = tf.matmul( tf.transpose(H_q, (0,2,1)), alpha )
-        z = tf.concat( [h_p, att_v] , dim = 1)
+
+        G_part1 = abc_mul_cd(H_q, self.W_q, q_l, self.state_size, self.state_size)# batch_size * q_l * state_size
+        G_part2 = tf.matmul(h_p, self.W_p) + tf.matmul(h_r, self.W_r) + self.b_p # batch_size * state_size
+        G_sum = abc_plus_ac(G_part1, G_part2, q_l, self.state_size)
+        G = tf.nn.tanh( G_sum )# batch_size * q_l * state_size
+
+        alpha = tf.nn.softmax( abc_mul_c(G, self.w, q_l, self.state_size) + self.b )# batch_size * q_l
+        att_v = tf.matmul( tf.transpose(H_q, (0,2,1)), tf.reshape(alpha, (-1, q_l, 1)) )#batch_size * state_size * 1
+        att_v = tf.reshape(att_v, (-1, self.state_size))
+        z = tf.concat(1, [h_p, att_v])
+        return z
