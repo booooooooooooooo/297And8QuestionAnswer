@@ -1,5 +1,3 @@
-import tensorflow as tf
-
 def abc_mul_cd(op1, op2, b, c, d):
     '''
         op1: (a, b, c)
