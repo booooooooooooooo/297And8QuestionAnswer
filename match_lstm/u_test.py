@@ -110,21 +110,19 @@ def sanity_match_layer():
     print sess.run(tf.shape(H_r))
 
 def test_tensorflow():
-    a = tf.zeros((3,4))
-    b = tf.zeros((3,4))
-    print tf.concat(1, [a,b])
 
-    H_p = tf.zeros((3,4,5))
-    h_p_lst = tf.unstack(H_p, axis = 1)
-    h_r = tf.zeros(tf.shape(h_p_lst[0]))
-    print H_p
-    print h_p_lst
-    print h_p_lst[0]
-    print h_r
+    c = tf.placeholder(tf.float32, (5,4))
+    print c
+    shape = tf.shape(c)
+    print shape
+    none = tf.slice(shape, [0], [1])
+    print none
+    d = tf.zeros(none)
+    print d
 if __name__ == "__main__":
     # sanity_LSTM_encoder()
     # sanity_Attention_match()
     # sanity_Attention_answer()
     # sanity_pre_layer()
-    sanity_match_layer()
-    # test_tensorflow()
+    # sanity_match_layer()
+    test_tensorflow()

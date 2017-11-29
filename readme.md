@@ -1,7 +1,7 @@
 ## My Memo
 Always run code in 297And8QuestionAnswer!
 
-docker run -it --rm -p 8888:8888 -v `pwd`:/297And8QuestionAnswer  masterproject
+docker run -it --rm -p 8888:8888 -v \`pwd\`:/297And8QuestionAnswer  masterproject_2
 
 
 docker build -t friendlyname .  # Create image using this directory's Dockerfile

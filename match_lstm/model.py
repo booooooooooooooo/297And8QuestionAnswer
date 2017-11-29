@@ -1,55 +1,72 @@
 import tensorflow as tf
 import numpy as np
-from match_lstm_model_helper import *
+from util import *
 
-class LSTM_encoder:
-    def __init__(self, scopeName, input_size, state_size):
-        self.scopeName = scopeName
-        self.input_size = input_size
-        self.state_size = state_size
-    def add_variables(self):
-        xavier_initializer = tf.contrib.layers.xavier_initializer()
-        with tf.variable_scope(self.scopeName):
-            self.W_i = tf.get_variable("W_i", initializer = xavier_initializer, shape =  (self.input_size, self.state_size), dtype = tf.float32)
-            self.V_i = tf.get_variable("V_i", initializer = xavier_initializer, shape = (self.state_size, self.state_size), dtype = tf.float32)
-            self.b_i = tf.get_variable("b_i", initializer = xavier_initializer, shape = (self.state_size,), dtype = tf.float32)
+#
+'''
+TODO:
+config or data?
 
-            self.W_f = tf.get_variable("W_f", initializer = xavier_initializer, shape =  (self.input_size, self.state_size), dtype = tf.float32)
-            self.V_f = tf.get_variable("V_f", initializer = xavier_initializer, shape = (self.state_size, self.state_size), dtype = tf.float32)
-            self.b_f = tf.get_variable("b_f", initializer = xavier_initializer, shape = (self.state_size,), dtype = tf.float32)
+'''
 
-            self.W_o = tf.get_variable("W_o", initializer = xavier_initializer, shape =  (self.input_size, self.state_size), dtype = tf.float32)
-            self.V_o = tf.get_variable("V_o", initializer = xavier_initializer, shape = (self.state_size, self.state_size), dtype = tf.float32)
-            self.b_o = tf.get_variable("b_o", initializer = xavier_initializer, shape = (self.state_size,), dtype = tf.float32)
+'''
+Used by tune.py to train better tensor graph.
 
-            self.W_c = tf.get_variable("W_c", initializer = xavier_initializer, shape =  (self.input_size, self.state_size), dtype = tf.float32)
-            self.V_c = tf.get_variable("V_c", initializer = xavier_initializer, shape = (self.state_size, self.state_size), dtype = tf.float32)
-            self.b_c = tf.get_variable("b_c", initializer = xavier_initializer, shape = (self.state_size,), dtype = tf.float32)
-    def encode_one_step(self, batch_inputs, batch_states, batch_memories):
-        i_k = tf.nn.sigmoid(tf.matmul(batch_inputs, self.W_i) + tf.matmul(batch_states, self.V_i) + self.b_i)
-        f_k = tf.nn.sigmoid(tf.matmul(batch_inputs, self.W_f) + tf.matmul(batch_states, self.V_f) + self.b_f)
-        o_k = tf.nn.sigmoid(tf.matmul(batch_inputs, self.W_o) + tf.matmul(batch_states, self.V_o) + self.b_o)
-        new_batch_memories = f_k * batch_memories + i_k * tf.nn.tanh( tf.matmul(batch_inputs, self.W_c) + tf.matmul(batch_states, self.V_c) + self.b_c)
-        new_batch_states = o_k * tf.nn.tanh(new_batch_memories)
+'''
+class Model:
+    def __init__(self, config):
+        self.config = config
+    def build(self):
+        batch_s = self.config.batch_s
+        pass_l = self.config.pass_l
+        ques_l = self.config.ques_l
+        embed_s = self.config.embed_s
+        num_units = self.config.num_units
 
-        return new_batch_states, new_batch_memories
-    def encode_sequence(self, batch_inputs_sequence, seq_len):
-        '''
-        paras
-            batch_inputs_sequence: (None, seq_len, input_size)
-        return
-            encoded: (None, seq_len, state_size)
-        '''
-        # Assume all sequences have same length. Padding work is done in data related files.
-        states = []
-        batch_states = tf.zeros( ( tf.shape(batch_inputs_sequence)[0], self.state_size) ) #TODO: problem of None
-        batch_memories = tf.zeros( ( tf.shape(batch_inputs_sequence)[0], self.state_size) ) #TODO: problem of None
-        for i in xrange(seq_len):
-            new_batch_states, new_batch_memories = self.encode_one_step(batch_inputs_sequence[:,i], batch_states, batch_memories)
-            states.append(new_batch_states)
-            batch_states, batch_memories = new_batch_states, new_batch_memories
-        encoded = tf.transpose( tf.stack(states) , (1, 0, 2))
-        return encoded
+        #add placeholders
+        self.ques = tf.placeholder(tf.int32, shape = (None, ques_l), name = "ques_ph")
+        self.ques_pad = tf.placeholder(tf.int32, shape = (None, ques_l), name = "ques_pad_ph")
+        self.passage = tf.placeholder(tf.int32, shape = (None, pass_l), name = "pass_ph")
+        self.pass_pad = tf.placeholder(tf.int32, shape = (None, pass_l), name = "pass_pad_ph")
+        self.ans = tf.placeholder(tf.int32, shape = (None, 2), name = "ans_ph")
+
+        #add variables / make architectures
+        init = tf.contrib.layers.xavier_initializer()
+        #Preprocessing Layer
+        with tf.variable_scope("Preprocessing Layer"):
+            self.U_pre = tf.get_variable("U_pre", initializer = init, shape = (embed_s, num_units))
+            self.lstm_pre = tf.contrib.rnn.BasicLSTMCell(num_units)
+        #Match-LSTM Layer
+        with tf.variable_scope("Match-LSTM Layer"):
+            with tf.variable_scope("Attention"):
+                self.W_q = tf.get_variable("W_q", initializer = init, shape = (num_units, num_units), dtype = tf.float32)
+                self.W_p = tf.get_variable("W_p", initializer = init, shape = (num_units, num_units), dtype = tf.float32)
+                self.W_r = tf.get_variable("W_r", initializer = init, shape = (num_units, num_units), dtype = tf.float32)
+                self.b_p = tf.get_variable("b_p", initializer = init, shape = (num_units, ), dtype = tf.float32)
+                self.w = tf.get_variable("w", initializer = init, shape = (num_units, ), dtype = tf.float32)
+                self.b = tf.get_variable("b", initializer = init, shape = (), dtype = tf.float32)
+            with tf.variable_scope("LSTM"):
+                self.U_match = tf.get_variable("U_match", initializer = init, shape = (2 * num_units, num_units))
+                self.lstm_match = tf.contrib.rnn.BasicLSTMCell(num_units)
+        #Answer Pointer Layer
+        with tf.variable_scope("Answer Pointer Layer"):
+            with tf.variable_scope("Attention"):
+                self.V = tf.get_variable("V", initializer = xavier_initializer, shape = (num_units * 2, num_units), dtype = tf.float32)
+                self.W_a = tf.get_variable("W_a", initializer = xavier_initializer, shape = (num_units, num_units), dtype = tf.float32)
+                self.b_a = tf.get_variable("b_a", initializer = xavier_initializer, shape = (num_units, ), dtype = tf.float32)
+                self.v = tf.get_variable("v", initializer = xavier_initializer, shape = (num_units, ), dtype = tf.float32)
+                self.c = tf.get_variable("c", initializer = xavier_initializer, shape = (), dtype = tf.float32)
+            with tf.variable_scope("LSTM"):
+                self.U_ans = tf.get_variable("U_ans", initializer = init, shape = (2 * num_units, num_units))
+                self.lstm_ans = tf.contrib.rnn.BasicLSTMCell(num_units)
+
+        #get train_op
+
+    def train_batch(self, sess, batch_data):
+
+    def train_epoch(self, sess):
+
+    def fit(self, sess):
 
 class Attention_match:
     def __init__(self, scopeName, l):
@@ -123,22 +140,24 @@ class Attention_ans:
         input_lstm_m = tf.reshape(input_lstm_m, (-1, self.l * 2))
 
         return beta, input_lstm_m
-def pre_layer(lstm_pre, batch_pass, pass_len, batch_ques, ques_len):
+
+
+def pre_layer(passage, passage_mask, ques, ques_mask, cell):
     '''
     paras
-        lstm_pre:   a LSTM_encoder
-                    Note:   input_size = dim_word_v
-                            state_size = l
-        batch_pass: (None, pass_len, dim_word_v)
-        batch_ques: (None, ques_len, dim_word_v)
+        passage:       (None, pass_len, dim_word_v)
+        passage_mask:  (None, pass_len)
+        ques:       (None, ques_len, dim_word_v)
+        ques_mask:  (None, ques_len)
+        cell:       BasicLSTMCell
     return
-        H_p: (None, pass_len, l)
-        H_q: (None, pass_len, l)
+        H_p: (None, pass_len, num_units)
+        H_q: (None, ques_len, num_units)
 
 
     '''
-    H_p = lstm_pre.encode_sequence(batch_pass, pass_len)
-    H_q = lstm_pre.encode_sequence(batch_ques, ques_len)
+    H_p, _ = tf.nn.dynamic_rnn(cell, passage, passage_mask, dtype=tf.float32)
+    H_q, _ = tf.nn.dynamic_rnn(cell, ques, ques_mask, dtype=tf.float32)
     return H_p, H_q
 
 def match_layer(lstm_m, att_m, H_p, pass_len, H_q, ques_len):
