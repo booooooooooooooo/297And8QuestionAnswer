@@ -7,22 +7,25 @@ from util import *
 '''
 TODO:
 padding
+regularization
+gradient decent clipping
+efficient training: nce etc.
 mark public and private def
+include embed_s, batch_size in title of saved model
+include num_units, lr, n_epoch in title of saved model too
+give nice names to important tensors
 '''
 class Model:
     def __init__(self, config):
         self.config = config
     def add_placeholder(self):
-        pass_l = self.config.data.pass_l
-        ques_l = self.config.data.ques_l
-
-        self.ques = tf.placeholder(tf.int32, shape = (None, ques_l), name = "ques_ph")
-        self.ques_mask = tf.placeholder(tf.int32, shape = (None, ques_l), name = "ques_pad_ph")
-        self.passage = tf.placeholder(tf.int32, shape = (None, pass_l), name = "pass_ph")
-        self.passage_mask = tf.placeholder(tf.int32, shape = (None, pass_l), name = "pass_pad_ph")
-        self.ans = tf.placeholder(tf.int32, shape = (None, 2), name = "ans_ph")
+        self.ques = tf.placeholder(tf.int32, shape = (None, None), name = "ques_ph")#(batch_size, ques_l)
+        self.ques_mask = tf.placeholder(tf.int32, shape = (None, None), name = "ques_pad_ph")#(batch_size, ques_l)
+        self.passage = tf.placeholder(tf.int32, shape = (None, None), name = "pass_ph")#(batch_size, pass_l)
+        self.passage_mask = tf.placeholder(tf.int32, shape = (None, None), name = "pass_pad_ph")#(batch_size, pass_l)
+        self.ans = tf.placeholder(tf.int32, shape = (None, 2), name = "ans_ph")#(batch_size, 2)
     def add_variables(self):
-        embed_s = self.config.data.embed_s
+        embed_s = self.config.embed_s
         num_units = self.config.num_units
 
         init = tf.contrib.layers.xavier_initializer()
@@ -55,7 +58,7 @@ class Model:
                 self.U_ans = tf.get_variable("U_ans", initializer = init, shape = (2 * num_units, num_units))
                 self.lstm_ans = tf.contrib.rnn.BasicLSTMCell(num_units)
     def embed_layer(self):
-        embed_matrix = self.config.data.embed_matrix
+        embed_matrix = self.config.embed_matrix
         passage = self.passage
         ques = self.ques
 
@@ -64,8 +67,8 @@ class Model:
         return pass_embed, ques_embed
     def pre_layer(self, pass_embed, ques_embed):
         U_pre = self.U_pre
-        pass_l = self.config.data.pass_l
-        embed_s = self.config.data.embed_s
+        pass_l = self.config.pass_l
+        embed_s = self.config.embed_s
         num_units = self.config.num_units
         lstm_pre = self.lstm_pre
         passage_mask = self.passage_mask
@@ -85,7 +88,7 @@ class Model:
         return:
             z: (batch_size, 2 * num_units)
         '''
-        ques_l = self.config.data.ques_l
+        ques_l = self.config.ques_l
         num_units = self.config.num_units
         W_q = self.W_q
         W_p = self.W_p
@@ -117,7 +120,7 @@ class Model:
         '''
         lstm = self.lstm_match
         num_units = self.config.num_units
-        batch_size = self.config.data.batch_size
+        batch_size = self.config.batch_size
 
         h_p_lst = tf.unstack(H_p, axis = 1)
 
@@ -142,7 +145,7 @@ class Model:
 
         '''
         V = self.V
-        pass_l = self.config.data.pass_l
+        pass_l = self.config.pass_l
         num_units = self.config.num_units
         W_a = self.W_a
         b_a = self.b_a
@@ -169,7 +172,7 @@ class Model:
         '''
         lstm = self.lstm_ans
         num_units = self.config.num_units
-        batch_size = self.config.data.batch_size
+        batch_size = self.config.batch_size
 
         dist_lst = []
         h_a = lstm.zero_state(batch_size, tf.float32)
