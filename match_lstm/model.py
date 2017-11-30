@@ -5,7 +5,9 @@ import tensorflow as tf
 import numpy as np
 from util import *
 '''
-TODO: mark public and private def
+TODO:
+padding
+mark public and private def
 '''
 class Model:
     def __init__(self, config):
@@ -52,7 +54,29 @@ class Model:
             with tf.variable_scope("LSTM"):
                 self.U_ans = tf.get_variable("U_ans", initializer = init, shape = (2 * num_units, num_units))
                 self.lstm_ans = tf.contrib.rnn.BasicLSTMCell(num_units)
-    def attention_match(self, H_q, h_p, h_r):
+    def get_embed(self):
+        embed_matrix = self.config.data.embed_matrix
+        passage = self.passage
+        ques = self.ques
+
+        pass_embed = tf.nn.embedding_lookup(embed_matrix, passage)#(None, pass_l, embed_s)
+        ques_embed = tf.nn.embedding_lookup(embed_matrix, ques)#(None, ques_l, embed_s)
+        return pass_embed, ques_embed
+    def pre_layer(self, pass_embed, ques_embed):
+        U_pre = self.U_pre
+        pass_l = self.config.data.pass_l
+        embed_s = self.config.data.embed_s
+        num_units = self.config.num_units
+        lstm_pre = self.lstm_pre
+        passage_mask = self.passage_mask
+        ques_mask = self.ques_mask
+
+        pass_pre = abc_mul_cd(pass_embed, U_pre, pass_l, embed_s, num_units)#(None, pass_l, num_units)
+        ques_pre = abc_mul_cd(ques_embed, U_pre, ques_l, embed_s, num_units)#(None, ques_l, num_units)
+        H_p, _ = tf.nn.dynamic_rnn(lstm_pre, pass_pre, passage_mask, dtype=tf.float32)#(None, pass_l, num_units)
+        H_q, _ = tf.nn.dynamic_rnn(lstm_pre, ques_pre, ques_mask, dtype=tf.float32)#(None, ques_l, num_units)
+        return H_p, H_q
+    def match_attention(self, H_q, h_p, h_r):
         '''
         paras:
             H_q: (batch_size, ques_l, num_units)
@@ -83,64 +107,42 @@ class Model:
         z = tf.concat(1, [h_p, att_v])#(batch_size, 2 * num_units)
 
         return z
-    def add_predicted_dist(self):
-        #TODO
-        #embdding
-        pass_embed = tf.nn.embedding_lookup(embed_matrix, self.passage)#(None, pass_l, embed_s)
-        ques_embed = tf.nn.embedding_lookup(embed_matrix, self.ques)#(None, ques_l, embed_s)
-        #Preprocessing Layer
-        pass_pre = abc_mul_cd(pass_embed, self.U_pre, pass_l, embed_s, num_units)#(None, pass_l, num_units)
-        ques_pre = abc_mul_cd(ques_embed, self.U_pre, ques_l, embed_s, num_units)#(None, ques_l, num_units)
-        H_p, _ = tf.nn.dynamic_rnn(self.lstm_pre, pass_pre, passage_mask, dtype=tf.float32)#(None, pass_l, num_units)
-        H_q, _ = tf.nn.dynamic_rnn(self.lstm_pre, ques_pre, ques_mask, dtype=tf.float32)#(None, ques_l, num_units)
-        #Match-LSTM Layer
+    def match_layer(self, H_p, H_q):
         '''
         paras
-            lstm_m:     a LSTM_encoder instance
-                        Note: input_size = 2 * l
-                              state_size = l
-            att_m:      an Attention_match instance
-                        Note: l is from here
-            H_p:        (None, pass_len, l)
-            pass_len:   # of tokens in each passage
-            H_q:        (None, pass_len, l)
-            ques_len:   # of tokens in each question
+            H_p:        (None, pass_l, num_units)
+            H_q:        (None, ques_l, num_units)
         return
-            H_r:        (None, pass_len, 2 * l)
+            H_r:        (None, pass_l, num_units)
         '''
-        h_r_lst_r = []
-        h_r_lst_l = []
+        lstm = self.lstm_match
+        num_units = self.config.num_units
+        batch_size = self.config.data.batch_size
 
-        h_p_lst_r = tf.unstack(H_p, axis = 1)
-        h_r_r = tf.zeros(tf.shape(h_p_lst_r[0]))
-        mem_r = tf.zeros(tf.shape(h_p_lst_r[0]))
+        h_p_lst = tf.unstack(H_p, axis = 1)
 
-        h_p_lst_l = h_p_lst_r[::-1]
-        h_r_l = tf.zeros(tf.shape(h_p_lst_l[0]))
-        mem_l = tf.zeros(tf.shape(h_p_lst_l[0]))
-
+        h_r_lst = []
+        h_r = lstm.zero_state(batch_size, tf.float32)
         for i in xrange(pass_len):
-            z_r = att_m.attention_one_step(H_q, ques_len, h_p_lst_r[i], h_r_r)
-            h_r_r_new, mem_r_new = lstm_m.encode_one_step(z_r, h_r_r, mem_r)
-            h_r_lst_r.append(h_r_r_new)
-            h_r_r = h_r_r_new
-            mem_r = mem_r_new
+            h_p = h_p_lst[i]
+            z_i = match_attention(H_q, h_p, h_r)
+            h_r = lstm(z_i, h_r)
+            h_r_lst.append(h_r)
+        H_r = tf.stack(h_r_lst)# (pass_len, None, num_units)
 
-            z_l = att_m.attention_one_step(H_q, ques_len, h_p_lst_l[i], h_r_l)
-            h_r_l_new, mem_l_new = lstm_m.encode_one_step(z_l, h_r_l, mem_l)
-            h_r_lst_l.append(h_r_l_new)
-            h_r_l = h_r_l_new
-            mem_l = mem_l_new
-
-        H_r_r = tf.stack(h_r_lst_r)# (pass_len, None, l)
-        H_r_l = tf.stack(h_r_lst_l)# (pass_len, None, l)
-        H_r = tf.concat(2, [H_r_r, H_r_l]) ## (pass_len, None, 2 * l)
-        print H_r_r
-        print H_r_l
-        print H_r
-        H_r = tf.transpose(H_r, (1, 0, 2))
         return H_r
+    def add_predicted_dist(self):
+        #embdding
+        pass_embed, ques_embed = self.get_embed()
+        #Preprocessing Layer
+        H_p, H_q = pre_layer(pass_embed, ques_embed)
+        #Match-LSTM Layer
+        H_r_r = match_layer(H_p, H_q)
+        H_r_l = match_layer(H_p, H_q) #TODO: bidirectional lstm and padding
+        H_r = tf.concat(2, [H_r_r, H_r_l]) ## (pass_len, None, 2 * l)
+        H_r = tf.transpose(H_r, (1, 0, 2))
         #Answer Pointer Layer
+        #TODO
     def add_train_op(self):
         #TODO
     def build(self):
