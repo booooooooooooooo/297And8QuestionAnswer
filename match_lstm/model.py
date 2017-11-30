@@ -54,7 +54,7 @@ class Model:
             with tf.variable_scope("LSTM"):
                 self.U_ans = tf.get_variable("U_ans", initializer = init, shape = (2 * num_units, num_units))
                 self.lstm_ans = tf.contrib.rnn.BasicLSTMCell(num_units)
-    def get_embed(self):
+    def embed_layer(self):
         embed_matrix = self.config.data.embed_matrix
         passage = self.passage
         ques = self.ques
@@ -131,9 +131,58 @@ class Model:
         H_r = tf.stack(h_r_lst)# (pass_len, None, num_units)
 
         return H_r
+    def answer_attention(self, H_r, h_a):
+        '''
+        paras:
+            H_r: (batch_size, pass_l, 2 * num_units)
+            h_a: (batch_size, num_units)
+        return:
+            beta: (batch_size, pass_l)
+            input_lstm: (batch_size, 2 * num_units)
+
+        '''
+        V = self.V
+        pass_l = self.config.data.pass_l
+        num_units = self.config.num_units
+        W_a = self.W_a
+        b_a = self.b_a
+        v = self.v
+        c = self.c
+
+        F_part1 = abc_mul_cd(H_r, V, pass_l, 2 * num_units, num_units)# (batch_size, pass_l, num_units)
+        F_part2 = tf.matmul(h_a, W_a) + b_a # (batch_size, num_units)
+        F_sum = abc_plus_ac(F_part1, F_part2, pass_l, num_units )
+        F = tf.nn.tanh( F_sum )# (batch_size, pass_l, num_units)
+
+        beta = tf.nn.softmax( abc_mul_c(F, v, pass_l, num_units) + c )#(batch_size, pass_l)
+
+        input_lstm = tf.matmul( tf.transpose(H_r, (0,2,1)), tf.reshape(beta, (-1, pass_l, 1)) )#(batch_size, 2 * num_units, 1)
+        input_lstm = tf.reshape(input_lstm, (-1, 2 * num_units))
+
+        return beta, input_lstm
+    def answer_layer(self, H_r):
+        '''
+        paras
+            H_r:        (None, pass_l, 2 * num_units)
+        return
+            dist:       (None, 2, pass_l)
+        '''
+        lstm = self.lstm_ans
+        num_units = self.config.num_units
+        batch_size = self.config.data.batch_size
+
+        dist_lst = []
+        h_a = lstm.zero_state(batch_size, tf.float32)
+        for i in xrange(2):
+            beta, input_lstm = match_attention(H_r, h_a)
+            h_a = tf.matmul(input_lstm, U_ans)
+            dist_lst.append(beta)
+        dist = tf.stack(dist_lst)#(2, None, pass_l)
+
+        return tf.transpose(dist, (1,0,2))#(None, 2, pass_l)
     def add_predicted_dist(self):
         #embdding
-        pass_embed, ques_embed = self.get_embed()
+        pass_embed, ques_embed = self.embed_layer()
         #Preprocessing Layer
         H_p, H_q = pre_layer(pass_embed, ques_embed)
         #Match-LSTM Layer
@@ -142,9 +191,11 @@ class Model:
         H_r = tf.concat(2, [H_r_r, H_r_l]) ## (pass_len, None, 2 * l)
         H_r = tf.transpose(H_r, (1, 0, 2))
         #Answer Pointer Layer
-        #TODO
+        self.dist = answer_layer(H_p)
+
     def add_train_op(self):
         #TODO
+        loss = tf.reduce_mean( )
     def build(self):
         #add placeholders
         add_placeholder()
@@ -160,76 +211,3 @@ class Model:
     def train_epoch(self, sess):
 
     def fit(self, sess):
-
-class Attention_match:
-    def __init__(self, scopeName, l):
-        self.l = l
-        self.scopeName = scopeName
-    def add_variables(self):
-        xavier_initializer = tf.contrib.layers.xavier_initializer()
-        with tf.variable_scope(self.scopeName):
-            self.W_q = tf.get_variable("W_q", initializer = xavier_initializer, shape = (self.l, self.l), dtype = tf.float32)
-            self.W_p = tf.get_variable("W_p", initializer = xavier_initializer, shape = (self.l, self.l), dtype = tf.float32)
-            self.W_r = tf.get_variable("W_r", initializer = xavier_initializer, shape = (self.l, self.l), dtype = tf.float32)
-            self.b_p = tf.get_variable("b_p", initializer = xavier_initializer, shape = (self.l, ), dtype = tf.float32)
-            self.w = tf.get_variable("w", initializer = xavier_initializer, shape = (self.l, ), dtype = tf.float32)
-            self.b = tf.get_variable("b", initializer = xavier_initializer, shape = (), dtype = tf.float32)
-    def attention_one_step(self, H_q, q_l, h_p, h_r):
-        '''
-        paras:
-            H_q: batch_size * q_l * l
-            h_p: batch_size * l
-            h_r: batch_size * l
-        return:
-            z: batch_size * (2 * l)
-        '''
-
-        G_part1 = abc_mul_cd(H_q, self.W_q, q_l, self.l, self.l)# batch_size * q_l * l
-        G_part2 = tf.matmul(h_p, self.W_p) + tf.matmul(h_r, self.W_r) + self.b_p # batch_size * l
-        G_sum = abc_plus_ac(G_part1, G_part2, q_l, self.l)
-        G = tf.nn.tanh( G_sum )# batch_size * q_l * l
-
-        alpha = tf.nn.softmax( abc_mul_c(G, self.w, q_l, self.l) + self.b )# batch_size * q_l
-
-        att_v = tf.matmul( tf.transpose(H_q, (0,2,1)), tf.reshape(alpha, (-1, q_l, 1)) )#batch_size * l * 1
-        att_v = tf.reshape(att_v, (-1, self.l))
-
-        z = tf.concat(1, [h_p, att_v])
-
-        return z
-
-class Attention_ans:
-    def __init__(self, scopeName, l):
-        self.l = l
-        self.scopeName = scopeName
-    def add_variables(self):
-        xavier_initializer = tf.contrib.layers.xavier_initializer()
-        with tf.variable_scope(self.scopeName):
-            self.V = tf.get_variable("V", initializer = xavier_initializer, shape = (self.l * 2, self.l), dtype = tf.float32)
-            self.W_a = tf.get_variable("W_a", initializer = xavier_initializer, shape = (self.l, self.l), dtype = tf.float32)
-            self.b_a = tf.get_variable("b_a", initializer = xavier_initializer, shape = (self.l, ), dtype = tf.float32)
-            self.v = tf.get_variable("v", initializer = xavier_initializer, shape = (self.l, ), dtype = tf.float32)
-            self.c = tf.get_variable("c", initializer = xavier_initializer, shape = (), dtype = tf.float32)
-    def attention_one_step(self, H_r_hat, q_l, h_a):
-        '''
-        paras:
-            H_r_hat: batch_size * q_l * (l * 2)
-            q_l: passage length + 1
-            h_a: batch_size * l
-        return:
-            beta: batch_size * q_l
-            input_lstm_m: batch_size * (2 * l)
-
-        '''
-
-        F_part1 = abc_mul_cd(H_r_hat, self.V, q_l, 2 * self.l, self.l)# batch_size * q_l * l
-        F_part2 = tf.matmul(h_a, self.W_a) +  self.b_a # batch_size * l
-        F_sum = abc_plus_ac(F_part1, F_part2, q_l, self.l )
-        F = tf.nn.tanh( F_sum )# batch_size * q_l * l
-
-        beta = tf.nn.softmax( abc_mul_c(F, self.v, q_l, self.l) + self.c )# batch_size * q_l
-
-        input_lstm_m = tf.matmul( tf.transpose(H_r_hat, (0,2,1)), tf.reshape(beta, (-1, q_l, 1)) )#batch_size * (2*l) * 1
-        input_lstm_m = tf.reshape(input_lstm_m, (-1, self.l * 2))
-
-        return beta, input_lstm_m
