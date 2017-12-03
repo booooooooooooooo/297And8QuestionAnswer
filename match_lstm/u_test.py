@@ -1,128 +1,83 @@
 import tensorflow as tf
 import numpy as np
 
-from match_lstm_model import *
-
-def sanity_LSTM_encoder():
-    input_size = 3
-    state_size = 4
-    seq_len = 5
-
-    inputs_placeholder = tf.placeholder(tf.float32, shape=(None, seq_len, input_size))
-    encoder = LSTM_encoder("sanity", input_size, state_size)
-    encoder.add_variables()
-    predicted = encoder.encode_sequence(inputs_placeholder, seq_len)
-
-
-    sess = tf.Session()
-    sess.run( tf.global_variables_initializer() )
-    inputs = np.zeros((10, seq_len, input_size))
-    print sess.run(  tf.shape( sess.run(predicted, {inputs_placeholder : inputs}) )  )
-    print sess.run(predicted, {inputs_placeholder : inputs})
-def sanity_Attention_match():
-    batch_size  = 10
-    question_len = 5
-    state_size = 3
-
-    att_match = Attention_match("sanity", state_size)
-    att_match.add_variables()
-    H_q_placeholder = tf.placeholder(tf.float32, shape = (None, question_len, state_size))
-    h_p_placeholder = tf.placeholder(tf.float32, shape = (None,  state_size))
-    h_r_placeholder = tf.placeholder(tf.float32, shape = (None,  state_size))
-    predicted = att_match.attention_one_step(H_q_placeholder, question_len, h_p_placeholder, h_r_placeholder)
-
-    sess = tf.Session()
-    sess.run( tf.global_variables_initializer() )
-    H_q = np.zeros((batch_size, question_len, state_size))
-    h_p = np.zeros( (batch_size, state_size) )
-    h_r = np.zeros( (batch_size, state_size) )
-    result = sess.run(predicted, { H_q_placeholder : H_q, h_p_placeholder : h_p, h_r_placeholder : h_r })
-    print result
-    print sess.run( tf.shape(result) )
-
-def sanity_Attention_answer():
-    batch_size  = 10
-    question_len = 5
-    state_size = 3
-
-    att_ans = Attention_ans("sanity", state_size)
-    att_ans.add_variables()
-    H_r_hat_placeholder = tf.placeholder(tf.float32, shape = (None, question_len, state_size * 2))
-    h_a_placeholder = tf.placeholder(tf.float32, shape = (None,  state_size))
-    predicted = att_ans.attention_one_step(H_r_hat_placeholder, question_len, h_a_placeholder)
-
-    sess = tf.Session()
-    sess.run( tf.global_variables_initializer() )
-    H_r_hat = np.zeros((batch_size, question_len, state_size * 2))
-    h_a = np.zeros( (batch_size, state_size) )
-    beta, state = sess.run(predicted, { H_r_hat_placeholder : H_r_hat, h_a_placeholder : h_a })
-    print beta
-    print state
-    print sess.run( tf.shape(beta) )
-    print sess.run( tf.shape(state) )
-def sanity_pre_layer():
-    batch_size  = 10
-    pass_len = 7
-    ques_len = 5
-    state_size = 3
-    input_size = 11
+def sanity_model():
+    from model import Model
+    class Config:
+        def __init__(self, batch_s, embed_s, num_units, embed_matrix, n_epoch):
+            self.batch_s = batch_s
+            self.embed_s = embed_s
+            self.num_units = num_units
+            self.embed_matrix = embed_matrix
+            self.n_epoch = n_epoch
+    class Data:
+        def getTrain(self, embed_s, batch_s):
+            pass_l = 119
+            ques_l = 13
+            vocabulary = None#TODO
+            vocabulary_rev = None#TODO
+            embed_matrix = tf.ones((17, 17))
+            batch_data = None#TODO
+            return pass_l, ques_l, vocabulary, vocabulary_rev, embed_matrix, batch_data
 
 
+    batch_s = 2
+    embed_s = 3
+    num_units = 5
+    n_epoch = 7
+    data = Data()
+    pass_l, ques_l, vocabulary, vocabulary_rev, embed_matrix, batch_data = data.getTrain(embed_s, batch_s)
+    config = Config(batch_s, embed_s, num_units, embed_matrix, n_epoch)
 
-    encoder = LSTM_encoder("sanity", input_size, state_size)
-    encoder.add_variables()
-    placeholder_pass = tf.placeholder(tf.float32, shape=(None, pass_len, input_size))
-    placeholder_ques = tf.placeholder(tf.float32, shape=(None, ques_len, input_size))
-    predicted_H_p, predicted_H_q = pre_layer(encoder, placeholder_pass, pass_len, placeholder_ques, ques_len)
 
+    model = Model(config)
 
-    sess = tf.Session()
-    sess.run( tf.global_variables_initializer() )
-    passage = np.zeros((batch_size, pass_len, input_size))
-    question = np.zeros((batch_size, ques_len, input_size))
-    H_p, H_q = sess.run((predicted_H_p, predicted_H_q)  , {placeholder_pass: passage, placeholder_ques : question })
+    model.add_placeholder()
+    print model.ques
+    print model.ques_mask
+
+    model.add_variables()
+    print model.W_q
+
+    pass_embed, ques_embed = model.embed_layer()
+    print pass_embed
+    print ques_embed
+
+    H_p, H_q = model.pre_layer(pass_embed, ques_embed)
     print H_p
     print H_q
-    print sess.run(tf.shape(H_p))
-    print sess.run(tf.shape(H_q))
-def sanity_match_layer():
-    batch_size = 17
-    l = 5
-    pass_len = 7
-    ques_len = 3
-
-
-    lstm_m = LSTM_encoder("sanity_match_layer_lstm_m", 2*l, l)
-    att_m = Attention_match("sanity_match_layer_att_m", l)
-    lstm_m.add_variables()
-    att_m.add_variables()
-    H_p_ph = tf.placeholder(tf.float32, shape = (None, pass_len, l))
-    H_q_ph = tf.placeholder(tf.float32, shape = (None, ques_len, l))
-    H_r_pred = match_layer(lstm_m, att_m, H_p_ph, pass_len, H_q_ph, ques_len)
-    print H_r_pred
-
-    sess = tf.Session()
-    sess.run(tf.global_variables_initializer())
-    H_p = np.zeros((batch_size, pass_len, l))
-    H_q = np.zeros((batch_size, ques_len, l))
-    H_r = sess.run(H_r_pred, {H_p_ph: H_p, H_q_ph : H_q} )
-    print H_r
-    print sess.run(tf.shape(H_r))
 
 def test_tensorflow():
+    ##test BasicRNNCell and dynamic_rnn
+    batch_s = 7
+    max_length = 5
+    input_size = 3
+    hidden_size = 2
+    input_data = tf.ones((batch_s, max_length, input_size))
+    input_data_seq_length = tf.ones((batch_s,))
 
-    c = tf.placeholder(tf.float32, (5,4))
-    print c
-    shape = tf.shape(c)
-    print shape
-    none = tf.slice(shape, [0], [1])
-    print none
-    d = tf.zeros(none)
-    print d
+    # create a BasicRNNCell
+    rnn_cell = tf.nn.rnn_cell.BasicRNNCell(hidden_size)
+
+    # 'outputs' is a tensor of shape [batch_s, max_time, cell_state_size]
+
+    # defining initial state
+    initial_state = rnn_cell.zero_state(batch_s, dtype=tf.float32)
+
+    # 'state' is a tensor of shape [batch_s, cell_state_size]
+    outputs, state = tf.nn.dynamic_rnn(rnn_cell, input_data, sequence_length = input_data_seq_length,
+                                       initial_state=initial_state,
+                                       dtype=tf.float32)
+
+    # input_data_prime = tf.zeros((batch_s, max_length, input_size * 3))
+    # outputs_prime, state_prime = tf.nn.dynamic_rnn(rnn_cell, input_data_prime,
+    #                                    initial_state=initial_state,
+    #                                    dtype=tf.float32)
+    # print outputs_prime
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer() )
+        print sess.run(outputs)
+
 if __name__ == "__main__":
-    # sanity_LSTM_encoder()
-    # sanity_Attention_match()
-    # sanity_Attention_answer()
-    # sanity_pre_layer()
-    # sanity_match_layer()
-    test_tensorflow()
+    # test_tensorflow()
+    sanity_model()
