@@ -24,13 +24,15 @@ class Model:
         self.config = config
     def add_placeholder(self):
         batch_s = self.config.batch_s#trainning and test have same batch_s
+        pass_l = self.config.pass_l
 
-        self.ques = tf.placeholder(tf.int32, shape = (batch_s, None), name = "ques")#(batch_s, ques_l)
-        self.ques_mask = tf.placeholder(tf.int32, shape = (batch_s, ), name = "ques_mask")#(batch_s,)
-        self.ques_mask_matrix = tf.placeholder(tf.float32, shape = (batch_s, None), name = "ques_mask_matrix")#(batch_s, ques_l)
-        self.passage = tf.placeholder(tf.int32, shape = (batch_s, None), name = "pass")#(batch_s, pass_l)
-        self.passage_mask = tf.placeholder(tf.int32, shape = (batch_s, ), name = "passage_mask")#(batch_s, pass_l)
-        self.ans = tf.placeholder(tf.int32, shape = (batch_s, 2), name = "ans")#(batch_s, 2)
+        self.ques = tf.placeholder(tf.int32, shape = (None, None), name = "ques")#(None, ques_l)
+        self.ques_mask = tf.placeholder(tf.int32, shape = (None, ), name = "ques_mask")#(None,)
+        self.ques_mask_matrix = tf.placeholder(tf.float32, shape = (None, None), name = "ques_mask_matrix")#(None, ques_l)
+        self.passage = tf.placeholder(tf.int32, shape = (None, pass_l), name = "pass")#(None, pass_l)
+        self.passage_rev = tf.placeholder(tf.int32, shape = (None, pass_l), name = "pass")#(None, pass_l)
+        self.passage_mask = tf.placeholder(tf.int32, shape = (None, ), name = "passage_mask")#(None, pass_l)
+        self.ans = tf.placeholder(tf.int32, shape = (None, 2), name = "ans")#(None, 2)
     def add_variables(self):
         embed_s = self.config.embed_s
         num_units = self.config.num_units
@@ -67,12 +69,14 @@ class Model:
         ques = self.ques
 
         pass_embed = tf.nn.embedding_lookup(embed_matrix, passage)#(batch_s, pass_l, embed_s)
+        pass_embed_rev = tf.nn.embedding_lookup(embed_matrix, passage)#(batch_s, pass_l, embed_s)
         ques_embed = tf.nn.embedding_lookup(embed_matrix, ques)#(batch_s, ques_l, embed_s)
-        return pass_embed, ques_embed
-    def pre_layer(self, pass_embed, ques_embed):
+        return pass_embed, pass_embed_rev, ques_embed
+    def pre_layer(self, pass_embed, pass_embed_rev, ques_embed):
         '''
         paras:
             pass_embed: (batch_s, pass_l, embed_s)
+            pass_embed_rev: (batch_s, pass_l, embed_s)
             ques_embed: (batch_s, ques_l, embed_s)
         return:
             H_p: (batch_s, pass_l, num_units)
@@ -92,11 +96,14 @@ class Model:
         H_p, _ = tf.nn.dynamic_rnn(lstm_pre, pass_embed, sequence_length = passage_mask,
                                            initial_state=initial_state,
                                            dtype=tf.float32)
+        H_p_rev, _ = tf.nn.dynamic_rnn(lstm_pre, pass_embed_rev, sequence_length = passage_mask,
+                                           initial_state=initial_state,
+                                           dtype=tf.float32)
         H_q, _ = tf.nn.dynamic_rnn(lstm_pre, ques_embed, sequence_length = ques_mask,
                                            initial_state=initial_state,
                                            dtype=tf.float32)
 
-        return H_p, H_q
+        return H_p, H_p_rev, H_q
 
     def match_attention(self, H_q, h_p, h_r):
         '''
@@ -143,30 +150,48 @@ class Model:
         z = tf.concat([h_p, att_state], 1)#(batch_s, 2 * num_units)
 
         return z
-    # def match_layer(self, H_p, H_q):
-    #     '''
-    #     paras
-    #         H_p:        (None, pass_l, num_units)
-    #         H_q:        (None, ques_l, num_units)
-    #     return
-    #         H_r:        (None, pass_l, num_units)
-    #     '''
-    #     lstm = self.lstm_match
-    #     num_units = self.config.num_units
-    #     batch_s = self.config.batch_s
-    #
-    #     h_p_lst = tf.unstack(H_p, axis = 1)
-    #
-    #     h_r_lst = []
-    #     h_r = lstm.zero_state(batch_s, tf.float32)
-    #     for i in xrange(pass_len):
-    #         h_p = h_p_lst[i]
-    #         z_i = match_attention(H_q, h_p, h_r)
-    #         h_r = lstm(z_i, h_r)
-    #         h_r_lst.append(h_r)
-    #     H_r = tf.stack(h_r_lst)# (pass_len, None, num_units)
-    #
-    #     return H_r
+    def match_one_direct(self, H_p, H_q):
+        '''
+        paras
+            H_p:        (None, pass_l, num_units)
+            H_q:        (None, ques_l, num_units)
+        return
+            H_r_one_direct:        (None, pass_l, num_units)
+        '''
+
+        num_units = self.config.num_units
+        batch_s = self.config.batch_s
+        pass_l = self.config.pass_l
+
+        lstm = self.lstm_match
+
+        h_p_lst = tf.unstack(H_p, axis = 1)
+
+        h_r_lst = []
+        stateTuple = lstm.zero_state(batch_s, tf.float32)
+        for i in xrange(pass_l):
+            h_p = h_p_lst[i]
+            z_i = self.match_attention(H_q, h_p, stateTuple[1])
+            _, stateTuple = lstm(z_i, stateTuple)
+            h_r_lst.append(stateTuple[1])
+        H_r_one_direct = tf.stack(h_r_lst)# (pass_l, None, num_units)
+        H_r_one_direct = tf.transpose(H_r_one_direct, (1, 0, 2))# (None, pass_l, num_units)
+        return H_r_one_direct
+    def match_layer(self, H_p, H_p_rev, H_q):
+        '''
+        paras
+            H_r_right:        (None, pass_l, num_units)
+            H_r_left:         (None, ques_l, num_units)
+        return
+            H_r:              (None, pass_l, 2 * num_units)
+        '''
+        H_r_right = self.match_one_direct(H_p, H_q)#(None, pass_l, num_units)
+        H_r_left = self.match_one_direct(H_p_rev, H_q)#(None, pass_l, num_units)
+        H_r = tf.concat([H_r_right, H_r_left], 2)#(None, pass_l, 2 * num_units)
+        return H_r
+
+
+
     # def answer_attention(self, H_r, h_a):
     #     '''
     #     paras:

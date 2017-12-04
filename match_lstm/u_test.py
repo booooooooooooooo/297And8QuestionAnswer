@@ -4,11 +4,12 @@ import numpy as np
 def sanity_model():
     from model import Model
     class Config:
-        def __init__(self, batch_s, embed_s, num_units, embed_matrix, n_epoch):
+        def __init__(self, batch_s, embed_s, num_units, embed_matrix, pass_l, n_epoch):
             self.batch_s = batch_s
             self.embed_s = embed_s
             self.num_units = num_units
             self.embed_matrix = embed_matrix
+            self.pass_l = pass_l
             self.n_epoch = n_epoch
     class Data:
         def getTrain(self, embed_s, batch_s):
@@ -24,10 +25,11 @@ def sanity_model():
     batch_s = 2
     embed_s = 3
     num_units = 5
+    pass_l = 11
     n_epoch = 7
     data = Data()
     pass_l, ques_l, vocabulary, vocabulary_rev, embed_matrix, batch_data = data.getTrain(embed_s, batch_s)
-    config = Config(batch_s, embed_s, num_units, embed_matrix, n_epoch)
+    config = Config(batch_s, embed_s, num_units, embed_matrix, pass_l, n_epoch)
 
 
     model = Model(config)
@@ -39,12 +41,14 @@ def sanity_model():
     model.add_variables()
     print model.W_q
 
-    pass_embed, ques_embed = model.embed_layer()
+    pass_embed, pass_embed_rev, ques_embed = model.embed_layer()
     print pass_embed
+    print pass_embed_rev
     print ques_embed
 
-    H_p, H_q = model.pre_layer(pass_embed, ques_embed)
+    H_p, H_p_rev, H_q = model.pre_layer(pass_embed, pass_embed_rev, ques_embed)
     print H_p
+    print H_p_rev
     print H_q
 
 
@@ -52,6 +56,14 @@ def sanity_model():
     h_r = tf.zeros((batch_s, num_units))
     z = model.match_attention(H_q, h_p, h_r)
     print z
+
+    H_r_one_direct = model.match_one_direct( H_p, H_q)
+    print H_r_one_direct
+
+    H_r = model.match_layer(H_p, H_p_rev, H_q)
+    print H_r
+
+
 
 def test_tensorflow():
     # ##test BasicRNNCell and dynamic_rnn
@@ -95,11 +107,35 @@ def test_tensorflow():
     #     print sess.run(b)
     #     print sess.run(tf.reshape(b, (-1, 2)  ))
 
-    ##test tf.matmul
-    a = tf.ones((3, 4))
-    b = tf.ones((4,1))
-    c = tf.matmul(a, b)
-    print c
+    # ##test tf.matmul
+    # a = tf.ones((3, 4))
+    # b = tf.ones((4,1))
+    # c = tf.matmul(a, b)
+    # print c
+
+
+    # ##test while_loop
+    # i0 = tf.constant(0)
+    # m0 = tf.ones([2, 2])
+    # c = lambda i, m: i < 10
+    # b = lambda i, m: [i+1, tf.concat([m, m], axis=0)]
+    # loop = tf.while_loop(
+    #     c, b, loop_vars=[i0, m0],
+    #     shape_invariants=[i0.get_shape(), tf.TensorShape([None, 2])])
+    # with tf.Session() as sess:
+    #     sess.run(tf.global_variables_initializer() )
+    #     print sess.run(loop)
+
+    ##test case
+    x = 1
+    y = 2
+
+    f1 = lambda: tf.constant(17)
+    f2 = lambda: tf.constant(23)
+    r = tf.case([(tf.less(x, y), f1)], default=f2)
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer() )
+        print sess.run(r)
 
 if __name__ == "__main__":
     # test_tensorflow()
