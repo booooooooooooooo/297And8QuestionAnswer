@@ -25,11 +25,12 @@ class Model:
     def add_placeholder(self):
         batch_s = self.config.batch_s#trainning and test have same batch_s
 
-        self.ques = tf.placeholder(tf.int32, shape = (batch_s, None), name = "ques_ph")#(batch_s, ques_l)
-        self.ques_mask = tf.placeholder(tf.int32, shape = (batch_s, ), name = "ques_pad_ph")#(batch_s, ques_l)
-        self.passage = tf.placeholder(tf.int32, shape = (batch_s, None), name = "pass_ph")#(batch_s, pass_l)
-        self.passage_mask = tf.placeholder(tf.int32, shape = (batch_s, ), name = "pass_pad_ph")#(batch_s, pass_l)
-        self.ans = tf.placeholder(tf.int32, shape = (batch_s, 2), name = "ans_ph")#(batch_s, 2)
+        self.ques = tf.placeholder(tf.int32, shape = (batch_s, None), name = "ques")#(batch_s, ques_l)
+        self.ques_mask = tf.placeholder(tf.int32, shape = (batch_s, ), name = "ques_mask")#(batch_s,)
+        self.ques_mask_matrix = tf.placeholder(tf.float32, shape = (batch_s, None), name = "ques_mask_matrix")#(batch_s, ques_l)
+        self.passage = tf.placeholder(tf.int32, shape = (batch_s, None), name = "pass")#(batch_s, pass_l)
+        self.passage_mask = tf.placeholder(tf.int32, shape = (batch_s, ), name = "passage_mask")#(batch_s, pass_l)
+        self.ans = tf.placeholder(tf.int32, shape = (batch_s, 2), name = "ans")#(batch_s, 2)
     def add_variables(self):
         embed_s = self.config.embed_s
         num_units = self.config.num_units
@@ -97,37 +98,51 @@ class Model:
 
         return H_p, H_q
 
-    # def match_attention(self, H_q, h_p, h_r):
-    #     '''
-    #     paras:
-    #         H_q: (batch_s, ques_l, num_units)
-    #         h_p: (batch_s, num_units)
-    #         h_r: (batch_s, num_units)
-    #     return:
-    #         z: (batch_s, 2 * num_units)
-    #     '''
-    #     ques_l = self.config.ques_l
-    #     num_units = self.config.num_units
-    #     W_q = self.W_q
-    #     W_p = self.W_p
-    #     W_r = self.W_r
-    #     b_p = self.b_p
-    #     w = self.w
-    #     b = self.b
-    #
-    #     G_part1 = abc_mul_cd(H_q, W_q, ques_l, num_units, num_units)#(batch_s, ques_l, num_units)
-    #     G_part2 = tf.matmul(h_p, W_p) + tf.matmul(h_r, W_r) + b_p #(batch_s, num_units)
-    #     G_sum = abc_plus_ac(G_part1, G_part2, ques_l, num_units)#(batch_s, ques_l, num_units)
-    #     G = tf.nn.tanh( G_sum )# batch_s * ques_l * l
-    #
-    #     alpha = tf.nn.softmax( abc_mul_c(G, w, ques_l, num_units) + b )#(batch_s, ques_l)
-    #
-    #     att_v = tf.matmul( tf.transpose(H_q, (0,2,1)), tf.reshape(alpha, (-1, ques_l, 1)) )#(batch_s, num_units, 1)
-    #     att_v = tf.reshape(att_v, (-1, num_units))#(batch_s, num_units)
-    #
-    #     z = tf.concat(1, [h_p, att_v])#(batch_s, 2 * num_units)
-    #
-    #     return z
+    def match_attention(self, H_q, h_p, h_r):
+        '''
+        paras:
+            H_q: (batch_s, ques_l, num_units)
+            h_p: (batch_s, num_units)
+            h_r: (batch_s, num_units)
+        return:
+            z: (batch_s, 2 * num_units)
+        '''
+        batch_s = self.config.batch_s
+        num_units = self.config.num_units
+
+        ques_mask_matrix = self.ques_mask_matrix
+
+        W_q = self.W_q
+        W_p = self.W_p
+        W_r = self.W_r
+        b_p = self.b_p
+        w = self.w
+        b = self.b
+
+        G_1 = tf.matmul( tf.reshape(H_q, (-1, num_units)), W_q)#(batch_s * ques_l, num_units)
+        G_1 = tf.reshape(G_1, (batch_s, -1, num_units))#(batch_s, ques_l, num_units)
+        G_1 = tf.transpose(G_1, (0, 2, 1))#(batch_s, num_units, ques_l)
+        G_1 = tf.reshape(G_1, (batch_s * num_units, -1))#(batch_s * num_units, ques_l)
+        G_2 = tf.matmul(h_p, W_p) + tf.matmul(h_r, W_r) + b_p #(batch_s, num_units)
+        G_2 = tf.reshape(G_2, (-1, 1))#(batch_s * num_units, 1)
+        G = tf.nn.tanh( G_1 + G_2 )#(batch_s * num_units, ques_l)
+        G = tf.reshape(G, (batch_s, num_units, -1))#(batch_s, num_units, ques_l)
+        G = tf.transpose(G, (0, 2, 1))#(batch_s, ques_l, num_units)
+        G = tf.reshape(G, (-1, num_units))#(batch_s * ques_l, num_units)
+
+        alpha = tf.matmul(G, tf.reshape(w, (-1, 1))) + b #(batch_s * ques_l, 1)
+        alpha = tf.reshape(alpha, (batch_s, -1))#(batch_s, ques_l)
+        alpha = alpha * ques_mask_matrix#(batch_s, ques_l)
+        alpha = tf.nn.softmax(alpha)#(batch_s, ques_l)
+        alpha = tf.reshape(alpha, (batch_s, -1, 1))#(batch_s, ques_l, 1)
+
+        att_state = tf.matmul(tf.transpose(H_q, (0, 2, 1)), alpha)#(batch_s, num_units, 1)
+        att_state = tf.reshape(att_state, (batch_s, num_units))#(batch_s, num_units)
+
+
+        z = tf.concat([h_p, att_state], 1)#(batch_s, 2 * num_units)
+
+        return z
     # def match_layer(self, H_p, H_q):
     #     '''
     #     paras
@@ -170,9 +185,9 @@ class Model:
     #     v = self.v
     #     c = self.c
     #
-    #     F_part1 = abc_mul_cd(H_r, V, pass_l, 2 * num_units, num_units)# (batch_s, pass_l, num_units)
-    #     F_part2 = tf.matmul(h_a, W_a) + b_a # (batch_s, num_units)
-    #     F_sum = abc_plus_ac(F_part1, F_part2, pass_l, num_units )
+    #     F_1 = abc_mul_cd(H_r, V, pass_l, 2 * num_units, num_units)# (batch_s, pass_l, num_units)
+    #     F_2 = tf.matmul(h_a, W_a) + b_a # (batch_s, num_units)
+    #     F_sum = abc_plus_ac(F_1, F_2, pass_l, num_units )
     #     F = tf.nn.tanh( F_sum )# (batch_s, pass_l, num_units)
     #
     #     beta = tf.nn.softmax( abc_mul_c(F, v, pass_l, num_units) + c )#(batch_s, pass_l)

@@ -47,36 +47,59 @@ def sanity_model():
     print H_p
     print H_q
 
+
+    h_p = tf.zeros((batch_s, num_units))
+    h_r = tf.zeros((batch_s, num_units))
+    z = model.match_attention(H_q, h_p, h_r)
+    print z
+
 def test_tensorflow():
-    ##test BasicRNNCell and dynamic_rnn
-    batch_s = 7
-    max_length = 5
-    input_size = 3
-    hidden_size = 2
-    input_data = tf.ones((batch_s, max_length, input_size))
-    input_data_seq_length = tf.ones((batch_s,))
-
-    # create a BasicRNNCell
-    rnn_cell = tf.nn.rnn_cell.BasicRNNCell(hidden_size)
-
-    # 'outputs' is a tensor of shape [batch_s, max_time, cell_state_size]
-
-    # defining initial state
-    initial_state = rnn_cell.zero_state(batch_s, dtype=tf.float32)
-
-    # 'state' is a tensor of shape [batch_s, cell_state_size]
-    outputs, state = tf.nn.dynamic_rnn(rnn_cell, input_data, sequence_length = input_data_seq_length,
-                                       initial_state=initial_state,
-                                       dtype=tf.float32)
-
-    # input_data_prime = tf.zeros((batch_s, max_length, input_size * 3))
-    # outputs_prime, state_prime = tf.nn.dynamic_rnn(rnn_cell, input_data_prime,
+    # ##test BasicRNNCell and dynamic_rnn
+    # batch_s = 7
+    # max_length = 5
+    # input_size = 3
+    # hidden_size = 2
+    # input_data = tf.ones((batch_s, max_length, input_size))
+    # input_data_seq_length = tf.ones((batch_s,))
+    #
+    # # create a BasicRNNCell
+    # rnn_cell = tf.nn.rnn_cell.BasicRNNCell(hidden_size)
+    #
+    # # 'outputs' is a tensor of shape [batch_s, max_time, cell_state_size]
+    #
+    # # defining initial state
+    # initial_state = rnn_cell.zero_state(batch_s, dtype=tf.float32)
+    #
+    # # 'state' is a tensor of shape [batch_s, cell_state_size]
+    # outputs, state = tf.nn.dynamic_rnn(rnn_cell, input_data, sequence_length = input_data_seq_length,
     #                                    initial_state=initial_state,
     #                                    dtype=tf.float32)
-    # print outputs_prime
-    with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer() )
-        print sess.run(outputs)
+    #
+    # # input_data_prime = tf.zeros((batch_s, max_length, input_size * 3))
+    # # outputs_prime, state_prime = tf.nn.dynamic_rnn(rnn_cell, input_data_prime,
+    # #                                    initial_state=initial_state,
+    # #                                    dtype=tf.float32)
+    # # print outputs_prime
+    # with tf.Session() as sess:
+    #     sess.run(tf.global_variables_initializer() )
+    #     print sess.run(outputs)
+
+
+
+    # ##test reshape
+    # a = tf.constant([[[1,2,3], [4,5,6]], [[7,8,9], [10, 11, 12]]])
+    # b = tf.transpose(a, (0,2,1))
+    # with tf.Session() as sess:
+    #     sess.run(tf.global_variables_initializer() )
+    #     print sess.run(a)
+    #     print sess.run(b)
+    #     print sess.run(tf.reshape(b, (-1, 2)  ))
+
+    ##test tf.matmul
+    a = tf.ones((3, 4))
+    b = tf.ones((4,1))
+    c = tf.matmul(a, b)
+    print c
 
 if __name__ == "__main__":
     # test_tensorflow()
