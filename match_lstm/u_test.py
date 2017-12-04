@@ -63,6 +63,14 @@ def sanity_model():
     H_r = model.match_layer(H_p, H_p_rev, H_q)
     print H_r
 
+    h_a = tf.zeros((batch_s, num_units))
+    beta, input_lstm = model.answer_attention(H_r, h_a)
+    print beta
+    print input_lstm
+
+    dist = model.answer_layer(H_r)
+    print dist
+
 
 
 def test_tensorflow():

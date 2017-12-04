@@ -3,6 +3,8 @@ Used by tune.py to train better tensor graph.
 '''
 import tensorflow as tf
 
+from util import *
+
 '''
 TODO:
 use BasicLSTMCell professionally
@@ -25,13 +27,16 @@ class Model:
     def add_placeholder(self):
         batch_s = self.config.batch_s#trainning and test have same batch_s
         pass_l = self.config.pass_l
+        num_units = self.config.num_units
 
         self.ques = tf.placeholder(tf.int32, shape = (None, None), name = "ques")#(None, ques_l)
         self.ques_mask = tf.placeholder(tf.int32, shape = (None, ), name = "ques_mask")#(None,)
         self.ques_mask_matrix = tf.placeholder(tf.float32, shape = (None, None), name = "ques_mask_matrix")#(None, ques_l)
         self.passage = tf.placeholder(tf.int32, shape = (None, pass_l), name = "pass")#(None, pass_l)
         self.passage_rev = tf.placeholder(tf.int32, shape = (None, pass_l), name = "pass")#(None, pass_l)
-        self.passage_mask = tf.placeholder(tf.int32, shape = (None, ), name = "passage_mask")#(None, pass_l)
+        self.passage_mask = tf.placeholder(tf.int32, shape = (None, ), name = "passage_mask")#(None, )
+        self.passage_mask_matrix = tf.placeholder(tf.float32, shape = (None, pass_l), name = "passage_mask_matrix")#(None, pass_l)
+        self.passage_mask_cube = tf.placeholder(tf.float32, shape = (None, pass_l, num_units), name = "passage_mask_cube")#(None, pass_l, num_units)
         self.ans = tf.placeholder(tf.int32, shape = (None, 2), name = "ans")#(None, 2)
     def add_variables(self):
         embed_s = self.config.embed_s
@@ -139,7 +144,9 @@ class Model:
 
         alpha = tf.matmul(G, tf.reshape(w, (-1, 1))) + b #(batch_s * ques_l, 1)
         alpha = tf.reshape(alpha, (batch_s, -1))#(batch_s, ques_l)
+        #masking
         alpha = alpha * ques_mask_matrix#(batch_s, ques_l)
+        #softmax
         alpha = tf.nn.softmax(alpha)#(batch_s, ques_l)
         alpha = tf.reshape(alpha, (batch_s, -1, 1))#(batch_s, ques_l, 1)
 
@@ -163,17 +170,19 @@ class Model:
         batch_s = self.config.batch_s
         pass_l = self.config.pass_l
 
-        lstm = self.lstm_match
 
         h_p_lst = tf.unstack(H_p, axis = 1)
 
         h_r_lst = []
-        stateTuple = lstm.zero_state(batch_s, tf.float32)
-        for i in xrange(pass_l):
-            h_p = h_p_lst[i]
-            z_i = self.match_attention(H_q, h_p, stateTuple[1])
-            _, stateTuple = lstm(z_i, stateTuple)
-            h_r_lst.append(stateTuple[1])
+        with tf.variable_scope("match_ayer"):
+            with tf.variable_scope("LSTM"):
+                lstm_match = self.lstm_match
+                stateTuple = lstm_match.zero_state(batch_s, tf.float32)
+                for i in xrange(pass_l):
+                    h_p = h_p_lst[i]
+                    z_i = self.match_attention(H_q, h_p, stateTuple[1])
+                    _, stateTuple = lstm_match(z_i, stateTuple)
+                    h_r_lst.append(stateTuple[1])
         H_r_one_direct = tf.stack(h_r_lst)# (pass_l, None, num_units)
         H_r_one_direct = tf.transpose(H_r_one_direct, (1, 0, 2))# (None, pass_l, num_units)
         return H_r_one_direct
@@ -185,88 +194,105 @@ class Model:
         return
             H_r:              (None, pass_l, 2 * num_units)
         '''
+        passage_mask_cube = self.passage_mask_cube#(None, pass_l, num_units)
+        num_units = self.config.num_units
+
         H_r_right = self.match_one_direct(H_p, H_q)#(None, pass_l, num_units)
         H_r_left = self.match_one_direct(H_p_rev, H_q)#(None, pass_l, num_units)
+        #masking
+        H_r_right *= passage_mask_cube#(None, pass_l, num_units)
+        H_r_left *= passage_mask_cube#(None, pass_l, num_units)
+        #concat
         H_r = tf.concat([H_r_right, H_r_left], 2)#(None, pass_l, 2 * num_units)
         return H_r
 
 
 
-    # def answer_attention(self, H_r, h_a):
-    #     '''
-    #     paras:
-    #         H_r: (batch_s, pass_l, 2 * num_units)
-    #         h_a: (batch_s, num_units)
-    #     return:
-    #         beta: (batch_s, pass_l)
-    #         input_lstm: (batch_s, 2 * num_units)
-    #
-    #     '''
-    #     V = self.V
-    #     pass_l = self.config.pass_l
-    #     num_units = self.config.num_units
-    #     W_a = self.W_a
-    #     b_a = self.b_a
-    #     v = self.v
-    #     c = self.c
-    #
-    #     F_1 = abc_mul_cd(H_r, V, pass_l, 2 * num_units, num_units)# (batch_s, pass_l, num_units)
-    #     F_2 = tf.matmul(h_a, W_a) + b_a # (batch_s, num_units)
-    #     F_sum = abc_plus_ac(F_1, F_2, pass_l, num_units )
-    #     F = tf.nn.tanh( F_sum )# (batch_s, pass_l, num_units)
-    #
-    #     beta = tf.nn.softmax( abc_mul_c(F, v, pass_l, num_units) + c )#(batch_s, pass_l)
-    #
-    #     input_lstm = tf.matmul( tf.transpose(H_r, (0,2,1)), tf.reshape(beta, (-1, pass_l, 1)) )#(batch_s, 2 * num_units, 1)
-    #     input_lstm = tf.reshape(input_lstm, (-1, 2 * num_units))
-    #
-    #     return beta, input_lstm
-    # def answer_layer(self, H_r):
-    #     '''
-    #     paras
-    #         H_r:        (None, pass_l, 2 * num_units)
-    #     return
-    #         dist:       (None, 2, pass_l)
-    #     '''
-    #     lstm = self.lstm_ans
-    #     num_units = self.config.num_units
-    #     batch_s = self.config.batch_s
-    #
-    #     dist_lst = []
-    #     h_a = lstm.zero_state(batch_s, tf.float32)
-    #     for i in xrange(2):
-    #         beta, input_lstm = match_attention(H_r, h_a)
-    #         h_a = tf.matmul(input_lstm, U_ans)
-    #         dist_lst.append(beta)
-    #     dist = tf.stack(dist_lst)#(2, None, pass_l)
-    #
-    #     return tf.transpose(dist, (1,0,2))#(None, 2, pass_l)
-    # def add_predicted_dist(self):
-    #     #embdding
-    #     pass_embed, ques_embed = self.embed_layer()
-    #     #Preprocessing Layer
-    #     H_p, H_q = pre_layer(pass_embed, ques_embed)
-    #     #Match-LSTM Layer
-    #     H_r_r = match_layer(H_p, H_q)
-    #     H_r_l = match_layer(H_p, H_q) #TODO: bidirectional lstm and padding
-    #     H_r = tf.concat(2, [H_r_r, H_r_l]) ## (pass_len, None, 2 * l)
-    #     H_r = tf.transpose(H_r, (1, 0, 2))
-    #     #Answer Pointer Layer
-    #     self.dist = answer_layer(H_p)
-    #
-    # def add_train_op(self):
-    #     #TODO
-    #     loss = tf.reduce_mean( )
-    # def build(self):
-    #     #add placeholders
-    #     add_placeholder()
-    #     #add variables / make architectures
-    #     add_variables()
-    #     #get predicted distribution
-    #     add_predicted_dist()
-    #     #add train_op
-    #     add_train_op()
-    #
+    def answer_attention(self, H_r, h_a):
+        '''
+        paras:
+            H_r: (batch_s, pass_l, 2 * num_units)
+            h_a: (batch_s, num_units)
+        return:
+            beta: (batch_s, pass_l)
+            input_lstm: (batch_s, 2 * num_units)
+
+        '''
+        pass_l = self.config.pass_l
+        num_units = self.config.num_units
+        passage_mask_matrix = self.passage_mask_matrix#(None, pass_l)
+
+        V = self.V#(num_units * 2, num_units)
+        W_a = self.W_a#(num_units, num_units)
+        b_a = self.b_a#(num_units, )
+        v = self.v#(num_units, )
+        c = self.c#()
+
+        F_1 = abc_mul_cd(H_r, V, pass_l, 2 * num_units, num_units)# (batch_s, pass_l, num_units)
+        F_2 = tf.matmul(h_a, W_a) + b_a # (batch_s, num_units)
+        F_sum = abc_plus_ac(F_1, F_2, pass_l, num_units )
+        F = tf.nn.tanh( F_sum )# (batch_s, pass_l, num_units)
+
+        beta = abc_mul_c(F, v, pass_l, num_units) + c#(batch_s, pass_l)
+        #masking
+        beta *= passage_mask_matrix#(batch_s, pass_l)
+        #softmax
+        beta = tf.nn.softmax(beta)#(batch_s, pass_l)
+
+        input_lstm = tf.matmul( tf.transpose(H_r, (0,2,1)), tf.reshape(beta, (-1, pass_l, 1)) )#(batch_s, 2 * num_units, 1)
+        input_lstm = tf.reshape(input_lstm, (-1, 2 * num_units))
+
+        return beta, input_lstm
+    def answer_layer(self, H_r):
+        '''
+        paras
+            H_r:        (None, pass_l, 2 * num_units)
+        return
+            dist:       (None, 2, pass_l)
+        '''
+        num_units = self.config.num_units
+        batch_s = self.config.batch_s
+
+        dist_lst = []
+        with tf.variable_scope("answer_pointer_layer"):
+            with tf.variable_scope("LSTM"):
+                lstm_ans = self.lstm_ans
+                stateTuple = lstm_ans.zero_state(batch_s, tf.float32)
+                for i in xrange(2):
+                    beta, input_lstm = self.answer_attention(H_r, stateTuple[1])
+                    _, stateTuple = lstm_ans(input_lstm, stateTuple)
+                    dist_lst.append(beta)
+        dist = tf.stack(dist_lst)#(2, None, pass_l)
+        dist = tf.transpose(dist, (1,0,2))#(None, 2, pass_l)
+        return dist
+
+    def add_predicted_dist(self):
+        #embdding
+        pass_embed, pass_embed_rev, ques_embed = self.embed_layer()
+        #Preprocessing Layer
+        H_p, H_p_rev, H_q = self.pre_layer(pass_embed, pass_embed_rev, ques_embed)
+        #Match-LSTM Layer
+        H_r = self.match_layer(H_p, H_p_rev, H_q)
+        #Answer Pointer Layer
+        dist = self.answer_layer(H_r)
+
+        self.dist = dist
+
+    def add_train_op(self):
+        ans = self.ans#(None, 2)
+        dist = self.dist#(None, 2, pass_l)
+        #TODO
+        loss = tf.reduce_mean( )
+    def build(self):
+        #add placeholders
+        add_placeholder()
+        #add variables / make architectures
+        add_variables()
+        #get predicted distribution
+        add_predicted_dist()
+        #add train_op
+        add_train_op()
+
     # def train_batch(self, sess, batch_data):
     #
     # def train_epoch(self, sess):
