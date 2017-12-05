@@ -37,7 +37,7 @@ class Model:
         self.passage_mask = tf.placeholder(tf.int32, shape = (None, ), name = "passage_mask")#(None, )
         self.passage_mask_matrix = tf.placeholder(tf.float32, shape = (None, pass_l), name = "passage_mask_matrix")#(None, pass_l)
         self.passage_mask_cube = tf.placeholder(tf.float32, shape = (None, pass_l, num_units), name = "passage_mask_cube")#(None, pass_l, num_units)
-        self.ans = tf.placeholder(tf.int32, shape = (None, 2), name = "ans")#(None, 2)
+        self.ans = tf.placeholder(tf.int32, shape = (None, 2, pass_l), name = "ans")#(None, 2, pass_l)
     def add_variables(self):
         embed_s = self.config.embed_s
         num_units = self.config.num_units
@@ -279,19 +279,25 @@ class Model:
         self.dist = dist
 
     def add_train_op(self):
-        ans = self.ans#(None, 2)
+        lr = self.config.lr
+        ans = self.ans#(None, 2, pass_l)
         dist = self.dist#(None, 2, pass_l)
-        #TODO
-        loss = tf.reduce_mean( )
+
+        loss = tf.reduce_mean(tf.cast(ans, tf.float32) * tf.log(dist) * (-1))
+
+        train_op = tf.train.AdamOptimizer(lr).minimize(loss)
+
+        self.train_op = train_op
+
     def build(self):
         #add placeholders
-        add_placeholder()
+        self.add_placeholder()
         #add variables / make architectures
-        add_variables()
+        self.add_variables()
         #get predicted distribution
-        add_predicted_dist()
+        self.add_predicted_dist()
         #add train_op
-        add_train_op()
+        self.add_train_op()
 
     # def train_batch(self, sess, batch_data):
     #

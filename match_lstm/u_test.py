@@ -4,13 +4,14 @@ import numpy as np
 def sanity_model():
     from model import Model
     class Config:
-        def __init__(self, batch_s, embed_s, num_units, embed_matrix, pass_l, n_epoch):
+        def __init__(self, batch_s, embed_s, num_units, embed_matrix, pass_l, n_epoch, lr):
             self.batch_s = batch_s
             self.embed_s = embed_s
             self.num_units = num_units
             self.embed_matrix = embed_matrix
             self.pass_l = pass_l
             self.n_epoch = n_epoch
+            self.lr = lr
     class Data:
         def getTrain(self, embed_s, batch_s):
             pass_l = 119
@@ -27,49 +28,52 @@ def sanity_model():
     num_units = 5
     pass_l = 11
     n_epoch = 7
+    lr = 0.1
     data = Data()
     pass_l, ques_l, vocabulary, vocabulary_rev, embed_matrix, batch_data = data.getTrain(embed_s, batch_s)
-    config = Config(batch_s, embed_s, num_units, embed_matrix, pass_l, n_epoch)
+    config = Config(batch_s, embed_s, num_units, embed_matrix, pass_l, n_epoch, lr)
 
 
     model = Model(config)
 
-    model.add_placeholder()
-    print model.ques
-    print model.ques_mask
+    # model.add_placeholder()
+    # print model.ques
+    # print model.ques_mask
+    #
+    # model.add_variables()
+    # print model.W_q
+    #
+    # pass_embed, pass_embed_rev, ques_embed = model.embed_layer()
+    # print pass_embed
+    # print pass_embed_rev
+    # print ques_embed
+    #
+    # H_p, H_p_rev, H_q = model.pre_layer(pass_embed, pass_embed_rev, ques_embed)
+    # print H_p
+    # print H_p_rev
+    # print H_q
+    #
+    #
+    # h_p = tf.zeros((batch_s, num_units))
+    # h_r = tf.zeros((batch_s, num_units))
+    # z = model.match_attention(H_q, h_p, h_r)
+    # print z
+    #
+    # H_r_one_direct = model.match_one_direct( H_p, H_q)
+    # print H_r_one_direct
+    #
+    # H_r = model.match_layer(H_p, H_p_rev, H_q)
+    # print H_r
+    #
+    # h_a = tf.zeros((batch_s, num_units))
+    # beta, input_lstm = model.answer_attention(H_r, h_a)
+    # print beta
+    # print input_lstm
+    #
+    # dist = model.answer_layer(H_r)
+    # print dist
 
-    model.add_variables()
-    print model.W_q
-
-    pass_embed, pass_embed_rev, ques_embed = model.embed_layer()
-    print pass_embed
-    print pass_embed_rev
-    print ques_embed
-
-    H_p, H_p_rev, H_q = model.pre_layer(pass_embed, pass_embed_rev, ques_embed)
-    print H_p
-    print H_p_rev
-    print H_q
-
-
-    h_p = tf.zeros((batch_s, num_units))
-    h_r = tf.zeros((batch_s, num_units))
-    z = model.match_attention(H_q, h_p, h_r)
-    print z
-
-    H_r_one_direct = model.match_one_direct( H_p, H_q)
-    print H_r_one_direct
-
-    H_r = model.match_layer(H_p, H_p_rev, H_q)
-    print H_r
-
-    h_a = tf.zeros((batch_s, num_units))
-    beta, input_lstm = model.answer_attention(H_r, h_a)
-    print beta
-    print input_lstm
-
-    dist = model.answer_layer(H_r)
-    print dist
+    model.build()
 
 
 
