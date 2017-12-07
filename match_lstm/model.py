@@ -7,24 +7,23 @@ from util import *
 
 '''
 TODO:
-use BasicLSTMCell professionally
-all calculation only use embed_s, batch_s and num_units
-padding
-give nice names to important tensors
-
+embed_matrix placeholder
+mask placeholder is boolean type. Only use one mask, and use util to get needed ones.
 regularization
 gradient decent clipping
 
+
 efficient training: nce etc.
 
+
 mark public and private def
-include embed_s, batch_s in title of saved model
-include num_units, lr, n_epoch in title of saved model too
+give nice names to important tensors, include embed_s, batch_s, num_units, lr, n_epoch etc. in title of saved model
 '''
 class Model:
     def __init__(self, config):
         self.config = config
-    def add_placeholder(self):
+        self.build()
+    def __add_placeholder(self):
         batch_s = self.config.batch_s#trainning and test have same batch_s
         pass_l = self.config.pass_l
         num_units = self.config.num_units
@@ -38,7 +37,7 @@ class Model:
         self.passage_mask_matrix = tf.placeholder(tf.float32, shape = (None, pass_l), name = "passage_mask_matrix")#(None, pass_l)
         self.passage_mask_cube = tf.placeholder(tf.float32, shape = (None, pass_l, num_units), name = "passage_mask_cube")#(None, pass_l, num_units)
         self.ans = tf.placeholder(tf.int32, shape = (None, 2, pass_l), name = "ans")#(None, 2, pass_l)
-    def add_variables(self):
+    def __add_variables(self):
         embed_s = self.config.embed_s
         num_units = self.config.num_units
 
@@ -68,7 +67,7 @@ class Model:
                 self.c = tf.get_variable("c", initializer = init, shape = (), dtype = tf.float32)
             with tf.variable_scope("LSTM"):
                 self.lstm_ans = tf.contrib.rnn.BasicLSTMCell(num_units)
-    def embed_layer(self):
+    def __embed_layer(self):
         embed_matrix = self.config.embed_matrix
         passage = self.passage
         ques = self.ques
@@ -77,7 +76,7 @@ class Model:
         pass_embed_rev = tf.nn.embedding_lookup(embed_matrix, passage)#(batch_s, pass_l, embed_s)
         ques_embed = tf.nn.embedding_lookup(embed_matrix, ques)#(batch_s, ques_l, embed_s)
         return pass_embed, pass_embed_rev, ques_embed
-    def pre_layer(self, pass_embed, pass_embed_rev, ques_embed):
+    def __pre_layer(self, pass_embed, pass_embed_rev, ques_embed):
         '''
         paras:
             pass_embed: (batch_s, pass_l, embed_s)
@@ -110,7 +109,7 @@ class Model:
 
         return H_p, H_p_rev, H_q
 
-    def match_attention(self, H_q, h_p, h_r):
+    def __match_attention(self, H_q, h_p, h_r):
         '''
         paras:
             H_q: (batch_s, ques_l, num_units)
@@ -157,7 +156,7 @@ class Model:
         z = tf.concat([h_p, att_state], 1)#(batch_s, 2 * num_units)
 
         return z
-    def match_one_direct(self, H_p, H_q):
+    def __match_one_direct(self, H_p, H_q):
         '''
         paras
             H_p:        (None, pass_l, num_units)
@@ -186,7 +185,7 @@ class Model:
         H_r_one_direct = tf.stack(h_r_lst)# (pass_l, None, num_units)
         H_r_one_direct = tf.transpose(H_r_one_direct, (1, 0, 2))# (None, pass_l, num_units)
         return H_r_one_direct
-    def match_layer(self, H_p, H_p_rev, H_q):
+    def __match_layer(self, H_p, H_p_rev, H_q):
         '''
         paras
             H_r_right:        (None, pass_l, num_units)
@@ -208,7 +207,7 @@ class Model:
 
 
 
-    def answer_attention(self, H_r, h_a):
+    def __answer_attention(self, H_r, h_a):
         '''
         paras:
             H_r: (batch_s, pass_l, 2 * num_units)
@@ -243,7 +242,7 @@ class Model:
         input_lstm = tf.reshape(input_lstm, (-1, 2 * num_units))
 
         return beta, input_lstm
-    def answer_layer(self, H_r):
+    def __answer_layer(self, H_r):
         '''
         paras
             H_r:        (None, pass_l, 2 * num_units)
@@ -266,7 +265,7 @@ class Model:
         dist = tf.transpose(dist, (1,0,2))#(None, 2, pass_l)
         return dist
 
-    def add_predicted_dist(self):
+    def __add_predicted_dist(self):
         #embdding
         pass_embed, pass_embed_rev, ques_embed = self.embed_layer()
         #Preprocessing Layer
@@ -278,7 +277,7 @@ class Model:
 
         self.dist = dist
 
-    def add_train_op(self):
+    def __add_train_op(self):
         lr = self.config.lr
         ans = self.ans#(None, 2, pass_l)
         dist = self.dist#(None, 2, pass_l)
@@ -289,7 +288,7 @@ class Model:
 
         self.train_op = train_op
 
-    def build(self):
+    def __build(self):
         #add placeholders
         self.add_placeholder()
         #add variables / make architectures

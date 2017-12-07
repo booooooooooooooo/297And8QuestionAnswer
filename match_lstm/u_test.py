@@ -1,81 +1,6 @@
 import tensorflow as tf
 import numpy as np
 
-def sanity_model():
-    from model import Model
-    class Config:
-        def __init__(self, batch_s, embed_s, num_units, embed_matrix, pass_l, n_epoch, lr):
-            self.batch_s = batch_s
-            self.embed_s = embed_s
-            self.num_units = num_units
-            self.embed_matrix = embed_matrix
-            self.pass_l = pass_l
-            self.n_epoch = n_epoch
-            self.lr = lr
-    class Data:
-        def getTrain(self, embed_s, batch_s):
-            pass_l = 119
-            ques_l = 13
-            vocabulary = None#TODO
-            vocabulary_rev = None#TODO
-            embed_matrix = tf.ones((17, 17))
-            batch_data = None#TODO
-            return pass_l, ques_l, vocabulary, vocabulary_rev, embed_matrix, batch_data
-
-
-    batch_s = 2
-    embed_s = 3
-    num_units = 5
-    pass_l = 11
-    n_epoch = 7
-    lr = 0.1
-    data = Data()
-    pass_l, ques_l, vocabulary, vocabulary_rev, embed_matrix, batch_data = data.getTrain(embed_s, batch_s)
-    config = Config(batch_s, embed_s, num_units, embed_matrix, pass_l, n_epoch, lr)
-
-
-    model = Model(config)
-
-    # model.add_placeholder()
-    # print model.ques
-    # print model.ques_mask
-    #
-    # model.add_variables()
-    # print model.W_q
-    #
-    # pass_embed, pass_embed_rev, ques_embed = model.embed_layer()
-    # print pass_embed
-    # print pass_embed_rev
-    # print ques_embed
-    #
-    # H_p, H_p_rev, H_q = model.pre_layer(pass_embed, pass_embed_rev, ques_embed)
-    # print H_p
-    # print H_p_rev
-    # print H_q
-    #
-    #
-    # h_p = tf.zeros((batch_s, num_units))
-    # h_r = tf.zeros((batch_s, num_units))
-    # z = model.match_attention(H_q, h_p, h_r)
-    # print z
-    #
-    # H_r_one_direct = model.match_one_direct( H_p, H_q)
-    # print H_r_one_direct
-    #
-    # H_r = model.match_layer(H_p, H_p_rev, H_q)
-    # print H_r
-    #
-    # h_a = tf.zeros((batch_s, num_units))
-    # beta, input_lstm = model.answer_attention(H_r, h_a)
-    # print beta
-    # print input_lstm
-    #
-    # dist = model.answer_layer(H_r)
-    # print dist
-
-    model.build()
-
-
 
 def test_tensorflow():
     # ##test BasicRNNCell and dynamic_rnn
@@ -138,17 +63,71 @@ def test_tensorflow():
     #     sess.run(tf.global_variables_initializer() )
     #     print sess.run(loop)
 
-    ##test case
-    x = 1
-    y = 2
+    # ##test case
+    # x = 1
+    # y = 2
+    #
+    # f1 = lambda: tf.constant(17)
+    # f2 = lambda: tf.constant(23)
+    # r = tf.case([(tf.less(x, y), f1)], default=f2)
+    # with tf.Session() as sess:
+    #     sess.run(tf.global_variables_initializer() )
+    #     print sess.run(r)
 
-    f1 = lambda: tf.constant(17)
-    f2 = lambda: tf.constant(23)
-    r = tf.case([(tf.less(x, y), f1)], default=f2)
-    with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer() )
-        print sess.run(r)
+    ##test unicode
+    a = unicode("how are you")
+    print a
+    for b in enumerate(a):
+        print b,
+
+
+def sanity_model():
+    '''
+    TODO: sanity modified Model and Config
+    '''
+    from model import Model
+    from config import Config
+
+    class Data:
+        def getTrain(self, embed_s, batch_s):
+            pass_l = 119
+            ques_l = 13
+            vocabulary = None#TODO
+            vocabulary_rev = None#TODO
+            embed_matrix = tf.ones((17, 17))
+            batch_data = None#TODO
+            return pass_l, ques_l, vocabulary, vocabulary_rev, embed_matrix, batch_data
+
+
+    batch_s = 2
+    embed_s = 3
+    num_units = 5
+    pass_l = 11
+    n_epoch = 7
+    lr = 0.1
+
+    #hyperparameters of model
+    config = Config()
+    #batch data to feed
+    data = Data()
+    batch_data = data.getTrain()
+    #build model
+    model = Model(config)
+    #train model
+
+def test_data():
+    from data import getTrain
+    pass_ques_ans_file = '../download/train-v1.1.json'
+    glove_file = '../download/glove.6B'
+    batch_s = 10
+    pass_max_l = 100
+    ques_max_l = 5
+    embed_s = 7
+
+    getTrain( pass_ques_ans_file, glove_file, batch_s, pass_max_l, ques_max_l, embed_s)
+
 
 if __name__ == "__main__":
-    # test_tensorflow()
-    sanity_model()
+    test_tensorflow()
+    # sanity_model()
+    # test_data()
