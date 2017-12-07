@@ -13,7 +13,34 @@ class Data:
         self.UNK_ID = 1
         self.PAD = unicode("_pad")
         self.UNK = unicode("_unk")
-    def getTrain( pass_ques_ans_file, glove_file, batch_s, embed_s):
+    def tokenize(self, s):
+        '''
+        paras
+            s: unicode sequence
+        return
+            list of unicode token
+        '''
+        return [token.replace("``", '"').replace("''", '"') for token in nltk.word_tokenize(s)]
+    def c_id_to_token_id(self, context, context_token):
+        '''
+        paras
+            context: unicode sequence
+            context_token: list of unicode tokens from context
+        '''
+        c_id_to_token_id_map = {}
+        token_id = 0
+        id_in_token = 0
+        for c_id, c in enumerate(context):
+            if c != u' ':
+                c_id_to_token_id_map[c_id] = token_id
+                id_in_token+= 1
+                if id_in_token == len(context_token[token_id]):
+                    token_id+= 1
+                    id_in_token = 0
+        return c_id_to_token_id_map
+
+
+    def getTrain(self, pass_ques_ans_file, glove_file, batch_s, embed_s):
         '''
         return
             vocabulary (index: token)
@@ -34,31 +61,31 @@ class Data:
             pass_max_l
             ques_max_l
         '''
-        with open(pass_ques_ans_file) as data_file:
-            data = json.load(data_file)
+        data_token = []
+        with open(pass_ques_ans_file) as fh:
+            data = json.load(fh)
         for article_id in tqdm(xrange(len(data['data'])), desc="Preprocessing {}".format(pass_ques_ans_file)):
             paragraphs = data['data'][article_id]['paragraphs']
             for paragraph_id in xrange(len(paragraphs)):
                 context = paragraphs[paragraph_id]['context']
+                context_token = self.tokenize(context)
+                c_id_to_token_id_map = self.c_id_to_token_id(context, context_token)
                 qas = paragraphs[paragraph_id]['qas']
-                print paragraphs[paragraph_id].keys()
-                for c in nltk.word_tokenize(context):
-                    print c,
-                print
                 for qas_id in range(len(qas)):
                     question = qas[qas_id]['question']
+                    question_token = self.tokenize(question)
                     answers = qas[qas_id]['answers']
-                    print qas[qas_id].keys()
-                    print question
                     for answer_id in xrange(len(answers)):
                         text = answers[answer_id]['text']
-                        answer = nltk.word_tokenize(text)
-                        print answers[answer_id].keys()
-                        print text.encode('utf-8')
-                        break
-                    break
-                break
-            break
+                        text_token = self.tokenize(text)
+                        answer_start = answers[answer_id]['answer_start']
+                        a_s = c_id_to_token_id_map[answer_start]
+                        a_e = a_s + len(text_token) - 1
+                        datum = (context_token, question_token, [a_s, a_e])
+                        data_token.append(datum)
+                        print text_token
+                        print context_token[a_s : a_e + 1]
+                        
         # vocabulary
         '''
         input
