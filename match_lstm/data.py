@@ -6,6 +6,10 @@ import os
 import json
 from tqdm import tqdm
 import nltk
+import sys
+
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 class Data:
     def __init__(self):
@@ -16,27 +20,30 @@ class Data:
     def tokenize(self, s):
         '''
         paras
-            s: unicode sequence
+            s: unicode
         return
-            list of unicode token
+            s_token: list of unicode
         '''
-        return [token.replace("``", '"').replace("''", '"') for token in nltk.word_tokenize(s)]
+        s_token = nltk.word_tokenize(s)
+        return [token.decode('utf-8') for token in s_token]
+
     def c_id_to_token_id(self, context, context_token):
         '''
         paras
-            context: unicode sequence
-            context_token: list of unicode tokens from context
+            context: unicode
+            context_token: list of unicode
         '''
         c_id_to_token_id_map = {}
         token_id = 0
         id_in_token = 0
         for c_id, c in enumerate(context):
-            if c != u' ':
-                c_id_to_token_id_map[c_id] = token_id
-                id_in_token+= 1
+            if nltk.word_tokenize(c) != []:
                 if id_in_token == len(context_token[token_id]):
-                    token_id+= 1
+                    token_id += 1
                     id_in_token = 0
+                c_id_to_token_id_map[c_id] = token_id
+                id_in_token += 1
+
         return c_id_to_token_id_map
 
 
@@ -63,12 +70,15 @@ class Data:
         '''
         data_token = []
         with open(pass_ques_ans_file) as fh:
-            data = json.load(fh)
-        for article_id in tqdm(xrange(len(data['data'])), desc="Preprocessing {}".format(pass_ques_ans_file)):
+            data_json = json.load(fh)
+        for article_id in tqdm(xrange(len(data_json['data'])), desc="Preprocessing {}".format(pass_ques_ans_file)):
             paragraphs = data['data'][article_id]['paragraphs']
             for paragraph_id in xrange(len(paragraphs)):
                 context = paragraphs[paragraph_id]['context']
+                context = context.decode('utf-8')
                 context_token = self.tokenize(context)
+                # print context.encode('utf-8')
+                # print [token.decode('utf-8') for token in context_token]
                 c_id_to_token_id_map = self.c_id_to_token_id(context, context_token)
                 qas = paragraphs[paragraph_id]['qas']
                 for qas_id in range(len(qas)):
@@ -77,15 +87,15 @@ class Data:
                     answers = qas[qas_id]['answers']
                     for answer_id in xrange(len(answers)):
                         text = answers[answer_id]['text']
-                        text_token = self.tokenize(text)
                         answer_start = answers[answer_id]['answer_start']
+                        answer_end = answer_start + len(text) - 1
                         a_s = c_id_to_token_id_map[answer_start]
-                        a_e = a_s + len(text_token) - 1
+                        a_e = c_id_to_token_id_map[answer_end]
                         datum = (context_token, question_token, [a_s, a_e])
                         data_token.append(datum)
-                        print text_token
-                        print context_token[a_s : a_e + 1]
-                        
+                        # print text.encode('utf-8')
+                        # print [word.encode('utf-8') for word in context_token[a_s : a_e + 1]]
+
         # vocabulary
         '''
         input
