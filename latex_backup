@@ -1,0 +1,269 @@
+\documentclass[12pt]{article}
+\usepackage[nottoc]{tocbibind}
+\usepackage[parfill]{parskip}
+\usepackage{graphicx}
+% \graphicspath{ {image/} }
+\usepackage{geometry}
+ \geometry{
+ a4paper,
+ total={170mm,257mm},
+ left=20mm,
+ top=20mm,
+ }
+\usepackage[
+backend=biber,
+style=ieee,
+citestyle=numeric
+]{biblatex}
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+\usepackage[]{algorithm2e}
+\usepackage{CJKutf8}
+
+\addbibresource{biblio.bib}
+
+
+\renewcommand{\baselinestretch}{1.5}
+\renewcommand*\contentsname{TABLE OF CONTENTS}
+
+
+\begin{document}
+
+\begin{titlepage}
+\begin{center}
+        \vspace*{3cm}
+        {\Huge A Question Answering System on SQuAD Dataset Using End-to-end Neural Network}\\
+
+        \vspace*{3cm}
+        {\Huge CS297 Report}\\
+
+        \vspace{3 cm}
+        Student: Bo Li\\
+        Advisor: Dr. Chris Pollett\\
+        Date: Dec 2017
+
+ \end{center}
+
+
+
+\clearpage
+
+
+\end{titlepage}
+
+
+
+\begin{titlepage}
+\tableofcontents
+
+\clearpage
+\end{titlepage}
+
+\section{Test to Delete}
+hahaha
+\[ x^n + y^n = z^n \]
+
+\begin{equation}
+x^n + y^n = z^n
+\end{equation}
+hahaha
+
+
+``"
+
+
+\begin{lstlisting}[language=Python]
+    def addPlaceHolder(self):
+            self.cw = tf.placeholder(tf.int32, shape = [None, self.config.WINDOW_SIZE * 2], name = "contextWords")
+            self.pw = tf.placeholder(tf.int32, shape =  [None] , name = "predictedWord")
+
+\end{lstlisting}
+
+\begin{algorithm}[H]
+ \KwData{this text}
+ \KwResult{how to write algorithm with \LaTeX2e }
+ initialization\;
+ \While{not at end of this document}{
+  read current\;
+  \eIf{understand}{
+   go to next section\;
+   current section becomes this one\;
+   }{
+   go back to the beginning of current section\;
+  }
+ }
+ \caption{How to write algorithms}
+\end{algorithm}
+\break
+
+\section{Introduction}
+
+Question Answering(QA) is about making a computer program that could answer questions in natural language automatically. QA techniques are widely used among search engines, personal assistant applications on smart phones, voice control systems and a lot more other applications.
+
+In recent years, end-to-end neural network architectures are built to do question answering. In contrast, traditional solutions use syntactic and semantic analyses and hand made features. End-to-end neural network approach wins on giving more accurate result. However, traditional ways are more explainable. The neural network approach is used in this project.
+
+Among rich and varied question answering data sets, the SQuAD is used in this project. It includes questions asked by crowd workers on Wikipedia articles. The answer to each question is a segment of corresponding Wikipedia article. In total, SQuAD contains 100,000+ question-answer pairs on 500+ articles.
+
+
+The goal of this project is to build a QA system on SQuAD using an existing end-to-end neural network architecture. If there is still time left after finishing the QA system, I will review related literatures and try to come up with an improved architecture.
+
+
+
+\break
+
+\section{Calculation of Back Propagation}\label{sec:calculation}
+
+I calculated the back propagation on a dummy feed forward network example. I did this to convince myself this really works.
+
+In the dummy example, training data includes one $(x, y)$ pair. $x$ is a matrix of shape $(1, D_x)$, and y is one-hot matrix with shape $(1, D_y)$. One-hot means only one entry is not zero. The hidden state is $h$, which is a matrix with shape $(1, H)$. The parameters are $W_1$ with shape $(D_x, H)$, $b_1$ with shape $(1, H$, $W_2$ with shape $(H, D_y)$, and $b_2$ with shape $(1, D_y)$.
+
+$$\hat{y}=softmax(z_2)$$
+$$z_2=h\cdot W_2 + b_2$$
+$$h=sigmoid(z_1)$$
+$$z_1=x\cdot W_1+b_1$$
+
+Define loss
+$$J(W_1, b_1, W_2, b_2, x, y)$$
+$$=cross\_entropy(y, \hat{y})$$
+$$=-\frac{1}{D_y}\sum_{i=1}^{D_y}y_i \times \log{\hat{y_i}} $$
+
+After using chain rules multiple times, I got
+
+$$\frac{dJ}{dz_2}=\hat{y} - y$$
+$$\frac{dJ}{db_2}=\frac{dJ}{dz_2}$$
+$$\frac{dJ}{dh}=\frac{dJ}{dz_2}\cdot W_2^T$$
+$$\frac{dJ}{dW_2}=h^T \cdot \frac{dJ}{dz_2}$$
+
+Please refer to deliverable 1 for calculation details.
+
+Please be noted, due to the project topic was changed in November 2017, section \ref{sec:calculation} was not aimed at the current topic. But the techniques used in section \ref{sec:calculation} are also used in current project.
+
+\break
+
+\section{Implementation of Word Embedding}\label{sec:embdding}
+
+Word embedding is a way to map words to feature vectors in a continuous space. The dimension the continuous space is far lower than that of one-hot vector, the dimension of which is the vocabulary size. Also, the distance between two feature vectors could tell how likely the two corresponding words appear in same context.
+
+Word embedding is originally introduced by  Bengio et al in \cite{bengio2003neural}. They propose a neural probabilistic language model(NPLM) which is illustrated in Fig.\ref{fig:nplm}. The trainning set is a sequence $w_1,...,w_T$ of words $w_t \in V$, where V is the vocabulary. The purpose is to get $f(w_t, ..., w_{t-n+1} = \hat{P}(w_t | w_{t-1},...,w_{t-n+1})$. $f(w_t, ..., w_{t-n+1} = \hat{P}(w_t | w_{t-1},...,w_{t-n+1})$ is divided into two parts. First, map each $w$ to a distributed feature vector by selecting the corresponding row in $C$. Second, $g$ maps an input sequence of feature vectors from first step to the probability estimation $\hat{P}(w_t | w_{t-1},...,w_{t-n+1})$.
+
+$$x=(C(w_{t-1}),··· ,C(w_{t-n+1}))$$
+$$y=b+W\cdot x + U\cdot tanh(d + H\cdot x)$$
+$$\hat{P}(w_t | w_{t-1},...,w_{t-n+1}) = \frac{e^{y_{w_t}}}{\sum_{i}^{}e^{y_i}}$$
+
+
+\begin{figure}[h]
+\includegraphics[width=10cm, height=6cm]{image/nplm_architecture.png}
+\centering
+\caption{Neural architecture: $f(i,w_{t-1},··· ,w_{t-n+1}) =g(i,C(w_{t-1}),··· ,C(w_{t-n+1}))$ where $g$ is the neural network and $C(i)$ is the $i$-th word feature vector\cite{bengio2003neural}}
+\label{fig:nplm}
+\end{figure}
+
+At the present time, an simplified architecture proposed by Mikolov et al in \cite{mikolov2013efficient} is widely used. The main difference between it and NPLM is the tanh layer is removed.
+
+I implemented in Python both the NPLM model without Noise Contrastive Estimation (NCE) loss and skip-gram model with NCE loss. I use a collection of 284899 classic Chinese poems as the corpus.
+
+Here are some information about the skip-gram together with negative sampling implementation. Training each epoch costs about 8 minutes. After about 5 epochs, the valid loss reaches the lowest. Below is a list of some character pairs with high cosine similarities. These characters are from 200 most frequent characters in corpus as shown in Table \ref{table:similarity}. According to my knowledge of Chinese classic poems, in many pairs, the two characters have high probability to appear in same context. As such, I think the model is implemented correctly.
+\begin{CJK*}{UTF8}{gbsn}
+\begin{table}[h!]
+\centering
+\begin{tabular}{c c c c }
+作 后 0.999374 &
+当 少 0.999315 &
+同 好 0.999307 &
+闻 好 0.999266 \\
+同 少 0.999261 &
+愁 闲 0.999212 &
+好 少 0.999189 &
+红 叶 0.999121 \\
+复 少 0.999101 &
+当 复 0.999071 &
+故 少 0.999031 &
+醉 闲 0.999025 \\
+同 闻 0.999023 &
+出 开 0.999002 &
+空 入 0.999001 &
+起 发 0.99899 \\
+平 小 0.998955 &
+亦 应 0.998954 &
+雪 叶 0.998952 &
+竹 叶 0.998946 \\
+小 龙 0.998945 &
+发 晚 0.998937 &
+分 歌 0.99893 &
+起 晚 0.998928 \\
+寒 满 0.998914 &
+过 向 0.998909 &
+当 真 0.998894 &
+入 阴 0.99889 \\
+愁 后 0.998882 &
+情 言 0.998881 &
+尽 到 0.998878 &
+当 故 0.998865 \\
+到 起 0.998859 &
+闻 少 0.998846 &
+旧 少 0.998841 &
+当 犹 0.998839 \\
+开 阴 0.998839 &
+复 物 0.998835 &
+亦 还 0.998833 &
+言 以 0.998825 \\
+
+\end{tabular}
+\caption{Most High Similarities Between 200 Most Common Words}
+\label{table:similarity}
+\end{table}
+\end{CJK*}
+
+Please be noted, due to the project topic was changed in November 2017, section \ref{sec:embdding} was not aimed at the current topic. But the techniques used in section \ref{sec:embdding} are also used in current project.
+
+\break
+
+\section{Understanding Project and Setting Up Developing Environment}
+\subsection{SQuad}
+\subsection{Neural Network Models}
+\subsection{Docker}
+
+\break
+
+\section{Implementation of a Question Answering System Following
+Paper \cite{wang2016machine}}
+\subsection{Model}
+\subsection{Experiment Settings}
+\subsection{My Implementation Using Python}
+
+
+\section{Summary}
+
+
+
+
+\printbibliography[heading=bibintoc,title={References}]
+
+
+\end{document}

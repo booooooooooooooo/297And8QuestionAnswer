@@ -6,10 +6,6 @@ import os
 import json
 from tqdm import tqdm
 import nltk
-import sys
-
-reload(sys)
-sys.setdefaultencoding('utf8')
 
 class Data:
     def __init__(self):
