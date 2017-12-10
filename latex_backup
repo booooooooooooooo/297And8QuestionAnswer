@@ -48,7 +48,6 @@ citestyle=numeric
 
 \addbibresource{biblio.bib}
 
-
 \renewcommand{\baselinestretch}{1.5}
 \renewcommand*\contentsname{TABLE OF CONTENTS}
 
@@ -69,58 +68,15 @@ citestyle=numeric
         Date: Dec 2017
 
  \end{center}
-
-
-
 \clearpage
-
-
 \end{titlepage}
-
-
 
 \begin{titlepage}
 \tableofcontents
-
 \clearpage
 \end{titlepage}
 
-\section{Test to Delete}
-hahaha
-\[ x^n + y^n = z^n \]
 
-\begin{equation}
-x^n + y^n = z^n
-\end{equation}
-hahaha
-
-
-``"
-
-
-\begin{lstlisting}[language=Python]
-    def addPlaceHolder(self):
-            self.cw = tf.placeholder(tf.int32, shape = [None, self.config.WINDOW_SIZE * 2], name = "contextWords")
-            self.pw = tf.placeholder(tf.int32, shape =  [None] , name = "predictedWord")
-
-\end{lstlisting}
-
-\begin{algorithm}[H]
- \KwData{this text}
- \KwResult{how to write algorithm with \LaTeX2e }
- initialization\;
- \While{not at end of this document}{
-  read current\;
-  \eIf{understand}{
-   go to next section\;
-   current section becomes this one\;
-   }{
-   go back to the beginning of current section\;
-  }
- }
- \caption{How to write algorithms}
-\end{algorithm}
-\break
 
 \section{Introduction}
 
@@ -172,7 +128,7 @@ Word embedding is a way to map words to feature vectors in a continuous space. T
 
 Word embedding is originally introduced by  Bengio et al in \cite{bengio2003neural}. They propose a neural probabilistic language model(NPLM) which is illustrated in Fig.\ref{fig:nplm}. The trainning set is a sequence $w_1,...,w_T$ of words $w_t \in V$, where V is the vocabulary. The purpose is to get $f(w_t, ..., w_{t-n+1} = \hat{P}(w_t | w_{t-1},...,w_{t-n+1})$. $f(w_t, ..., w_{t-n+1} = \hat{P}(w_t | w_{t-1},...,w_{t-n+1})$ is divided into two parts. First, map each $w$ to a distributed feature vector by selecting the corresponding row in $C$. Second, $g$ maps an input sequence of feature vectors from first step to the probability estimation $\hat{P}(w_t | w_{t-1},...,w_{t-n+1})$.
 
-$$x=(C(w_{t-1}),··· ,C(w_{t-n+1}))$$
+$$x=(C(w_{t-1}),... ,C(w_{t-n+1}))$$
 $$y=b+W\cdot x + U\cdot tanh(d + H\cdot x)$$
 $$\hat{P}(w_t | w_{t-1},...,w_{t-n+1}) = \frac{e^{y_{w_t}}}{\sum_{i}^{}e^{y_i}}$$
 
@@ -180,7 +136,7 @@ $$\hat{P}(w_t | w_{t-1},...,w_{t-n+1}) = \frac{e^{y_{w_t}}}{\sum_{i}^{}e^{y_i}}$
 \begin{figure}[h]
 \includegraphics[width=10cm, height=6cm]{image/nplm_architecture.png}
 \centering
-\caption{Neural architecture: $f(i,w_{t-1},··· ,w_{t-n+1}) =g(i,C(w_{t-1}),··· ,C(w_{t-n+1}))$ where $g$ is the neural network and $C(i)$ is the $i$-th word feature vector\cite{bengio2003neural}}
+\caption{Neural architecture: $f(i,w_{t-1},... ,w_{t-n+1}) =g(i,C(w_{t-1}),... ,C(w_{t-n+1}))$ where $g$ is the neural network and $C(i)$ is the $i$-th word feature vector\cite{bengio2003neural}}
 \label{fig:nplm}
 \end{figure}
 
@@ -244,23 +200,149 @@ Please be noted, due to the project topic was changed in November 2017, section 
 
 \break
 
-\section{Understanding Project and Setting Up Developing Environment}
-\subsection{SQuad}
-\subsection{Neural Network Models}
+\section{Understanding Online Evaluation Environment and Setting Up Developing Environment}
+
+
+\subsection{Understanding Online Evaluation Environment}
+
+
+Test data is not open to public. To evaluate a model, a prediction Python script should be submitted through Codelab.
+
+As such, training and prediciton must be seprated. After training the mode, a tensorflow graph should be saved to disk. Then the prediction script should restore the tensorflow graph to make prediction on test data. This requires concise names and scopes for important nodes in the graph.
+
+
 \subsection{Docker}
+
+There are two main advantages to use Docker. First, the project goes more and more complex and software version dependency might cause problem. Second, I might need to use cloud GPU to train the model in the future and Docker helps on portability.
+
+I followed the online installation instruction to install Docker on my mac book. Since setting up a Docker image is simply done by make a Docker file and typing a command in terminal, my developing speed is increase.
 
 \break
 
-\section{Implementation of a Question Answering System Following
+\section{Implementating a Question Answering System Following
 Paper \cite{wang2016machine}}
-\subsection{Model}
-\subsection{Experiment Settings}
-\subsection{My Implementation Using Python}
+\subsection{Review on Paper \cite{wang2016machine}}
 
+Wang and Jiang \cite{wang2016machine} proposes an end-to-end neural network model on SQuAD dataset. While predicting, the inputs to the model are test data and pretrained word embeddings, the outputs are the predicted answers. While training, the inputs are train data and word embeddings, the outputs are losses to optimise. GloVe is used to do word embedding. The word embedding is not updated during training.
+
+Model architecture includes three layers-the LSTM preprocessing layer, the match-LSTM layer and the Answer Pointer(Ans-Ptr) layer.
+
+The LSTM preprossing layer encode each word sequence in passage and question to a sequence of hidden states using a standard one direction LSTM. The passage and question are processed separately.
+
+$$H^p = \overrightarrow{LSTM}(\textbf{P})$$
+$$H^q = \overrightarrow{LSTM}(\textbf{Q})$$
+
+where
+
+ $$P\in R^{d \times p}: passage$$
+ $$Q\in R^{d \times q}: question$$
+ $$H^p\in R^{l \times p}: encoded\ passage$$
+ $$H^q\in R^{l \times q}: encoded\ question$$
+ $$p: length \ of\ passage$$
+ $$q: length\ of\ question$$
+ $$d: dimension\ of\ LSTM\ hidden\ states$$
+ $$d: dimension\ of\ word\ embedding$$
+
+The match-LSTM layer uses the model in paper \cite{wang2015learning}. In this layer, a word-by-word attention mechanism and a LSTM are used together to encode hidden presentations of both passage and question to one sequence of hidden states that indicate the degree of matching between each token in the passage and each token in the question. To be specific,
+
+$$\overrightarrow{G} = tahn(W^qH^q + (W^p{h_i}^p + W^r\overrightarrow{{h_{i-1}}^r} + b^p) \otimes e_q)$$
+$$\overrightarrow{\alpha _i} = softmax(w^t\overrightarrow{G_i} + b \otimes e_q)$$
+
+
+where
+
+$$W^q, W^p, W^r\in R^{l \times l} $$
+$$b_p, w\in R^{l}  $$
+$$b \in R $$
+$$\overrightarrow{{h_{i-1}}^r}\in R^{l}: one\ column\ of\ H_p  $$
+
+and
+
+$$\overrightarrow{z_i} = ({h_i}^p, H^q\overrightarrow{ {\alpha _i}^T })$$
+$$\overrightarrow{{h_i}^r} = \overrightarrow{LSTM}(\overrightarrow{z_i}, \overrightarrow{{h_{i-1}}^r})$$
+
+After iterating between getting attention vector $\overrightarrow{\alpha _i}$ and getting hidden state ${{h_{1}}^i}$ $p$ times, we get $[{{h_{1}}^r}, ..., {{h_{p}}^r}]$. Concatenate them to get $\overrightarrow{H_r} \in R^{l \times p}$.
+
+To go over passage from both directions to get context information both before and after each word, go over $H_p$ from right to left to get $\overleftarrow{H_r}$. Then concatenate $\overrightarrow{H_r}$ and $\overleftarrow{H_r}$ to get $$ H_r = (\overrightarrow{H_r},\overleftarrow{H_r}) $$
+The Answer Pointer layer is motivated by the Pointer Net in paper \cite{vinyals2015pointer}. It has a similar structure with match-LSTM. However, instead of aiming at a sequence of hidden states, Ans-Ptr layer aims at the weight vector. Here I only explain the boundary model, which I will implement.
+
+$$F_k = tahn(VH_r + (W^a{h_{k-1}}^a +  b^a) \otimes e_p)$$
+$$\overrightarrow{\beta _k} = softmax(v^tF_k + c \otimes e_p)$$
+
+
+where
+$$V \in R^{l \times 2l}$$
+$$W^a\in R^{l \times l} $$
+$$b_a, v\in R^{l}  $$
+$$c \in R $$
+$$\overrightarrow{{h_{k-1}}^a}\in R^{l}: hidden\ state\ at\ positiom\ i\ of\ answer\ LSTM  $$
+
+and answer LSTM is
+
+
+$$\overrightarrow{{h_k}^a} = \overrightarrow{LSTM}(H^r\beta _k^T, h_{k-1}^a)$$
+
+By iterating between the attention mechanisim and the answer LSTM two times, we could get $\beta _0$ and $\beta _1$. Let $a_s$ denote start index of the answer, and $a_e$ denote the end index, then we have
+
+$$p(a|H^r) = p(a_s|H_r)p(a_r|H_r)=\beta _{0, a_s} \times \beta_{1, a_e}$$
+
+where $$\beta_{k, j} = jth\ token\ of\ \beta _k$$.
+
+To train the model, the loss function below is minimized.
+
+$$J(\theta) = -\sum_{i=1}^{N} \log{p(a_n|H^r)} $$
+
+
+\subsection{My Implementation in Python}
+\subsubsection{Tensorflow Graph}
+
+LSTM class
+
+No suitable attention mechanism class
+\subsubsection{}
+\subsubsection{Efficient Embedding}
+Embedding is treated as placeholder. Upon each task, either training or predicting, a small embedding matrix is selected from large GloVe embedding set. This small embedding matrix only includes the vocabulary of this specific task.
+\subsubsection{Padding}
+
+\break
 
 \section{Summary}
+\break
+
+\section{Test to Delete}
+hahaha
+\[ x^n + y^n = z^n \]
+
+\begin{equation}
+x^n + y^n = z^n
+\end{equation}
+hahaha
 
 
+``"
+
+
+\begin{lstlisting}[language=Python]
+    def addPlaceHolder(self)
+
+\end{lstlisting}
+
+\begin{algorithm}[H]
+ \KwData{this text}
+ \KwResult{how to write algorithm with \LaTeX2e }
+ initialization\;
+ \While{not at end of this document}{
+  read current\;
+  \eIf{understand}{
+   go to next section\;
+   current section becomes this one\;
+   }{
+   go back to the beginning of current section\;
+  }
+ }
+ \caption{How to write algorithms}
+\end{algorithm}
+\break
 
 
 \printbibliography[heading=bibintoc,title={References}]
