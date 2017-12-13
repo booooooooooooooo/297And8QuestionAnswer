@@ -127,8 +127,10 @@ def test_data():
     embed_s = 7
     data_util.getTrain( pass_ques_ans_file, glove_file, batch_s, embed_s)
 
-
+def test_import():
+    from ...download.evaluate_v1.1.py import *
 if __name__ == "__main__":
     # test_tensorflow()
     # sanity_model()
-    test_data()
+    # test_data()
+    test_import()

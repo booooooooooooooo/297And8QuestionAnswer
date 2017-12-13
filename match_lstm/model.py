@@ -20,13 +20,17 @@ mark public and private def
 give nice names to important tensors, include embed_s, batch_s, num_units, lr, n_epoch etc. in title of saved model
 '''
 class Model:
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, batch_s, pass_l, embed_s, num_units):
+        self.batch_s = batch_s
+        self.pass_l = pass_l
+        self.embed_s = embed_s
+        self.num_units = num_units
+        
         self.build()
     def __add_placeholder(self):
-        batch_s = self.config.batch_s#trainning and test have same batch_s
-        pass_l = self.config.pass_l
-        num_units = self.config.num_units
+        batch_s = self.batch_s#trainning and test have same batch_s
+        pass_l = self.pass_l
+        num_units = self.num_units
 
         self.ques = tf.placeholder(tf.int32, shape = (None, None), name = "ques")#(None, ques_l)
         self.ques_mask = tf.placeholder(tf.int32, shape = (None, ), name = "ques_mask")#(None,)
@@ -38,8 +42,8 @@ class Model:
         self.passage_mask_cube = tf.placeholder(tf.float32, shape = (None, pass_l, num_units), name = "passage_mask_cube")#(None, pass_l, num_units)
         self.ans = tf.placeholder(tf.int32, shape = (None, 2, pass_l), name = "ans")#(None, 2, pass_l)
     def __add_variables(self):
-        embed_s = self.config.embed_s
-        num_units = self.config.num_units
+        embed_s = self.embed_s
+        num_units = self.num_units
 
         init = tf.contrib.layers.xavier_initializer()
 
@@ -68,7 +72,7 @@ class Model:
             with tf.variable_scope("LSTM"):
                 self.lstm_ans = tf.contrib.rnn.BasicLSTMCell(num_units)
     def __embed_layer(self):
-        embed_matrix = self.config.embed_matrix
+        embed_matrix = self.embed_matrix
         passage = self.passage
         ques = self.ques
 
@@ -86,9 +90,9 @@ class Model:
             H_p: (batch_s, pass_l, num_units)
             H_q: (batch_s, ques_l, num_units)
         '''
-        batch_s = self.config.batch_s
-        embed_s = self.config.embed_s
-        num_units = self.config.num_units
+        batch_s = self.batch_s
+        embed_s = self.embed_s
+        num_units = self.num_units
 
         lstm_pre = self.lstm_pre
 
@@ -118,8 +122,8 @@ class Model:
         return:
             z: (batch_s, 2 * num_units)
         '''
-        batch_s = self.config.batch_s
-        num_units = self.config.num_units
+        batch_s = self.batch_s
+        num_units = self.num_units
 
         ques_mask_matrix = self.ques_mask_matrix
 
@@ -165,9 +169,9 @@ class Model:
             H_r_one_direct:        (None, pass_l, num_units)
         '''
 
-        num_units = self.config.num_units
-        batch_s = self.config.batch_s
-        pass_l = self.config.pass_l
+        num_units = self.num_units
+        batch_s = self.batch_s
+        pass_l = self.pass_l
 
 
         h_p_lst = tf.unstack(H_p, axis = 1)
@@ -194,7 +198,7 @@ class Model:
             H_r:              (None, pass_l, 2 * num_units)
         '''
         passage_mask_cube = self.passage_mask_cube#(None, pass_l, num_units)
-        num_units = self.config.num_units
+        num_units = self.num_units
 
         H_r_right = self.match_one_direct(H_p, H_q)#(None, pass_l, num_units)
         H_r_left = self.match_one_direct(H_p_rev, H_q)#(None, pass_l, num_units)
@@ -217,8 +221,8 @@ class Model:
             input_lstm: (batch_s, 2 * num_units)
 
         '''
-        pass_l = self.config.pass_l
-        num_units = self.config.num_units
+        pass_l = self.pass_l
+        num_units = self.num_units
         passage_mask_matrix = self.passage_mask_matrix#(None, pass_l)
 
         V = self.V#(num_units * 2, num_units)
@@ -249,8 +253,8 @@ class Model:
         return
             dist:       (None, 2, pass_l)
         '''
-        num_units = self.config.num_units
-        batch_s = self.config.batch_s
+        num_units = self.num_units
+        batch_s = self.batch_s
 
         dist_lst = []
         with tf.variable_scope("answer_pointer_layer"):
@@ -278,7 +282,7 @@ class Model:
         self.dist = dist
 
     def __add_train_op(self):
-        lr = self.config.lr
+        lr = self.lr
         ans = self.ans#(None, 2, pass_l)
         dist = self.dist#(None, 2, pass_l)
 
