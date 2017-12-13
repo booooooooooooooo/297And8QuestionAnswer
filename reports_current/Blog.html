@@ -1,0 +1,138 @@
+<h1>Project Blog</h1>
+
+<h2>Dec 5 </h2>
+<p>Discuss training details and model details of match-lstm</p>
+<p>TODO next week: 297 report draft before Dec 12</p>
+
+<h2>Nov 28 </h2>
+<p>Discuss how to improve the writing of proposal and deliverable. The deliverable documents should introduce the goal and the whole picture in the beginning. The proposal should give concrete deliverables to achieve.</p>
+<p>Discuss the format of report. Page 1 is about goal and report organization. Page 2-9 are about deliverables. Page 10 is about summary and work to be done in the future.
+<p>Discuss how to improve an existing model. One option is improving the loss function. One option is to improve the neural net architecture.</p>
+
+<h2>Nov 14, 2017</h2>
+<p>Talked about cosine similarity evaluation of word embedding. Talked about the new topic: question answerer. Have decided to change to the new topic.</p>
+<p>TOTO next week: Preprocessing Data and Setting up environment</p>
+
+<h2>Nov 7, 2017</h2>
+<p>Talk about the obstacles of converting modern language to classic language. Talk about narrowing down the project to a classic Chinese poem generator. But Dr. Pollett thinks a Chinese poem generator is a little trivial. We talk about other possible ideas, but no agreement is reached yet.</p>
+<p>TODO next week: finish cosine similarity evaluation on word feature vector; think about project ideas</p>
+
+
+
+<h2>Oct 24, 2017</h2>
+
+<p>
+About deliverable 2:
+  <ol>
+    <li>Should add model description, code example, input data description, output data description, instructions for running the code in deliverable 2 document.</li>
+    <li>Should add regularization and extrinsic evaluation to the model. Also, should tune the parameters to get better result. </li>
+  </ol>
+</p>
+
+<p>
+About general machine learning techniques:
+  <ol>
+    <li>Use cross validation when dataset is small. Do training and validating on (k-1)/k of the dataset, and to testing on 1/k of the dataset. </li>
+    <li>Dropout regularization helps to avoid getting large parameters when dataset is limited but number of parameters are large.</li>
+    <li>When tuning parameters, start from some small but reasonable number. Then use galloping search to find the optimal number.</li>
+  </ol>
+</p>
+
+<p>
+About two ideas of the text to poetry convertor:
+  <ol>
+    <li>Idea 1: extract keywords from text, use them to make the first line, then translate the previous lines to the current line. This idea could be the baseline of the master project.</li>
+    <li>Idea 2: summary the text the several sentences, translate each sentence to a poetry line.
+      <ul>
+        <li>Hard part 1: How to find the sentences that capture the core ideas of the text from the text.</li>
+        <li>Hard part 2: How to shorted the sentences to some length</li>
+        <li>Hard part 3: How to make different poetry lines related to each other when decoding the hidden state to poetry lines.</li>
+        <li>Hard part 4: How to satisfy the rules of the poetry, such as grammar and tone, when decoding the hidden state to poetry lines.</li>
+      </ul>
+    </li>
+  </ol>
+</p>
+
+<p>TODO next week: Study RNN and CNN models, and some standard code.</p>
+<p>TODO the week after next week: Try to get a baseline for deliverable 3. </p>
+
+<h2>Oct 17, 2017</h2>
+
+<p>
+About ChinesePeotryGeneration:
+<ol>
+<li>Discuss in detail how to generate first line. </li>
+   <ul>
+      <li>Make trigrams from corpus</li>
+      <li>Choose the trigram that both contains input keywords and has high frequency</li>
+      <li>Use two trigrams to get the 5 characters first line. The last character of one trigram is same with the first character of the second trigram. </li>
+   </ul>
+<li>Discussed in detail how to generate the first character of non-first line of Chinese 5 quatrain poem</li>
+   <ul>
+      <li>Generate 6 characters in each line. </li>
+      <li>Make the first character of non-first line same with the last character of the previous line. </li>
+   </ul>
+<li>Discuss the initialization and training of word embedding matrix in poetry generator.</li>
+   <ul>
+      <li>Initialize the L matrix with pre-trained embedding matrix from corpus.</li>
+      <li>Treat L matrix as parameters in ChinesePeotryGeneration. </li>
+   </ul>
+<li>Discuss the relationship among the corpus to get dense word vector, train set of poem generator, and test set of poem generator. </li>
+   <ul>
+      <li>Corpus is a super set of train set and test set.</li>
+      <li>Train set and test set should be disjoint. </li>
+   </ul>
+</ol>
+
+About schedule adjustment:
+<ol>
+<li>Postpone implementing the ChinesePeotryGeneration as deliverable 3 . Choose implementing "A neural probabilistic language model" (Abbreviated as NPLM) as deliverable 2 since it is a preparation for implementing the ChinesePeotryGeneration.  </li>
+</ol>
+
+TODO next week:
+<ol>
+<li>Implement NPLM.  </li>
+</ol>
+</p>
+
+
+
+
+<h2>Oct 10, 2017</h2>
+<p>
+<ul>
+<li>Went over the current progress in ChinesePeotryGeneration].</li>
+<li>Discussed the LSTM might also work upon line by line generation / translation.</li>
+<li>Discussed how to evaluate the first line of a poetry. </li>
+<li>Discussed the next paper to be implemented. It could relate to text summarization. </li>
+</ul>
+</p>
+<p>
+TODO next week: Continue implementing ChinesePeotryGeneration
+</p>
+
+<h2>Oct 3, 2017</h2>
+<p>
+Present a review on paper "Chinese Poetry Generation with Recurrent Neural Networks"(Abbreviated as ChinesePeotryGeneration). Present a demo of neural network model coded in TensorFlow.
+</p>
+
+
+<h2>Sep 26, 2017</h2>
+<p>
+Go through the differentiation of the  loss function of a particular neural network.
+</p>
+
+<h2>Sep 19, 2017</h2>
+<p>
+Discuss neural network model back propagation. Discuss word2vec model.
+</p>
+
+<h2>Sep 12, 2017</h2>
+<p>
+Work out the proposal. Discuss paper "A Neural Probabilistic Language Model".
+</p>
+
+<h2>Sep 5, 2017</h2>
+<p>
+Discuss the main idea of the project. Find several papers to begin with.
+</p>

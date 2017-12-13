@@ -1,0 +1,36 @@
+<h1>Setting Up Development Environment and Downloading Data</h1>
+
+<p> This deliverable is a preparation for implementing match-LSTM in [1]. I set up Docker as the developing environment. GloVe word vectors are downloaded. They are to be used in the embedding step. SQuAD is downloaded from [3]. It contains train and test data.</p>
+
+<h2>Set up Docker</h2>
+<p>There are two main advantages to use Docker. First, the project goes more and more complex and software version dependency might cause problem. Second, I might need to use cloud GPU to train the model in the future and Docker helps on portability.</p>
+
+<p>But Docker also causes some inconvenience. First, visualization in python need to be done in ipython notebook. Second, terminal provided by Docker container is a little different with mac terminal. Third, I always need to mount a host directory to a Docker container directory. </p>
+
+<p>The benefits outweigh the disadvantages. So I start to use Docker.</p>
+
+<h2>Download and Understand GloVe Word Vectors</h2>
+
+<p>GloVe word vectors are pre-trained word vectors using GloVe[2] algorithm. GloVe algorithm is an unsupervised learning algorithm to train word vectors. In addition to a neural network, it also uses co-occurrence statistics from a corpus.</p>
+
+<p>I choose GloVe because some existing papers on SQuAD[3] task use it. </p>
+
+<h2>Download and Understand SQuAD</h2>
+
+<p>Stanford Question Answering Dataset (SQuAD) is a reading comprehension dataset, consisting of questions posed by crowdworkers on a set of Wikipedia articles, where the answer to every question is a segment of text, or span, from the corresponding reading passage. It has 100,000+ question-answer pairs on 500+ articles. The data is in json format.</p>
+
+<p>The train set and dev set is open to public. But the test set is hidden. In practice, I will split the train set into my_train_set and my_dev_set, and use the dev set as my_test_set.</p>
+
+<h2>Understand Submission Method: CodaLab</h2>
+
+<p>To know the performance of model, a model script need to be uploaded to Codalab. According to my current understanding, I need some code to recover trained tensorflow model and do prediction on the hidden test set.</p>
+
+<p>For details, please refer to <a href="https://github.com/booooooooooooooo/297And8QuestionAnswer"> Link to my Github repository. </a></p>
+
+<h2>References</h2>
+
+<ol>
+ <li>Wang, Shuohang, and Jing Jiang. "Machine comprehension using match-lstm and answer pointer." arXiv preprint arXiv:1608.07905 (2016).</li>
+ <li>Pennington, Jeffrey, Richard Socher, and Christopher Manning. "Glove: Global vectors for word representation." Proceedings of the 2014 conference on empirical methods in natural language processing (EMNLP). 2014.</li>
+ <li>https://rajpurkar.github.io/SQuAD-explorer/</li>
+</ol>

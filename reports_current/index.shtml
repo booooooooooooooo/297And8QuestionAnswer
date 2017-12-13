@@ -1,0 +1,93 @@
+<!--#include virtual="myincludes.html" -->
+<!--#set var="fname" value="Li" -->
+<!--#set var="lname" value="Bo" -->
+<!--#set var="name" value="${fname} ${lname}" -->
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<head>
+    <title>Chris Pollett &gt; Students &gt; <!--#echo var="name" --></title>
+
+    <meta http-equiv="Content-type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta name="Authors" content="Christopher Pollett" />
+    <meta name="keywords" content="<!--#echo var="name" -->" />
+    <style type="text/css">
+        <!--
+        <!--#echo var="styles" -->
+        -->
+
+        table.schedule {
+            border-collapse: collapse;
+            border-spacing: 0px;
+        }
+
+        table.schedule tr:nth-child(odd) {
+            background-color: #fafafa;
+        }
+
+        table.schedule th {
+            background-color: white;
+        }
+
+        table.schedule th, table.schedule td {
+            padding: 10px 10px;
+            vertical-align: top;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body <!--#echo var="contentColor" -->
+<!--#if expr="\"${QUERY_STRING}\" != /print/" -->
+    <!--#echo var="background1" -->
+<!--#endif -->
+    style="margin-left:0cm;
+    margin-right: 0cm; margin-top:0cm; margin-bottom:0cm">
+
+<table border="0" cellpadding="0" cellspacing="0">
+
+<!--#if expr="\"${QUERY_STRING}\" != /print/" -->
+<col width="25%" />
+<!--#endif -->
+
+<col width="75%" />
+<tr>
+<!--#if expr="\"${QUERY_STRING}\" != /print/" -->
+<td <!--#echo var="borderColor" --> <!--#echo var="width" --> valign="top">
+
+<p><b> <a href="<!--#echo var="pollettURL" -->" >Chris Pollett</a> &gt; <a
+href="<!--#echo var="pollettURL" -->masters/" >Students</a> &gt; <!--#echo
+var="fname" --></b><br /><br /> &#160;&#160;&#160;&#160;<a
+href="?<!--#echo var="QUERY_STRING" -->?print">Print View</a> </p>
+<!--#endif --> <p> <!--#if expr="\"${QUERY_STRING}\" = /admin/" --> [<a
+href="folder.php">Admin View</a>] <!--#endif --> <!--#if
+expr="\"${QUERY_STRING}\" != /print/" --> </p>
+<p>&#160;&#160;&#160;&#160;[<a href="?Bio.shtml">Bio</a>]</p>
+<p>&#160;&#160;&#160;&#160;[<a href="?Blog.html">Blog</a>]</p>
+<p>&#160;&#160;&#160;&#160;[<a href="?CS297Proposal.html">CS 297 Proposal</a>]</p>
+<p>&#160;&#160;&#160;&#160;[<a href="folder_pdf/back_propagation.pdf">Deliverable #1: Back Propagation - PDF</a>]</p>
+<p>&#160;&#160;&#160;&#160;[<a href="?folder_html/wordEmbedding.html">Deliverable #2: Word Embedding</a>]</p>
+<p>&#160;&#160;&#160;&#160;[<a href="?folder_html/PreprocessingDataandSettingupenvironment.html">Deliverable #3: Preparation</a>]</p>
+<p><br /></p><p><br /></p><p><br /></p><p><br /></p><p><br /></p><p><br /></p><p><br /></p><p><br /></p>
+<p><br /></p><p><br /></p><p><br /></p><p><br /></p><p><br /></p><p><br /></p><p><br /></p><p><br /></p>
+<p><br /></p><p><br /></p><p><br /></p><p><br /></p><p><br /></p><p><br /></p><p><br /></p><p><br /></p>
+</td>
+<!--#endif -->
+<td class="contentColor" valign="top">
+<a <!--#echo var="nameorid"-->"top" />
+<!--#if expr="\"${QUERY_STRING}\" = \"\" ||
+   \"${QUERY_STRING}\" = \"print\"" -->
+<!--#include virtual="Bio.shtml" -->
+
+<!--#else -->
+<!--#include virtual="${QUERY_STRING}" -->
+<!--#endif -->
+</td>
+</tr>
+
+</table>
+
+</body>
+
+</html>
