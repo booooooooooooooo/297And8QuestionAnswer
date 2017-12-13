@@ -1,0 +1,21 @@
+<h1>Word Embedding</h1>
+<p>Word embedding is an important part of applying neural network to natural language processing. Although this deliverable is done for the old topic, which is replaced by the current topic in November 2017, understanding word embedding is also an essential part of the current topic.</p>
+
+<p> Word embedding is a way to map each word to a feature vector in a continuous space. The dimension of the continuous space is much lower than the dimension of one-hot vector, which is comparable to the vocabulary size. Also, the distance between two word feature vectors could tell how likely the two corresponding words appear in same context.</p>
+<p>
+Word embedding is originally introduced by  Bengio et al in <i> Bengio, Yoshua, et al. "A neural probabilistic language model." Journal of machine learning research 3.Feb (2003): 1137-1155. </i> They proposed a neural probabilistic language model(NPLM). The training set is a sequence of words `w_1,...,w_T` where `w_t \in V` and `V` is the vocabulary. The purpose is to train a model `f` such that ` \hat{P}(w_t | w_{t-1},...,w_{t-n+1}) = f(w_t, ..., w_{t-n+1})`. `f(w_t, ..., w_{t-n+1})` is divided into two parts. First, map each `w` to a distributed feature vector by selecting the corresponding row in `C` and concatenate the feature vectors to get `x=(C(w_{t-1}),... ,C(w_{t-n+1}))`. Second, map `x` to `f(w_t, ..., w_{t-n+1})` following `y=b+W\cdot x + U\cdot tanh(d + H\cdot x)` and ` f(w_t, ..., w_{t-n+1}) = \frac{e^{y_{w_t}}}{\sum_{i}^{}e^{y_i}}`.
+</p>
+<p>
+The loss function to minimize is `L = -\frac{1}{T}\sum _{t}^{} \log{f(w_t, ..., w_{t-n+1})}`.
+</p>
+<p>
+At the present time, an simplified architecture proposed by Mikolov et al in <i>Mikolov, Tomas, et al. "Efficient estimation of word representations in vector space." arXiv preprint arXiv:1301.3781 (2013).</i>  is widely used. The main difference between it and NPLM is Skip-gram removes tanh layer.
+</p>
+
+I implemented in Python both the NPLM model without Noise Contrastive Estimation (NCE) loss and skip-gram model with NCE loss. I use <a href="http://homepages.inf.ed.ac.uk/mlap/Data/EMNLP14/"> a collection of 284899 classic Chinese poems </a> as the corpus. The data is published by authors of paper "Zhang, Xingxing, and Mirella Lapata. "Chinese Poetry Generation with Recurrent Neural Networks." EMNLP. 2014."
+<p>
+
+
+<p>Here are some information about the skip-gram together with negative sampling implementation. Training each epoch costs about 8 minutes. After about 5 epochs, the valid loss reaches the lowest. Below is a list of some character pairs with high cosine similarities. These characters are from 200 most frequent characters in corpus. According to my knowledge of Chinese classic poems, in many pairs, the two characters have high probability to appear in same context. As such, I think the model is implemented correctly. </p>
+
+<img src="folder_image/similarities200_partial" alt="" style="width:300px;" />

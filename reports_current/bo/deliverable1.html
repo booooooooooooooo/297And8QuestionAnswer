@@ -1,0 +1,24 @@
+<h1>Calculation of Back Propagation</h1>
+
+<p>The purpose of this deliverable is to understand the mathematic foundations of neural network, which is the technical approach of this project. I fulfilled this purpose by doing back propagation on a dummy feed forward neural network example below.</p>
+
+<p>
+
+`hat{y}=softmax(z_2)`<br>
+`z_2=h\cdot W_2 + b_2`<br>
+`h=sigmoid(z_1)`<br>
+`z_1=x\cdot W_1+b_1`<br>
+</p>
+<p>
+Define loss `J(W_1, b_1, W_2, b_2, x, y)=cross\_entropy(y, \hat{y})=-\frac{1}{D_y}\sum_{i=1}^{D_y}y_i \times \log{\hat{y_i}} `
+</p>
+<p>
+After using chain rules multiple times, I got<br>
+
+`\frac{dJ}{dz_2}=\hat{y} - y`<br>
+`\frac{dJ}{db_2}=\frac{dJ}{dz_2}`<br>
+`\frac{dJ}{dh}=\frac{dJ}{dz_2}\cdot W_2^T`<br>
+`\frac{dJ}{dW_2}=h^T \cdot \frac{dJ}{dz_2}`<br>
+</p>
+
+<p> <a href="./bo/back_propagation.pdf">Concrete hand calculation process [PDF]</a> </p>
