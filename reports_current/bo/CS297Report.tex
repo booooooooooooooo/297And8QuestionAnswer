@@ -84,23 +84,15 @@ citestyle=numeric
 
 \section{Introduction}
 
-Question Answering(QA) is about making a computer program that could answer questions in natural language automatically. QA techniques are widely used among search engines, personal assistant applications on smart phones, voice control systems and a lot more other applications.
+Question Answering(QA) is about making a computer program that could answer questions in natural language automatically. QA techniques are widely used among search engines, personal assistant applications on smart phones, voice control systems and a lot more other applications. In recent years, more end-to-end neural network architectures are built to do question answering tasks. In contrast, traditional solutions use syntactic and semantic analyses and hand made features. End-to-end neural network approach gives more accurate result. However, traditional ways are more explainable. The Stanford Question Answering Dataset (SQuAD) is used in this project. It includes questions asked by human beings on Wikipedia articles. The answer to each question is a segment of the corresponding Wikipedia article\cite{rajpurkar2016squad}. In total, SQuAD contains 100,000+ question-answer pairs on 500+ articles\cite{rajpurkar2016squad}. The goal of this project is to build a QA system on SQuAD using an existing end-to-end neural network architecture. If there is still time left after finishing the QA system, I will review related literatures and try to come up with an improved architecture.
 
-In recent years, more end-to-end neural network architectures are built to do question answering tasks. In contrast, traditional solutions use syntactic and semantic analyses and hand made features. End-to-end neural network approach wins on giving more accurate result. However, traditional ways are more explainable. The neural network approach is used in this project.
-
-Among rich and varied question answering data sets, the Stanford Question Answering Dataset(SQuAD) is used in this project. It includes questions asked by crowd workers on Wikipedia articles. The answer to each question is a segment of corresponding Wikipedia article\cite{rajpurkar2016squad}. In total, SQuAD contains 100,000+ question-answer pairs on 500+ articles\cite{rajpurkar2016squad}.
-
-
-The goal of this project is to build a QA system on SQuAD using an existing end-to-end neural network architecture. If there is still time left after finishing the QA system, I will review related literatures and try to come up with an improved architecture.
-
-This report is about the progress in CS297. Section \ref{sec:calculation}  corresponds to deliverable 1, which is a study on some very basic mathematics of neural network. Section \ref{sec:embdding} corresponds to deliverable 2, in which I did word embedding of Chinese classic poems. Please be noted, the project topic was changed in November 2017 and section \ref{sec:embdding} was not aimed at the current topic. Section \ref{sec:setup} and section \ref{sec:implementpaper} correspond to deliverable 3 and 4, which are about the current topic. Section \ref{sec:summary} includes my comment on my work in CS297 and my plan for next step.
+This report is about my progress in CS297. Section \ref{sec:calculation}  corresponds to deliverable 1, which is a study on some very basic mathematics of neural network. Section \ref{sec:embdding} corresponds to Deliverable 2, in which I did word embedding of Chinese classic poems. Please be noted, the project topic was changed in November 2017 and Section \ref{sec:embdding} was not aimed at the current topic. Section \ref{sec:setup} and Section \ref{sec:implementpaper} correspond to Deliverable 3 and 4, which are about the current topic. Section \ref{sec:summary} includes my comment on my work in CS297 and my plan for next step.
 
 \break
 
 \section{Calculation of Back Propagation}\label{sec:calculation}
 
-I calculated the back propagation on a dummy feed forward network example. I did this to convince myself this really works.
-
+The purpose of this deliverable is to understand the mathematic foundations of neural network, which is the technical approach of this project. I fulfilled this purpose by doing back propagation on a dummy feed forward neural network example below.
 
 $$\hat{y}=softmax(z_2)$$
 $$z_2=h\cdot W_2 + b_2$$
@@ -130,14 +122,16 @@ $$\frac{dJ}{dW_2}=h^T \cdot \frac{dJ}{dz_2}$$
 \label{fig:nplm}
 \end{figure}
 
+Word embedding is an important part of applying neural network to natural language processing. Although this deliverable is done for the old topic, which is replaced by the current topic in November 2017, understanding word embedding is also an essential part of the current topic.
+
 Word embedding is a way to map each word to a feature vector in a continuous space. The dimension of the continuous space is much lower than the dimension of one-hot vector, which is comparable to the vocabulary size. Also, the distance between two word feature vectors could tell how likely the two corresponding words appear in same context.
 
-Word embedding is originally introduced by  Bengio et al in \cite{bengio2003neural}. They propose a neural probabilistic language model(NPLM) which is illustrated in Fig.\ref{fig:nplm}. The trainning set is a sequence of words $w_1,...,w_T$ where $w_t \in V$ and V is the vocabulary. The purpose is to train a model $f$ such that $ \hat{P}(w_t | w_{t-1},...,w_{t-n+1}) = f(w_t, ..., w_{t-n+1})$. $f(w_t, ..., w_{t-n+1})$ is divided into two parts.
-First, map each $w$ to a distributed feature vector by selecting the corresponding row in $C$.
+Word embedding is originally introduced by  Bengio et al in \cite{bengio2003neural}. They propose a neural probabilistic language model(NPLM) which is illustrated in Fig.\ref{fig:nplm}. The training set is a sequence of words $w_1,...,w_T$ where $w_t \in V$ and V is the vocabulary. The purpose is to train a model $f$ such that $ \hat{P}(w_t | w_{t-1},...,w_{t-n+1}) = f(w_t, ..., w_{t-n+1})$. The computation of $f(w_t, ..., w_{t-n+1})$ is divided into two parts.
+First, we map each $w$ to a distributed feature vector by selecting the corresponding row in $C$.
 
 $$x=(C(w_{t-1}),... ,C(w_{t-n+1}))$$
 
-Second, $g$ maps $x$ to $f(w_t, ..., w_{t-n+1})$.
+Second, we maps $x$ to $f(w_t, ..., w_{t-n+1})$.
 
 
 $$y=b+W\cdot x + U\cdot tanh(d + H\cdot x)$$
@@ -199,11 +193,10 @@ Here are some information about the skip-gram together with negative sampling im
 言 以 0.998825 \\
 
 \end{tabular}
-\caption{Most High Similarities Between 200 Most Common Words}
+\caption{Highest Similarities Between 200 Most Common Words}
 \label{table:similarity}
 \end{table}
 \end{CJK*}
-
 
 
 \break
@@ -211,26 +204,39 @@ Here are some information about the skip-gram together with negative sampling im
 \section{Understanding Online Evaluation Environment and Setting Up Developing Environment}\label{sec:setup}
 
 
-\subsection{Understanding Online Evaluation Environment}
+\subsection{Understanding the Online Evaluation Environment}
 
 
-Test data is not open to public. To evaluate a model, a prediction Python script should be submitted through Codelab.
+To evaluate a model, a prediction Python script should be submitted through Codelab.
 
-As such, training and prediciton must be seprated. After training the mode, a tensorflow graph should be saved to disk. Then the prediction script should restore the tensorflow graph to make prediction on test data. This requires concise names and scopes for important nodes in the graph.
+As such, training and prediction must be separated. After training the mode, a tensorflow graph should be saved to disk. Then the prediction script should restore the tensorflow graph to make prediction on test data. This requires concise names and scopes for important nodes in the graph.
 
 
 \subsection{Docker}
 
-There are two main advantages to use Docker. First, the project goes more and more complex and software version dependency might cause problem. Second, I might need to use cloud GPU to train the model in the future and Docker helps on portability.
+There are two concerns about development infrastructure. First, ascending complexity and software version dependencies might cause problem. Second, I might need to use cloud GPU to train the model in the future.
 
-I followed the online installation instruction to install Docker on my mac book. Since setting up a Docker image is simply done by make a Docker file and typing a command in terminal, my developing speed is increase.
+Docker helps solving this problem By using Docker, I can list all software dependencies in Docker file, build a Docker image using the Docker file, and then run a Docker container using the Docker image. Docker also supports potability between different devices.
+
+Below is the content of the Docker file I used.
+
+\begin{verbatim}
+FROM tensorflow/tensorflow
+RUN pip install joblib
+RUN pip install nltk
+RUN pip install tqdm
+RUN pip install pyprind
+RUN python -m nltk.downloader --dir=/usr/local/share/nltk_data perluniprops punkt
+
+WORKDIR /297And8QuestionAnswer
+
+\end{verbatim}
 
 \break
 
-\section{Implementating a Question Answering System Following
-Paper \cite{wang2016machine}}\label{sec:implementpaper}
+\section{Question Answering System Architecture}\label{sec:implementpaper}
 
-\subsection{Review on Paper \cite{wang2016machine}}\label{theoreticalModel}
+\subsection{Review of Paper \cite{wang2016machine}}\label{theoreticalModel}
 
 Wang and Jiang \cite{wang2016machine} proposes an end-to-end neural network model on SQuAD dataset. While predicting, the inputs to the model are test data and pretrained word embeddings, the outputs are the predicted answers. While training, the inputs are train data and word embeddings, the outputs are losses to optimise. GloVe is used to do word embedding. The word embedding is not updated during training.
 
@@ -307,15 +313,17 @@ and answer LSTM is
 
 $$\overrightarrow{{h_k}^a} = \overrightarrow{LSTM}(H^r\beta _k^T, h_{k-1}^a)$$
 
-By iterating between the attention mechanisim and the answer LSTM two times, we could get $\beta _0$ and $\beta _1$. Let $a_s$ denote start index of the answer, and $a_e$ denote the end index, then we have
+By iterating between the attention mechanism and the answer LSTM two times, we could get $\beta _0$ and $\beta _1$. Let $a_s$ denote start index of the answer, and $a_e$ denote the end index, then we have
 
 $$p(a|H^r) = p(a_s|H_r)p(a_r|H_r)=\beta _{0, a_s} \times \beta_{1, a_e}$$
 
-where $$\beta_{k, j} = jth\ token\ of\ \beta _k$$.
+where $$\beta_{k, j} = jth\ token\ of\ \beta _k$$
 
-To train the model, the loss function below is minimized.
+To train the model, the loss function
 
 $$J(\theta) = -\frac{1}{N}\sum_{i=1}^{N} \log{p(a^n|H^r)} $$
+
+is minimized.
 
 
 \subsection{Implementation Architecture}\label{sec:architectures}
@@ -328,15 +336,15 @@ $$J(\theta) = -\frac{1}{N}\sum_{i=1}^{N} \log{p(a^n|H^r)} $$
 \label{fig:wangAndJiang}
 \end{figure}
 
-As indicated in Fig.\ref{fig:wangAndJiang}, the train pipeline, valid pipeline and evaluate pipeline are separated. This not only separates developing and deploying, but also make the large system easier to debug.
+As indicated in Fig.\ref{fig:wangAndJiang}, the training pipeline, validation pipeline and evaluation pipeline are separated. This not only separates development and deployment, but also make the large system easier to debug.
 
-Take the train pipeline as example. The \texttt{preprocess.py} reads a json file, splits out passages, questions and answers, tokenizes them, and outputs each passage, question or data in token sequence. The \texttt{midprocess.py} reads token sequences and word embedding GloVe, vectorized token sequences to vector sequences, trims or pads the sequences, makes mask tensor, and outputs feed-ready data. The \texttt{train.py} takes feed-ready data and \texttt{model.py}, iterate through different number of epochs, learning rates, trainning optimizer and so on, and store trained models to disk.
-
-
-Since Tensorflow graphs are shared in train, valid and evaluate steps, the feed data in the three steps must be consistent with the graphs. Since a graph is defined using pass\_max\_length, batch\_size, embed\_size, and  num\_units, which is called $l$ in theoretical model, train, valid and evaluate data are vectorized, padded, and divided to mini batches in same file \texttt{midprocess.py} using same pass\_max\_length, all data must be divided to same batch\_size. The num\_unit does not relate to shape of feed data.
+Take the training pipeline as example. The \texttt{preprocess.py} reads a json file, splits out passages, questions and answers, tokenizes them, and outputs each passage, question or data in token sequence. The \texttt{midprocess.py} reads token sequences and word embedding GloVe, vectorized token sequences to vector sequences, trims or pads the sequences, makes mask tensor, and outputs feed-ready data. Here, GloVe word vectors are pre-trained word vectors using GloVe algorithm \cite{pennington2014glove}. GloVe algorithm is an unsupervised learning algorithm to train word vectors. In addition to a neural network, it also uses co-occurrence statistics from a corpus. The \texttt{train.py} takes feed-ready data and \texttt{model.py}, iterate through different number of epochs, learning rates, training optimizer and so on, and store trained models to disk.
 
 
-To achieve batched training, paragraphs should be padded to same length, so does questions. As such, the model in implementation has some difference with the theoretical model explained in \ref{theoreticalModel}.
+Since Tensorflow graphs are shared for the training, validation and evaluation steps, the feed data in the three steps must be consistent with the graphs. Since a graph is defined using \texttt{pass\_max\_length}, \texttt{batch\_size}, \texttt{embed\_size}, and \texttt{num\_units}, which is called $l$ in theoretical model, train, valid and evaluate data are vectorized, padded, and divided to mini batches in same file \texttt{midprocess.py} using same \texttt{pass\_max\_length}, all data must be divided to same \texttt{batch\_size}. The \texttt{num\_unit} does not relate to shape of feed data.
+
+
+To achieve batched training, paragraphs should be padded to a same length. Similarly, questions are also padded the a same length. As such, the model in implementation has some difference with the theoretical model explained in \ref{theoreticalModel}.
 
 In preprocessing layer,
 $$H^p = H^p \circ passage\_mask$$
@@ -355,9 +363,9 @@ $$\overrightarrow{\beta _k} = softmax( (v^tF_k + c \otimes e_p) \circ passage\_m
 
 \section{Summary}\label{sec:summary}
 
-I have made several milestones to myself in CS297. First, I have implemented Skip-gram model on Chinese classic poems data successfully. This is a milestone to me since I didn't know neural network and word embedding when I started this project. Second, I am able to understand paper \cite{wang2016machine}. This is a milestone to me since I experienced a long way to this including learning feed forward network, learning RNN, learning LSTM, and  learning attention mechanism. Third, I have designed a nice architecture and wrote some coding for implementing paper \cite{wang2016machine}.
+I have accomplished several milestones in CS297. First, I have implemented Skip-gram model on Chinese classic poems data successfully. Second, I have reviewed paper \cite{wang2016machine} and mastered feed forward network, RNN, LSTM, and attention mechanism. Third, I have designed a nice architecture and wrote some coding for the Question Answering system.
 
-The next step is to finish implementing paper \cite{wang2016machine} as soon as possible. And I will decide what to do next depending on the finish date.
+What I have done in this semester builds a good foundation for implementing a Question Answering system. Using the architecture I designed in \ref{sec:architectures}, I could code up the Question Answering system. This is what I will do in CS298.
 
 \break
 
