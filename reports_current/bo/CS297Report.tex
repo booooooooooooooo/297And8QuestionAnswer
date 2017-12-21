@@ -61,7 +61,7 @@ citestyle=numeric
 \begin{titlepage}
 \begin{center}
         \vspace*{3cm}
-        {\Huge A Question Answering System on SQuAD Dataset Using End-to-end Neural Network}\\
+        {\Huge A Question Answering System on SQuAD Dataset Using an End-to-end Neural Network}\\
 
         \vspace*{3cm}
         {\Huge CS297 Report}\\
@@ -92,14 +92,16 @@ This report is about my progress in CS297. Section \ref{sec:calculation}  corres
 
 \section{Calculation of Back Propagation}\label{sec:calculation}
 
-The purpose of this deliverable is to understand the mathematic foundations of neural network, which is the technical approach of this project. I fulfilled this purpose by doing back propagation on a dummy feed forward neural network example below.
+The purpose of this deliverable is to understandthe mathematical basis of neural networks. This is important since a neural network model will be used to build the Question Answering System. I fulfilled the purpose by doing back propagation on a dummy feed forward neural network example.
 
+
+Define the model as
 $$\hat{y}=softmax(z_2)$$
 $$z_2=h\cdot W_2 + b_2$$
 $$h=sigmoid(z_1)$$
 $$z_1=x\cdot W_1+b_1$$
 
-Define loss
+Define the loss as
 $$J(W_1, b_1, W_2, b_2, x, y)$$
 $$=cross\_entropy(y, \hat{y})$$
 $$=-\frac{1}{D_y}\sum_{i=1}^{D_y}y_i \times \log{\hat{y_i}} $$
@@ -110,6 +112,8 @@ $$\frac{dJ}{dz_2}=\hat{y} - y$$
 $$\frac{dJ}{db_2}=\frac{dJ}{dz_2}$$
 $$\frac{dJ}{dh}=\frac{dJ}{dz_2}\cdot W_2^T$$
 $$\frac{dJ}{dW_2}=h^T \cdot \frac{dJ}{dz_2}$$
+
+By working out this dummy example, I got a solid foundation of back propagation and became more prepared for understanding more complex neural network models.
 
 \break
 
@@ -122,11 +126,11 @@ $$\frac{dJ}{dW_2}=h^T \cdot \frac{dJ}{dz_2}$$
 \label{fig:nplm}
 \end{figure}
 
-Word embedding is an important part of applying neural network to natural language processing. Although this deliverable is done for the old topic, which is replaced by the current topic in November 2017, understanding word embedding is also an essential part of the current topic.
+Word embedding is an important language modeling technique. It is usually the first step towards applying neural networks to natural language processing. Understanding word embedding is an essential part of understanding how to use a neural network model to build a Question Answering System.
 
 Word embedding is a way to map each word to a feature vector in a continuous space. The dimension of the continuous space is much lower than the dimension of one-hot vector, which is comparable to the vocabulary size. Also, the distance between two word feature vectors could tell how likely the two corresponding words appear in same context.
 
-Word embedding is originally introduced by  Bengio et al in \cite{bengio2003neural}. They propose a neural probabilistic language model(NPLM) which is illustrated in Fig.\ref{fig:nplm}. The training set is a sequence of words $w_1,...,w_T$ where $w_t \in V$ and V is the vocabulary. The purpose is to train a model $f$ such that $ \hat{P}(w_t | w_{t-1},...,w_{t-n+1}) = f(w_t, ..., w_{t-n+1})$. The computation of $f(w_t, ..., w_{t-n+1})$ is divided into two parts.
+Word embedding technique is originally introduced by Bengio et al in \cite{bengio2003neural}. They propose a neural probabilistic language model(NPLM) which is illustrated in Fig.\ref{fig:nplm}. The training set is a sequence of words $w_1,...,w_T$ where $w_t \in V$ and V is the vocabulary. The purpose is to train a model $f$ such that $ \hat{P}(w_t | w_{t-1},...,w_{t-n+1}) = f(w_t, ..., w_{t-n+1})$. The computation of $f(w_t, ..., w_{t-n+1})$ is divided into two parts.
 First, we map each $w$ to a distributed feature vector by selecting the corresponding row in $C$.
 
 $$x=(C(w_{t-1}),... ,C(w_{t-n+1}))$$
@@ -142,11 +146,11 @@ The loss function to minimize is
 $$L = -\frac{1}{T}\sum _{t}^{} \log{f(w_t, ..., w_{t-n+1})}$$
 
 
-At the present time, an simplified architecture proposed by Mikolov et al in \cite{mikolov2013efficient} is widely used. The main difference between it and NPLM is Skip-gram removes tanh layer.
+At the present time, a simplified architecture proposed by Mikolov et al in \cite{mikolov2013efficient} is widely used. The main difference between Skip-gram and NPLM is the first one removes tanh layer.
 
 I implemented in Python both the NPLM model without Noise Contrastive Estimation (NCE) loss and skip-gram model with NCE loss. I use a collection of 284899 classic Chinese poems as the corpus.
 
-Here are some information about the skip-gram together with negative sampling implementation. Training each epoch costs about 8 minutes. After about 5 epochs, the valid loss reaches the lowest. I selected 200 most common words and calculated cosine similarity between each two words pair to get 40000 word pair cosine similarity. Table \ref{table:similarity} lists top results among the 40000 results . According to my knowledge of Chinese classic poems, in most word pairs in Table \ref{table:similarity}, the two characters have high probability to appear in same context. As such, I think the model is implemented correctly.
+Here are some information about the skip-gram together with negative sampling implementation. Training each epoch took about 8 minutes. After about 5 epochs, the valid loss reaches the lowest. I selected 200 most common words and calculated cosine similarity between each two words pair to get 40000 word pair cosine similarity. Table \ref{table:similarity} lists top results among the 40000 results . According to my knowledge of Chinese classic poems, in most word pairs in Table \ref{table:similarity}, the two characters have high probability to appear in same context. As such, I think the model is implemented correctly.
 \begin{CJK*}{UTF8}{gbsn}
 \begin{table}[h!]
 \centering
@@ -203,20 +207,11 @@ Here are some information about the skip-gram together with negative sampling im
 
 \section{Understanding Online Evaluation Environment and Setting Up Developing Environment}\label{sec:setup}
 
+This deliverable was to prepare a development setting for implementing the match-LSTM network of \cite{wang2016machine}. The preparation works include installing development environment, downloading data, and understanding submission methods.
 
-\subsection{Understanding the Online Evaluation Environment}
+\subsection{Set Up Docker}
 
-
-To evaluate a model, a prediction Python script should be submitted through Codelab.
-
-As such, training and prediction must be separated. After training the mode, a tensorflow graph should be saved to disk. Then the prediction script should restore the tensorflow graph to make prediction on test data. This requires concise names and scopes for important nodes in the graph.
-
-
-\subsection{Docker}
-
-There are two concerns about development infrastructure. First, ascending complexity and software version dependencies might cause problem. Second, I might need to use cloud GPU to train the model in the future.
-
-Docker helps solving this problem By using Docker, I can list all software dependencies in Docker file, build a Docker image using the Docker file, and then run a Docker container using the Docker image. Docker also supports potability between different devices.
+Docker enables independencies between project and development environment by using containers. There are two main advantages to use Docker. First, it helps to manage software version dependency might cause problem. Second, I might need to use a cloud GPU to train the model in the future and Docker helps on portability. I followed the official tutorial to install Docker on my Mac. To set up a development environment, I just need to make a Docker file using a text editor, create a Docker image using the Docker file through a terminal command, and build a container using the image through another terminal command.
 
 Below is the content of the Docker file I used.
 
@@ -232,15 +227,36 @@ WORKDIR /297And8QuestionAnswer
 
 \end{verbatim}
 
+\subsection{Download the Word Vectors}
+
+I downloaded the word vectors trained using GloVe algorithm\cite{pennington2014glove} from \cite{glove}. GloVe algorithm is an unsupervised learning algorithm to train word vectors. In addition to a neural network, it also uses co-occurrence statistics from a corpus. The word vectors trained using GloVe algorithm are not only used in \cite{wang2016machine}, but also used in some other existing papers on SQuAD task.
+
+\subsection{Download SQuAD}
+
+
+Stanford Question Answering Dataset (SQuAD) is a reading comprehension dataset, consisting of questions posed by crowd workers on a set of Wikipedia articles, where the answer to every question is a segment of text, or span, from the corresponding reading passage. It has 100,000+ question-answer pairs on 500+ articles. The data is in json format. The train set and dev set is open to public. But the test set is hidden. In practice, I will split the train set into my\_train\_set and my\_dev\_set, and use the dev set as my\_test\_set.
+
+\subsection{Understanding the Online Evaluation Environment}
+
+
+To evaluate a model, a prediction Python script should be submitted through Codelab.
+
+As such, training and prediction must be separated. After training, a tensorflow graph should be saved to disk. Then the prediction script should restore the tensorflow graph to make prediction on test data. This requires concise names and scopes for important nodes in the graph.
+
+
+
+
 \break
 
 \section{Question Answering System Architecture}\label{sec:implementpaper}
 
+This deliverable is about the algorithm and the system design of my Question Answering system. I first reviewed paper \cite{wang2016machine}. Then I designed an implementation architecture based on this paper.
+
 \subsection{Review of Paper \cite{wang2016machine}}\label{theoreticalModel}
 
-Wang and Jiang \cite{wang2016machine} proposes an end-to-end neural network model on SQuAD dataset. While predicting, the inputs to the model are test data and pretrained word embeddings, the outputs are the predicted answers. While training, the inputs are train data and word embeddings, the outputs are losses to optimise. GloVe is used to do word embedding. The word embedding is not updated during training.
+Wang and Jiang proposed an end-to-end neural network model on SQuAD dataset. While predicting, the inputs to the model are test data and pretrained word vectors, the outputs are the predicted answers. While training, the inputs are train data and word vectors, the outputs are losses to be optimised. The word vectors trained using GloVe algorithm[3] are used to do word embedding. The word vectors are not updated during training.
 
-Model architecture includes three layers-the LSTM preprocessing layer, the match-LSTM layer and the Answer Pointer(Ans-Ptr) layer.
+The model architecture includes three layers-the LSTM preprocessing layer, the match-LSTM layer and the Answer Pointer(Ans-Ptr) layer.
 
 The LSTM preprossing layer encode each word sequence in passage and question to a sequence of hidden states using a standard one direction LSTM. The passage and question are processed separately.
 
@@ -336,7 +352,7 @@ is minimized.
 \label{fig:wangAndJiang}
 \end{figure}
 
-As indicated in Fig.\ref{fig:wangAndJiang}, the training pipeline, validation pipeline and evaluation pipeline are separated. This not only separates development and deployment, but also make the large system easier to debug.
+As indicated in Fig.\ref{fig:wangAndJiang}, the training pipeline, the validation pipeline, and the evaluation pipeline are separated. This not only separates development and deployment, but also make the large system easier to debug.
 
 Take the training pipeline as example. The \texttt{preprocess.py} reads a json file, splits out passages, questions and answers, tokenizes them, and outputs each passage, question or data in token sequence. The \texttt{midprocess.py} reads token sequences and word embedding GloVe, vectorized token sequences to vector sequences, trims or pads the sequences, makes mask tensor, and outputs feed-ready data. Here, GloVe word vectors are pre-trained word vectors using GloVe algorithm \cite{pennington2014glove}. GloVe algorithm is an unsupervised learning algorithm to train word vectors. In addition to a neural network, it also uses co-occurrence statistics from a corpus. The \texttt{train.py} takes feed-ready data and \texttt{model.py}, iterate through different number of epochs, learning rates, training optimizer and so on, and store trained models to disk.
 
@@ -363,9 +379,7 @@ $$\overrightarrow{\beta _k} = softmax( (v^tF_k + c \otimes e_p) \circ passage\_m
 
 \section{Summary}\label{sec:summary}
 
-I have accomplished several milestones in CS297. First, I have implemented Skip-gram model on Chinese classic poems data successfully. Second, I have reviewed paper \cite{wang2016machine} and mastered feed forward network, RNN, LSTM, and attention mechanism. Third, I have designed a nice architecture and wrote some coding for the Question Answering system.
-
-What I have done in this semester builds a good foundation for implementing a Question Answering system. Using the architecture I designed in \ref{sec:architectures}, I could code up the Question Answering system. This is what I will do in CS298.
+I have accomplished several milestones in CS297. In delieverable 1, I have mastered back propagation through hand calculation on a dummy example. In deliverable 2, I have mastered word embedding technique through implementing NPLM and Skip-gram model on Chinese classic poems data. Based on what I learned in deliverable 1 and 2, I have reviewed the end-to-end model in paper \cite{wang2016machine}. Based on the paper, I have designed a nice architecture for my Question Answering System in deliverable 4. In CS298, I will follow this architecture to implement my Question Answering System. After this implementation, I will research on how to improve the model.
 
 \break
 
