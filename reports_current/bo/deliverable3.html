@@ -3,19 +3,20 @@
 <p> This deliverable was to prepare a development setting for implementing the match-LSTM network of [1]. The preparation works include installing development environment, downloading data, and understanding submission methods.</p>
 
 <h2>Set up Docker</h2>
-<p>Docker enables independencies between project and development environment by using containers. There are two main advantages to use Docker. First, it helps to manage software version dependency might cause problem. Second, I might need to use a cloud GPU to train the model in the future and Docker helps on portability. I followed the official tutorial to install Docker on my Mac. To set up a development environment, I just need to make a Docker file using a text editor, create a Docker image using the Docker file through a terminal command, and build a container using the image through another terminal command.</p>
+<p>Docker enables independencies between project and development environment by using containers. There are two main advantages to use Docker. First, it helps to manage software version dependencies. Second, I might need to use a cloud GPU to train the model in the future and Docker helps on portability. I followed the official tutorial to install Docker on my Mac. To set up a development environment, I just need to make a Docker file using a text editor, create a Docker image using the Docker file through a terminal command, and build a container using the image through another terminal command.</p>
 
 <h2>Download the Word Vectors</h2>
 
-<p>I downloaded the word vectors trained using GloVe algorithm[2] from [4]. GloVe algorithm is an unsupervised learning algorithm to train word vectors. In addition to a neural network, it also uses co-occurrence statistics from a corpus. The word vectors trained using GloVe algorithm are not only used in [1], but also used in some other existing papers on SQuAD task[3]. </p>
+<p>I downloaded the word vectors trained using GloVe algorithm[2] from [4]. GloVe algorithm is an unsupervised learning algorithm to train word vectors. In addition to a neural network, it also uses co-occurrence statistics from a corpus. The word vectors trained using GloVe algorithm are not only used in [1], the algorithm of which is used in this project, but also used in some other existing papers on SQuAD. </p>
 
 <h2>Download SQuAD</h2>
 
-<p>Stanford Question Answering Dataset (SQuAD) is a reading comprehension dataset, consisting of questions posed by crowd workers on a set of Wikipedia articles, where the answer to every question is a segment of text, or span, from the corresponding reading passage. It has 100,000+ question-answer pairs on 500+ articles. The data is in json format. The train set and dev set is open to public. But the test set is hidden. In practice, I will split the train set into my_train_set and my_dev_set, and use the dev set as my_test_set.</p>
+<p>Stanford Question Answering Dataset (SQuAD) is a reading comprehension dataset. It consists of questions posed by crowd workers on a set of Wikipedia articles. The answer to every question is a segment of the corresponding reading passage. It has 100,000+ question-answer pairs on 500+ articles. The data is in json format. The train set and dev set is open to public. But the test set is hidden. In practice, I will split the train set into my_train_set and my_dev_set, and use the dev set as my_test_set.</p>
 
-<h2>Understand Submission Method: CodaLab</h2>
+<h2>Understand the Online Evaluation Environment</h2>
 
-<p>To know the performance of model, a model script need to be uploaded to Codalab. The model will be evaluated on the hidden test set. According to my current understanding, I need some code to recover trained tensorflow model and do prediction on the hidden test set.</p>
+<p>To evaluate a model, a prediction Python script should be submitted through Codelab. As such, training and prediction must be separated. After training, a tensorflow graph should be saved to disk. Then the prediction script should restore the Tensorflow graph to make prediction on test data. This requires concise names and scopes for important nodes in the graph.
+</p>
 
 
 <h2>References</h2>
