@@ -9,8 +9,9 @@ Word embedding technique is originally introduced by  Bengio et al in <i> Bengio
 At the present time, a simplified architecture Skip-gram proposed by Mikolov et al in <i>Mikolov, Tomas, et al. "Efficient estimation of word representations in vector space." arXiv preprint arXiv:1301.3781 (2013).</i>  is widely used. The main difference between Skip-gram and NPLM is the first one removes tanh layer.
 </p>
 
-I implemented in Python both the NPLM model without Noise Contrastive Estimation (NCE) loss and skip-gram model with NCE loss. I use <a href="http://homepages.inf.ed.ac.uk/mlap/Data/EMNLP14/"> a collection of 284899 classic Chinese poems </a> as the corpus. The data is published by authors of paper <i>"Zhang, Xingxing, and Mirella Lapata. "Chinese Poetry Generation with Recurrent Neural Networks." EMNLP. 2014."</i>
 <p>
+I implemented in Python both the NPLM model without Noise Contrastive Estimation (NCE) loss and skip-gram model with NCE loss. I use <a href="http://homepages.inf.ed.ac.uk/mlap/Data/EMNLP14/"> a collection of 284899 classic Chinese poems </a> as the corpus. The data is published by authors of paper <i>"Zhang, Xingxing, and Mirella Lapata. "Chinese Poetry Generation with Recurrent Neural Networks." EMNLP. 2014."</i>
+</p>
 
 
 <p>Here are some experimental results of the Skip-gram model together with negative sampling implementation. Training each epoch took about 8 minutes. After about 5 epochs, the valid loss reaches the lowest. Below is a list of some character pairs with high cosine similarities. These characters are from 200 most frequent characters in corpus. According to my knowledge of Chinese classic poems, in many pairs, the two characters have high probability to appear in same context. As such, I think the model is implemented correctly. </p>
