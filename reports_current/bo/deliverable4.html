@@ -1,17 +1,27 @@
 <h1>Question Answering System Architecture</h1>
 
-<p>This deliverable is about the algorithm and the design of the Question Answering system. I first reviewed a paper <i>Wang, Shuohang, and Jing Jiang. "Machine comprehension using match-lstm and answer pointer." arXiv preprint arXiv:1608.07905 (2016).</i> Then I designed an implementation architecture based on the paper.</p>
+<p>This deliverable is about the algorithm and the system design of my Question Answering system. I first reviewed paper [1]. Then I designed an implementation architecture based on this paper.</p>
 
 <p>
-Wang and Jiang proposes an end-to-end neural network model on SQuAD dataset. While predicting, the inputs to the model are test data and pretrained word embeddings, the outputs are the predicted answers. While training, the inputs are train data and word embeddings, the outputs are losses to be optimised. GloVe is used to do word embedding. The word embedding is not updated during training.
+Wang and Jiang proposed an end-to-end neural network model[1] on SQuAD dataset[2]. While predicting, the inputs to the model are test data and pretrained word vectors, the outputs are the predicted answers. While training, the inputs are train data and word vectors, the outputs are losses to be optimised. The word vectors trained using GloVe algorithm[3] are used to do word embedding. The word vectors are not updated during training.
 </p>
 <p>
-Model architecture includes three layers-the LSTM preprocessing layer, the match-LSTM layer and the Answer Pointer(Ans-Ptr) layer. The LSTM preprocessing layer encodes passage to LSTM hidden states `H_p`, and encodes question to LSTM hidden states `H_q`. Using attention mechanism and a match LSTM, the match-LSTM layer encodes `H_p` and `H_q` to a new hidden state sequence `H_r`. Using a similar attention mechanism and an answer LSTM, the Ans-Ptr layer encodes `H_r` to another hidden state sequence `H_a`. However, in the Ans-Ptr layer, the weight vector `\beta _k` from the attention part is the target. By iterating between the attention part and the answer LSTM two times, we could get `\beta _0` and `\beta _1`. Let `a_s` denote start index of the answer, and `a_e` denote the end index, then we have `p(a|H^r) = p(a_s|H_r)p(a_r|H_r)=\beta _{0, a_s} \times \beta_{1, a_e}`, where `\beta_{k, j} = jth\ entry\ of \ \beta _k`. To train the model, the loss function `J(\theta) = -\frac{1}{N}\sum_{i=1}^{N} \log{p(a^n|H^r)} `is minimized.
+The model architecture includes three layers-the LSTM preprocessing layer, the match-LSTM layer and the Answer Pointer(Ans-Ptr) layer. The LSTM preprocessing layer encodes passage to LSTM hidden states `H_p`, and encodes question to LSTM hidden states `H_q`. Using attention mechanism and a match LSTM, the match-LSTM layer encodes `H_p` and `H_q` to a new hidden state sequence `H_r`. Using a similar attention mechanism and an answer LSTM, the Ans-Ptr layer encodes `H_r` to another hidden state sequence `H_a`. However, in the Ans-Ptr layer, the weight vector `\beta _k` from the attention part is the target. By iterating between the attention part and the answer LSTM two times, we could get `\beta _0` and `\beta _1`. Let `a_s` denote start index of the answer, and `a_e` denote the end index, then we have `p(a|H^r) = p(a_s|H_r)p(a_r|H_r)=\beta _{0, a_s} \times \beta_{1, a_e}`, where `\beta_{k, j} = jth\ entry\ of \ \beta _k`. To train the model, the loss function `J(\theta) = -\frac{1}{N}\sum_{i=1}^{N} \log{p(a^n|H^r)} `is minimized.
 </p>
 
 
 <p>
-In the design architecture, the training pipeline, validation pipeline and evaluation pipeline are separated. This not only separates development and deployment, but also make the large system easier to debug. Please see the image below for details.
+In the design architecture, the training pipeline, validation pipeline, and evaluation pipeline are separated. This not only separates development and deployment, but also make the large system easier to debug. Please see the image below for details of the training pipeline, the validation pipeline, and the evaluation pipeline.
 </p>
 
 <img src="bo/wangAndJiang.png" alt="" style="width:600px;height:600px;" />
+
+
+<h2>References</h2>
+
+<ol>
+ <li>Wang, Shuohang, and Jing Jiang. "Machine comprehension using match-lstm and answer pointer." arXiv preprint arXiv:1608.07905 (2016).</li>
+ <li>https://rajpurkar.github.io/SQuAD-explorer/</li>
+<li>Pennington, Jeffrey, Richard Socher, and Christopher Manning. "Glove: Global vectors for word representation." Proceedings of the 2014 conference on empirical methods in natural language processing (EMNLP). 2014.</li>
+ <li>https://nlp.stanford.edu/projects/glove/</li>
+</ol>
