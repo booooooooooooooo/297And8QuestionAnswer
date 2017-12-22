@@ -68,10 +68,10 @@ expr="\"${QUERY_STRING}\" != /print/" --> </p>
 <p>&#160;&#160;&#160;&#160;[<a href="?Bio.shtml">Bio</a>]</p>
 <p>&#160;&#160;&#160;&#160;[<a href="?Blog.html">Blog</a>]</p>
 <p>&#160;&#160;&#160;&#160;[<a href="?CS297Proposal.html">CS 297 Proposal</a>]</p>
-<p>&#160;&#160;&#160;&#160;[<a href="?bo/deliverable1.html">Deli #1: Back Propagation</a>]</p>
-<p>&#160;&#160;&#160;&#160;[<a href="?bo/deliverable2.html">Deli #2: Word Embedding</a>]</p>
-<p>&#160;&#160;&#160;&#160;[<a href="?bo/deliverable3.html">Deli #3: Setup</a>]</p>
-<p>&#160;&#160;&#160;&#160;[<a href="?bo/deliverable4.html">Deli #4: QA System Architecture</a>]</p>
+<p>&#160;&#160;&#160;&#160;[<a href="?bo/deliverable1.html">Del 1: Back Propagation</a>]</p>
+<p>&#160;&#160;&#160;&#160;[<a href="?bo/deliverable2.html">Del 2: Word Embedding</a>]</p>
+<p>&#160;&#160;&#160;&#160;[<a href="?bo/deliverable3.html">Del 3: Setup</a>]</p>
+<p>&#160;&#160;&#160;&#160;[<a href="?bo/deliverable4.html">Del 4: QA System Architecture</a>]</p>
 <p>&#160;&#160;&#160;&#160;[<a href="bo/CS297Report3pmDec212017.pdf">CS297Report [PDF]</a>]</p>
 
 <p><br /></p><p><br /></p><p><br /></p><p><br /></p><p><br /></p><p><br /></p><p><br /></p><p><br /></p>
