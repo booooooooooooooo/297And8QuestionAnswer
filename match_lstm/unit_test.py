@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import argparse
 
 
 def test_tensorflow():
@@ -127,10 +128,20 @@ def test_data():
     embed_s = 7
     data_util.getTrain( pass_ques_ans_file, glove_file, batch_s, embed_s)
 
-def test_import():
-    from ...download.evaluate_v1.1.py import *
+
+def test_preprocess():
+    from preprocess import Preprocessor
+    pass_ques_ans_json_path = "./data_raw/train-v1.1.json"
+    dir_to_save = "./data_token/"
+    preprocessor = Preprocessor()
+
+    preprocessor.analyze(pass_ques_ans_json_path)
+    # print preprocessor.preprocess_train(pass_ques_ans_json_path, dir_to_save)
+
 if __name__ == "__main__":
-    # test_tensorflow()
-    # sanity_model()
-    # test_data()
-    test_import()
+    parser = argparse.ArgumentParser(
+        description='Unit testing')
+    parser.add_argument('filename')
+    args = parser.parse_args()
+    if args.filename == "preprocess":
+        test_preprocess()
