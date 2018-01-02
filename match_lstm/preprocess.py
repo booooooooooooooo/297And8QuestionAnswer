@@ -4,7 +4,13 @@ from tqdm import tqdm
 import os
 import sys
 
+'''
+Caution!
+nltk.word_tokenize has some weird behaviours.
+First, it tokenizes ''word'' to "word". This case is not corrected in this code.
+Second, it tokenizes "word" to ``word''. This caseis corrected in this code.
 
+'''
 
 class Preprocessor:
     def tokenize(self, s):
@@ -15,6 +21,7 @@ class Preprocessor:
             s_token: list of unicode
         '''
         s_token = nltk.word_tokenize(s)
+        s_token = [token.replace("``", '"').replace("''", '"') for token in s_token]#nltk makes "aaa "word" bbb" to 'aaa', '``', 'word', '''', 'bbb'
         return s_token
 
     def c_id_to_token_id(self, context, context_token):
@@ -28,10 +35,20 @@ class Preprocessor:
         id_in_cur_token = 0
         for c_id, c in enumerate(context):
             if nltk.word_tokenize(c) != []:
-                if id_in_cur_token == len(context_token[token_id]):
-                    token_id += 1
-                    id_in_cur_token = 0
-                c_id_to_token_id_map[c_id] = token_id
+                try:
+                    if id_in_cur_token == len(context_token[token_id]):
+                        token_id += 1
+                        id_in_cur_token = 0
+                    c_id_to_token_id_map[c_id] = token_id
+                except IndexError as e:
+                    print context.encode('utf8')
+                    print len(context)
+                    print c_id
+                    print c.encode('utf8')
+                    print len(context_token)
+                    print token_id
+                    print id_in_cur_token
+                    print "======================="
                 id_in_cur_token += 1
 
         return c_id_to_token_id_map

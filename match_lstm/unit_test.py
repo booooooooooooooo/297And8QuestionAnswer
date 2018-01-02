@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import argparse
+import nltk
 
 
 def test_tensorflow():
@@ -135,8 +136,39 @@ def test_preprocess():
     dir_to_save = "./data_token/"
     preprocessor = Preprocessor()
 
-    preprocessor.analyze(pass_ques_ans_json_path)
-    # print preprocessor.preprocess_train(pass_ques_ans_json_path, dir_to_save)
+    # preprocessor.analyze(pass_ques_ans_json_path)
+    preprocessor.preprocess_train(pass_ques_ans_json_path, dir_to_save)
+
+def test_tokenizer():
+    with open("./output/failedPreprocessCase") as fh:
+        context = fh.readline()
+    context = context.decode('utf8')
+    context_token = nltk.word_tokenize(context)
+    context_token = [token.replace("``", '"').replace("''", '"') for token in context_token]#nltk makes "aaa "word" bbb" to 'aaa', '``', 'word', '''', 'bbb'
+
+    print type(context)
+    print context.encode('utf8')
+    print len(context)
+    for token in context_token:
+        print token.encode('utf8'),
+    print
+    print len(context_token)
+
+    c_id_to_token_id_map = {}
+    token_id = 0
+    id_in_cur_token = 0
+    for c_id, c in enumerate(context):
+        if nltk.word_tokenize(c) != []:
+            if id_in_cur_token == len(context_token[token_id]):
+                token_id += 1
+                id_in_cur_token = 0
+            c_id_to_token_id_map[c_id] = token_id
+            print c_id
+            print c.encode('utf8')
+            print id_in_cur_token
+            print context_token[token_id].encode('utf8')
+            print "======================="
+            id_in_cur_token += 1
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -145,3 +177,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.filename == "preprocess":
         test_preprocess()
+    elif args.filename == "tokenizer":
+        test_tokenizer()
