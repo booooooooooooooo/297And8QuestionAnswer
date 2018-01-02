@@ -169,6 +169,19 @@ def test_tokenizer():
             print context_token[token_id].encode('utf8')
             print "======================="
             id_in_cur_token += 1
+def test_midprocess():
+    from midprocess import Midprocessor
+
+    midprocessor = Midprocessor()
+
+    vocabulary = midprocessor.get_vocabulary("./data_token/passage", "./data_token/question")
+    print len(vocabulary)
+    # print vocabulary
+
+    small_glove_dic = midprocessor.get_small_size_glove(vocabulary, "./data_raw/glove.6B/glove.6B.50d.txt")
+    print len(small_glove_dic)
+    # print small_glove_dic
+    print small_glove_dic['the'.decode('utf8')]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -179,3 +192,5 @@ if __name__ == "__main__":
         test_preprocess()
     elif args.filename == "tokenizer":
         test_tokenizer()
+    elif args.filename == "midprocess":
+        test_midprocess()
