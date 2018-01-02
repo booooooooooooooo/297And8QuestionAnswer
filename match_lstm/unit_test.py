@@ -183,6 +183,15 @@ def test_midprocess():
     # print small_glove_dic
     print small_glove_dic['the'.decode('utf8')]
 
+    passage_vectors, question_vectors = midprocessor.get_batched_vectors("./data_token/passage", "./data_token/question", small_glove_dic)
+
+    print len(passage_vectors)
+    print len(passage_vectors[0])
+    print len(passage_vectors[0][0])
+    print len(question_vectors)
+    print len(question_vectors[0])
+    print len(question_vectors[0][0])
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Unit testing')

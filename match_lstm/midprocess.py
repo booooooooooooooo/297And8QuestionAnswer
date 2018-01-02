@@ -20,8 +20,6 @@ class Midprocessor:
         return vocabulary_utf8
 
     def get_small_size_glove(self, vocabulary, glove_path):
-
-
         glove_dic = {}
         with open(glove_path) as fh:
             for line in fh:
@@ -38,7 +36,50 @@ class Midprocessor:
         return small_glove_dic #lowercase key
 
     def get_batched_vectors(self, passage_file, question_file, small_glove_dic):
-        #pad of strip to same max_length
+        '''
+        Use zero vector to pad
+        Use zero vector if there is no glove vector
+        '''
+        #pad or strip each passage to same pass_max_length
+        pass_max_length = self.pass_max_length
+        pass_zero_vector = [0] * pass_max_length
 
+        passage_vectors = []
+        with open(passage_file) as fh:
+            for line in fh:
+                datum = []
+                token_list = line.split()
+                for i in range(0, min(len(token_list), pass_max_length)):
+                    token = token_list[i]
+                    word = token.lower()
+                    if word in small_glove_dic:
+                        datum.append(small_glove_dic[word])
+                    else:
+                        datum.append(pass_zero_vector)
+                for i in range(len(token_list), pass_max_length):
+                    datum.append(pass_zero_vector)
+                passage_vectors.append(datum)
+        #pad or strip each question to same ques_max_length
+        ques_max_length = self.ques_max_length
+        ques_zero_vector = [0] * ques_max_length
+
+        question_vectors = []
+        with open(question_file) as fh:
+            for line in fh:
+                datum = []
+                token_list = line.split()
+                for i in range(0, min(len(token_list), ques_max_length)):
+                    token = token_list[i]
+                    word = token.lower()
+                    if word in small_glove_dic:
+                        datum.append(small_glove_dic[word])
+                    else:
+                        datum.append(ques_zero_vector)
+                for i in range(len(token_list), ques_max_length):
+                    datum.append(ques_zero_vector)
+                question_vectors.append(datum)
         #split to batches
-        return
+        batch_size = self.batch_size
+        #TODO
+
+        return passage_vectors, question_vectors
