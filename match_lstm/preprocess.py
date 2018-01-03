@@ -41,6 +41,7 @@ class Preprocessor:
                         id_in_cur_token = 0
                     c_id_to_token_id_map[c_id] = token_id
                 except IndexError as e:
+                    c_id_to_token_id_map[c_id] = token_id - 1#make c_id_to_token_id_map a wrong but working map
                     print context.encode('utf8')
                     print len(context)
                     print c_id
@@ -55,7 +56,7 @@ class Preprocessor:
 
 
 
-    def preprocess_train(self, pass_ques_ans_json_path, dir_to_save):
+    def preprocess_pass_ques_ans_json(self, pass_ques_ans_json_path):
         '''
         Splits out pass, ques and ans from json file.
 
@@ -64,41 +65,68 @@ class Preprocessor:
             dir_to_save
 
         '''
+        passage_list = []
+        question_list = []
+        answer_text_list = []
+        answer_span_list = []
         with open(pass_ques_ans_json_path) as fh:
             data_json = json.load(fh)
 
-        with open(os.path.join(dir_to_save, 'passage'), 'w') as passage_file, \
-             open(os.path.join(dir_to_save, 'question'), 'w') as question_file, \
-             open(os.path.join(dir_to_save, 'answer_text'), 'w') as ans_text_file, \
-             open(os.path.join(dir_to_save, 'answer_span'), 'w') as ans_span_file:
-            for article_id in tqdm(xrange(len(data_json['data'])), desc="Preprocessing {}".format(pass_ques_ans_json_path)):
-                paragraphs = data_json['data'][article_id]['paragraphs']
-                for paragraph_id in xrange(len(paragraphs)):
-                    context = paragraphs[paragraph_id]['context']
-                    context_token = self.tokenize(context)
-                    c_id_to_token_id_map = self.c_id_to_token_id(context, context_token)
-                    qas = paragraphs[paragraph_id]['qas']
-                    for qas_id in range(len(qas)):
-                        question = qas[qas_id]['question']
-                        question_token = self.tokenize(question)
-                        answers = qas[qas_id]['answers']
-                        for answer_id in xrange(len(answers)):
-                            text = answers[answer_id]['text']
-                            answer_start = answers[answer_id]['answer_start']
-                            answer_end = answer_start + len(text) - 1
-                            a_s = c_id_to_token_id_map[answer_start]
-                            a_e = c_id_to_token_id_map[answer_end]
-                            #write to file
-                            passage_file.write(' '.join([token.encode('utf8') for token in context_token]) + '\n')
-                            question_file.write(' '.join([token.encode('utf8') for token in question_token]) + '\n')
-                            ans_text_file.write(text.encode('utf8') + '\n')
-                            ans_span_file.write(' '.join([str(a_s), str(a_e)]) + '\n')
-                            # print context_token
-                            # print question_token
-                            # print text
-                            # print [a_s, a_e]
 
-    def analyze(self, pass_ques_ans_json_path):
+        for article_id in tqdm(xrange(len(data_json['data'])), desc="Preprocessing {}".format(pass_ques_ans_json_path)):
+            paragraphs = data_json['data'][article_id]['paragraphs']
+            for paragraph_id in xrange(len(paragraphs)):
+                context = paragraphs[paragraph_id]['context']
+                context_token = self.tokenize(context)
+                c_id_to_token_id_map = self.c_id_to_token_id(context, context_token)
+                qas = paragraphs[paragraph_id]['qas']
+                for qas_id in range(len(qas)):
+                    question = qas[qas_id]['question']
+                    question_token = self.tokenize(question)
+                    answers = qas[qas_id]['answers']
+                    for answer_id in xrange(len(answers)):
+                        text = answers[answer_id]['text']
+                        answer_start = answers[answer_id]['answer_start']
+                        answer_end = answer_start + len(text) - 1
+                        a_s = c_id_to_token_id_map[answer_start]
+                        a_e = c_id_to_token_id_map[answer_end]
+
+                        passage_list.append(context_token)
+                        question_list.append(question_token)
+                        answer_text_list.append(text)#untokenized
+                        answer_span_list.append([str(a_s), str(a_e)])
+
+                        # print context_token
+                        # print question_token
+                        # print text
+                        # print [a_s, a_e]
+
+        return passage_list, question_list, answer_text_list, answer_span_list
+
+    def preprocess_train_json_to_train_and_valid_token(self, pass_ques_ans_json_path, dir_to_save, train_percent):
+        passage_list, question_list, answer_text_list, answer_span_list = self.preprocess_pass_ques_ans_json(pass_ques_ans_json_path)
+        split_index = int ( len(passage_list) * train_percent )
+        with open(os.path.join(dir_to_save, 'train.passage'), 'w') as passage_file, \
+             open(os.path.join(dir_to_save, 'train.question'), 'w') as question_file, \
+             open(os.path.join(dir_to_save, 'train.answer_text'), 'w') as ans_text_file, \
+             open(os.path.join(dir_to_save, 'train.answer_span'), 'w') as ans_span_file:
+             for i in tqdm(range(0, split_index), desc="Writing my train tokens to {} folder".format(dir_to_save)):
+                 passage_file.write(' '.join([token.encode('utf8') for token in passage_list[i]]) + '\n')
+                 question_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
+                 ans_text_file.write(answer_text_list[i].encode('utf8') + '\n')
+                 ans_span_file.write(' '.join(answer_span_list[i]) + '\n')
+
+        with open(os.path.join(dir_to_save, 'valid.passage'), 'w') as passage_file, \
+             open(os.path.join(dir_to_save, 'valid.question'), 'w') as question_file, \
+             open(os.path.join(dir_to_save, 'valid.answer_text'), 'w') as ans_text_file, \
+             open(os.path.join(dir_to_save, 'valid.answer_span'), 'w') as ans_span_file:
+             for i in tqdm(range(split_index, len(passage_list)), desc="Writing my valid tokens to {} folder".format(dir_to_save)):
+                 passage_file.write(' '.join([token.encode('utf8') for token in passage_list[i]]) + '\n')
+                 question_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
+                 ans_text_file.write(answer_text_list[i].encode('utf8') + '\n')
+                 ans_span_file.write(' '.join(answer_span_list[i]) + '\n')
+
+    def analyze_pass_ques_ans_json(self, pass_ques_ans_json_path):
         count = 0
         pass_max_length = 0
         pass_ave_length = 0

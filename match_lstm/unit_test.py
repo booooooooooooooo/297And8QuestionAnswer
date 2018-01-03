@@ -132,12 +132,13 @@ def test_data():
 
 def test_preprocess():
     from preprocess import Preprocessor
-    pass_ques_ans_json_path = "./data_raw/train-v1.1.json"
+    pass_ques_ans_json_path = "./data_raw/fake_pass_ques_ans.json"
     dir_to_save = "./data_token/"
+    train_percent = 0.9
+
     preprocessor = Preprocessor()
 
-    # preprocessor.analyze(pass_ques_ans_json_path)
-    preprocessor.preprocess_train(pass_ques_ans_json_path, dir_to_save)
+    preprocessor.preprocess_train_json_to_train_and_valid_token(pass_ques_ans_json_path, dir_to_save, train_percent)
 
 def test_tokenizer():
     with open("./output/failedPreprocessCase") as fh:
@@ -174,23 +175,13 @@ def test_midprocess():
 
     midprocessor = Midprocessor()
 
-    vocabulary = midprocessor.get_vocabulary("./data_token/passage", "./data_token/question")
-    # print len(vocabulary)
-    # print vocabulary
 
-    small_glove_dic = midprocessor.get_small_size_glove(vocabulary, "./data_raw/glove.6B/glove.6B.50d.txt")
-    # print len(small_glove_dic)
-    # print small_glove_dic
-    # print small_glove_dic['the'.decode('utf8')]
+    passage_file = "./data_token/train.passage"
+    question_file ="./data_token/train.question"
+    answer_span_file ="./data_token/train.answer_span"
+    glove_path = "./data_raw/glove.6B/glove.6B.50d.txt"
 
-    batches, passage_vectors, question_vectors, answer_spans = midprocessor.get_batched_vectors("./data_token/passage", "./data_token/question", "./data_token/answer_span", small_glove_dic)
-
-    print len(batches)
-    print len(passage_vectors)
-    print len(question_vectors)
-    print len(answer_spans)
-
-    print len(batches[len(batches) - 1][0])
+    midprocessor.get_padded_vectorized_and_batched(passage_file, question_file, answer_span_file, glove_path )
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

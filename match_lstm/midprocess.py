@@ -1,4 +1,5 @@
 import numpy as np
+from tqdm import tqdm
 
 class Midprocessor:
     def __init__(self):
@@ -20,9 +21,16 @@ class Midprocessor:
         return vocabulary_utf8
 
     def get_small_size_glove(self, vocabulary, glove_path):
+        #check whether glove_path contains the word vectors with self.embed_size
+        with open(glove_path) as fh:
+            line = fh.readline()
+            line_list = line.split()
+            if len(line_list) - 1 != self.embed_size:
+                raise ValueError('Glove file does not match target embed_size')
+
         glove_dic = {}
         with open(glove_path) as fh:
-            for line in fh:
+            for line in tqdm(fh, desc="Preprocessing {}".format(glove_path)):
                 line_list = line.split()
                 word = line_list[0].decode('utf8')#decode
                 vector = line_list[1:]
@@ -97,10 +105,15 @@ class Midprocessor:
         answer_spans += [answer_span_fake for i in xrange(amount)]
 
         batches = []
-        for i in range(0, len(passage_vectors) , batch_size):
+        for i in tqdm(range(0, len(passage_vectors) , batch_size), desc="Batching") :
             batch_passage = passage_vectors[i: i + batch_size]
             batch_question = question_vectors[i: i + batch_size]
             batch_answer_span = answer_spans[i: i + batch_size]
             batches.append((batch_passage, batch_question, batch_answer_span))
 
         return batches, passage_vectors, question_vectors, answer_spans
+    def get_padded_vectorized_and_batched(self, passage_file, question_file, answer_span_file, glove_path ):
+        vocabulary = self.get_vocabulary(passage_file, question_file)
+        small_glove_dic = self.get_small_size_glove(vocabulary, glove_path)
+        batches, _, _, _ = self.get_batched_vectors(passage_file, question_file, answer_span_file, small_glove_dic)
+        #TODO: save feed-ready batches to disk
