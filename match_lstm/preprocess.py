@@ -70,7 +70,7 @@ class Preprocessor:
         with open(os.path.join(dir_to_save, 'passage'), 'w') as passage_file, \
              open(os.path.join(dir_to_save, 'question'), 'w') as question_file, \
              open(os.path.join(dir_to_save, 'answer_text'), 'w') as ans_text_file, \
-             open(os.path.join(dir_to_save, 'answer_apan'), 'w') as ans_span_file:
+             open(os.path.join(dir_to_save, 'answer_span'), 'w') as ans_span_file:
             for article_id in tqdm(xrange(len(data_json['data'])), desc="Preprocessing {}".format(pass_ques_ans_json_path)):
                 paragraphs = data_json['data'][article_id]['paragraphs']
                 for paragraph_id in xrange(len(paragraphs)):

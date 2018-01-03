@@ -183,7 +183,7 @@ def test_midprocess():
     # print small_glove_dic
     print small_glove_dic['the'.decode('utf8')]
 
-    passage_vectors, question_vectors = midprocessor.get_batched_vectors("./data_token/passage", "./data_token/question", small_glove_dic)
+    passage_vectors, question_vectors = midprocessor.get_batched_vectors("./data_token/passage", "./data_token/question", "./data_token/answer_span", small_glove_dic)
 
     print len(passage_vectors)
     print len(passage_vectors[0])

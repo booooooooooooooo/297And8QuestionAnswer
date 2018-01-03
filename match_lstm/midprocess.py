@@ -35,15 +35,19 @@ class Midprocessor:
                 small_glove_dic[word] = glove_dic[word]
         return small_glove_dic #lowercase key
 
-    def get_batched_vectors(self, passage_file, question_file, small_glove_dic):
+    def get_batched_vectors(self, passage_file, question_file, answer_span_file, small_glove_dic):
         '''
         Use zero vector to pad
         Use zero vector if there is no glove vector
         '''
-        #pad or strip each passage to same pass_max_length
+        embed_size= self.embed_size
         pass_max_length = self.pass_max_length
-        pass_zero_vector = [0] * pass_max_length
+        ques_max_length = self.ques_max_length
+        batch_size = self.batch_size
 
+        zero_vector = [0] * embed_size
+
+        #pad or strip each passage to same pass_max_length
         passage_vectors = []
         with open(passage_file) as fh:
             for line in fh:
@@ -55,14 +59,11 @@ class Midprocessor:
                     if word in small_glove_dic:
                         datum.append(small_glove_dic[word])
                     else:
-                        datum.append(pass_zero_vector)
+                        datum.append(zero_vector)
                 for i in range(len(token_list), pass_max_length):
-                    datum.append(pass_zero_vector)
+                    datum.append(zero_vector)
                 passage_vectors.append(datum)
         #pad or strip each question to same ques_max_length
-        ques_max_length = self.ques_max_length
-        ques_zero_vector = [0] * ques_max_length
-
         question_vectors = []
         with open(question_file) as fh:
             for line in fh:
@@ -74,12 +75,14 @@ class Midprocessor:
                     if word in small_glove_dic:
                         datum.append(small_glove_dic[word])
                     else:
-                        datum.append(ques_zero_vector)
+                        datum.append(zero_vector)
                 for i in range(len(token_list), ques_max_length):
-                    datum.append(ques_zero_vector)
+                    datum.append(zero_vector)
                 question_vectors.append(datum)
         #split to batches
-        batch_size = self.batch_size
+        passage_fake = [zero_vector for i in xrange(pass_max_length)]
+        question_fake = [zero_vector for i in xrange(ques_max_length)]
+
         #TODO
 
         return passage_vectors, question_vectors
