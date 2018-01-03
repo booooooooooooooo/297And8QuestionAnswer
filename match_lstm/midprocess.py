@@ -1,5 +1,7 @@
 import numpy as np
 from tqdm import tqdm
+import pickle
+import os
 
 class Midprocessor:
     def __init__(self):
@@ -112,8 +114,11 @@ class Midprocessor:
             batches.append((batch_passage, batch_question, batch_answer_span))
 
         return batches, passage_vectors, question_vectors, answer_spans
-    def get_padded_vectorized_and_batched(self, passage_file, question_file, answer_span_file, glove_path ):
+    def get_padded_vectorized_and_batched(self, passage_file, question_file, answer_span_file, glove_path, batches_file ):
         vocabulary = self.get_vocabulary(passage_file, question_file)
         small_glove_dic = self.get_small_size_glove(vocabulary, glove_path)
         batches, _, _, _ = self.get_batched_vectors(passage_file, question_file, answer_span_file, small_glove_dic)
-        #TODO: save feed-ready batches to disk
+        if not os.path.isdir(os.path.dirname(batches_file)):
+            os.makedirs(os.path.dirname(batches_file) )
+        with open(batches_file, 'w') as f:
+            pickle.dump(batches, f, pickle.HIGHEST_PROTOCOL)

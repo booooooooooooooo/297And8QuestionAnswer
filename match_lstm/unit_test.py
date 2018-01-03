@@ -180,8 +180,22 @@ def test_midprocess():
     question_file ="./data_token/train.question"
     answer_span_file ="./data_token/train.answer_span"
     glove_path = "./data_raw/glove.6B/glove.6B.50d.txt"
+    batches_file = "./data_feed_ready/train.batches"
 
-    midprocessor.get_padded_vectorized_and_batched(passage_file, question_file, answer_span_file, glove_path )
+    midprocessor.get_padded_vectorized_and_batched(passage_file, question_file, answer_span_file, glove_path, batches_file)
+def test_train():
+    from train import get_batches
+    batches_file = "./data_feed_ready/train.batches"
+    batches = get_batches(batches_file)
+    print len(batches)
+    print len(batches[0])
+    print len(batches[0][0])
+    print len(batches[0][1])
+    print len(batches[0][2])
+
+    print len(batches[0][0][0])
+    print len(batches[0][1][0])
+    print len(batches[0][2][0])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -194,3 +208,5 @@ if __name__ == "__main__":
         test_tokenizer()
     elif args.filename == "midprocess":
         test_midprocess()
+    elif args.filename == "train":
+        test_train()
