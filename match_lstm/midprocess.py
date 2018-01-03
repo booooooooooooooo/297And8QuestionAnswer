@@ -90,14 +90,14 @@ class Midprocessor:
         question_fake = [zero_vector for i in xrange(ques_max_length)]
         answer_span_fake = [0, 0]
 
-        amount = batch_size - len(passage_vectors) * batch_size
+        amount = batch_size - len(passage_vectors) % batch_size
 
         passage_vectors += [passage_fake for i in xrange(amount)]
         question_vectors += [question_fake for i in xrange(amount)]
         answer_spans += [answer_span_fake for i in xrange(amount)]
 
         batches = []
-        for i in range(0, len(passage_vectors) - batch_size, batch_size):
+        for i in range(0, len(passage_vectors) , batch_size):
             batch_passage = passage_vectors[i: i + batch_size]
             batch_question = question_vectors[i: i + batch_size]
             batch_answer_span = answer_spans[i: i + batch_size]

@@ -190,7 +190,8 @@ def test_midprocess():
     print len(question_vectors)
     print len(answer_spans)
 
-    print batches[0][0]
+    print len(batches[len(batches) - 1][0])
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Unit testing')
