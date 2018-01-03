@@ -47,7 +47,7 @@ class Midprocessor:
 
         zero_vector = [0] * embed_size
 
-        #pad or strip each passage to same pass_max_length
+        #pad or strip each passage to same pass_max_length, vectorization
         passage_vectors = []
         with open(passage_file) as fh:
             for line in fh:
@@ -63,7 +63,7 @@ class Midprocessor:
                 for i in range(len(token_list), pass_max_length):
                     datum.append(zero_vector)
                 passage_vectors.append(datum)
-        #pad or strip each question to same ques_max_length
+        #pad or strip each question to same ques_max_length, vectorization
         question_vectors = []
         with open(question_file) as fh:
             for line in fh:
@@ -79,10 +79,28 @@ class Midprocessor:
                 for i in range(len(token_list), ques_max_length):
                     datum.append(zero_vector)
                 question_vectors.append(datum)
+        #read in answer_span
+        answer_spans = []
+        with open(answer_span_file) as fh:
+            for line in fh:
+                datum = line.split()
+                answer_spans.append(datum)
         #split to batches
         passage_fake = [zero_vector for i in xrange(pass_max_length)]
         question_fake = [zero_vector for i in xrange(ques_max_length)]
+        answer_span_fake = [0, 0]
 
-        #TODO
+        amount = batch_size - len(passage_vectors) * batch_size
 
-        return passage_vectors, question_vectors
+        passage_vectors += [passage_fake for i in xrange(amount)]
+        question_vectors += [question_fake for i in xrange(amount)]
+        answer_spans += [answer_span_fake for i in xrange(amount)]
+
+        batches = []
+        for i in range(0, len(passage_vectors) - batch_size, batch_size):
+            batch_passage = passage_vectors[i: i + batch_size]
+            batch_question = question_vectors[i: i + batch_size]
+            batch_answer_span = answer_spans[i: i + batch_size]
+            batches.append((batch_passage, batch_question, batch_answer_span))
+
+        return batches, passage_vectors, question_vectors, answer_spans

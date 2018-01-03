@@ -175,23 +175,22 @@ def test_midprocess():
     midprocessor = Midprocessor()
 
     vocabulary = midprocessor.get_vocabulary("./data_token/passage", "./data_token/question")
-    print len(vocabulary)
+    # print len(vocabulary)
     # print vocabulary
 
     small_glove_dic = midprocessor.get_small_size_glove(vocabulary, "./data_raw/glove.6B/glove.6B.50d.txt")
-    print len(small_glove_dic)
+    # print len(small_glove_dic)
     # print small_glove_dic
-    print small_glove_dic['the'.decode('utf8')]
+    # print small_glove_dic['the'.decode('utf8')]
 
-    passage_vectors, question_vectors = midprocessor.get_batched_vectors("./data_token/passage", "./data_token/question", "./data_token/answer_span", small_glove_dic)
+    batches, passage_vectors, question_vectors, answer_spans = midprocessor.get_batched_vectors("./data_token/passage", "./data_token/question", "./data_token/answer_span", small_glove_dic)
 
+    print len(batches)
     print len(passage_vectors)
-    print len(passage_vectors[0])
-    print len(passage_vectors[0][0])
     print len(question_vectors)
-    print len(question_vectors[0])
-    print len(question_vectors[0][0])
+    print len(answer_spans)
 
+    print batches[0][0]
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Unit testing')
