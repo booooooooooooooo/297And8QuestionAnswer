@@ -106,9 +106,12 @@ class Model:
             z: (batch_size, 2 * num_units)
         '''
         batch_size = self.batch_size
+        pass_max_length = self.pass_max_length
+        ques_max_length = self.ques_max_length
+        embed_size = self.embed_size
         num_units = self.num_units
 
-        ques_mask_matrix = self.ques_mask_matrix
+        ques_sequence_length = self.ques_sequence_length
 
         W_q = self.W_q
         W_p = self.W_p
@@ -117,32 +120,30 @@ class Model:
         w = self.w
         b = self.b
 
+        #get G
         G_1 = tf.matmul( tf.reshape(H_q, (-1, num_units)), W_q)#(batch_size * ques_max_length, num_units)
         G_1 = tf.reshape(G_1, (batch_size, -1, num_units))#(batch_size, ques_max_length, num_units)
-        G_1 = tf.transpose(G_1, (0, 2, 1))#(batch_size, num_units, ques_max_length)
-        G_1 = tf.reshape(G_1, (batch_size * num_units, -1))#(batch_size * num_units, ques_max_length)
         G_2 = tf.matmul(h_p, W_p) + tf.matmul(h_r, W_r) + b_p #(batch_size, num_units)
-        G_2 = tf.reshape(G_2, (-1, 1))#(batch_size * num_units, 1)
-        G = tf.nn.tanh( G_1 + G_2 )#(batch_size * num_units, ques_max_length)
-        G = tf.reshape(G, (batch_size, num_units, -1))#(batch_size, num_units, ques_max_length)
-        G = tf.transpose(G, (0, 2, 1))#(batch_size, ques_max_length, num_units)
+        G_2 = tf.tile(G_2, ques_max_length)#(batch_size, num_units, ques_max_length)
+        G_2 = tf.transpose(G_2, (batch_size, ques_max_length, num_units))#(batch_size, ques_max_length, num_units)
+        G = tf.nn.tanh( G_1 + G_2 )#(batch_size, ques_max_length, num_units)
+        #get alpha
         G = tf.reshape(G, (-1, num_units))#(batch_size * ques_max_length, num_units)
-
         alpha = tf.matmul(G, tf.reshape(w, (-1, 1))) + b #(batch_size * ques_max_length, 1)
         alpha = tf.reshape(alpha, (batch_size, -1))#(batch_size, ques_max_length)
-        #masking
-        alpha = alpha * ques_mask_matrix#(batch_size, ques_max_length)
-        #softmax
+        #TODO: test tf.sequence_mask
+        ques_sequence_mask = tf.sequence_mask( ques_sequence_length,ques_max_length, dtype=tf.int32)#(batch_size, ques_max_length)
+        alpha = alpha * ques_sequence_mask#(batch_size, ques_max_length)
         alpha = tf.nn.softmax(alpha)#(batch_size, ques_max_length)
-        alpha = tf.reshape(alpha, (batch_size, -1, 1))#(batch_size, ques_max_length, 1)
-
-        att_state = tf.matmul(tf.transpose(H_q, (0, 2, 1)), alpha)#(batch_size, num_units, 1)
+        #get att_state
+        alpha = tf.reshape(alpha, (batch_size, 1, ques_max_length))#(batch_size, 1, ques_max_length)
+        att_state = tf.matmul(alpha, H_q)#(batch_size, 1, num_units)
         att_state = tf.reshape(att_state, (batch_size, num_units))#(batch_size, num_units)
-
-
+        #get z
         z = tf.concat([h_p, att_state], 1)#(batch_size, 2 * num_units)
 
         return z
+
     def __match_one_direct(self, H_p, H_q, direction):
         '''
         paras

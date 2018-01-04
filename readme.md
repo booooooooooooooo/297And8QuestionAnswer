@@ -3,7 +3,7 @@ Always run code in 297And8QuestionAnswer!
 
 docker run -it --rm -p 8888:8888 -v \`pwd\`:/297And8QuestionAnswer  masterproject_2
 
-exec -i -t 5b0bb9b8547d  /bin/bash
+docker exec -i -t 5b0bb9b8547d  /bin/bash
 
 docker build -t friendlyname .  # Create image using this directory's Dockerfile
 
