@@ -191,18 +191,21 @@ class Model:
         return
             H_r:        (batch_size, pass_max_length, 2 * num_units)
         '''
-        H_r_right = self.match_one_direct(H_p, H_q, "right")#(batch_size, pass_max_length, num_units)
-        H_r_left = self.match_one_direct(H_p, H_q, "left")#(batch_size, pass_max_length, num_units)
-        #get mask
         num_units = self.num_units
         passage_sequence_length = self.passage_sequence_length#(batch_size,)
         pass_max_length = self.pass_max_length
+        batch_size = self.batch_size
+
+        #get attention encoding or both directions
+        H_r_right = self.match_one_direct(H_p, H_q, "right")#(batch_size, pass_max_length, num_units)
+        H_r_left = self.match_one_direct(H_p, H_q, "left")#(batch_size, pass_max_length, num_units)
+        #get mask
         passage_sequence_mask = tf.sequence_mask(passage_sequence_length, pass_max_length, dtype=tf.int32)#(batch_size, pass_max_length)
         passage_encoding_mask = tf.reshape(passage_sequence_mask, (batch_size, pass_max_length, 1))#(batch_size, pass_max_length, 1)
         passage_encoding_mask = tf.tile(passage_encoding_mask, (1,1, num_units))#(batch_size, pass_max_length, num_units)
         #masking
-        H_r_right = H_r_right * passage_encoding_mask
-        H_r_left = H_r_left * passage_encoding_mask
+        H_r_right = H_r_right * tf.cast(passage_encoding_mask, tf.float32)
+        H_r_left = H_r_left * tf.cast(passage_encoding_mask, tf.float32)
         #concat
         H_r = tf.concat([H_r_right, H_r_left], 2)#(batch_size, pass_max_length, 2 * num_units)
 
