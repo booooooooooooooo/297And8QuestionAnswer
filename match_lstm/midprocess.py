@@ -3,6 +3,8 @@ from tqdm import tqdm
 import pickle
 import os
 
+#TODO: make passage_mask and ques_mask
+
 class Midprocessor:
     def __init__(self):
         self.pass_max_length = 766

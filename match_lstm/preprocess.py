@@ -5,11 +5,9 @@ import os
 import sys
 
 '''
-Caution!
 nltk.word_tokenize has some weird behaviours.
 First, it tokenizes ''word'' to "word". This case is not corrected in this code.
 Second, it tokenizes "word" to ``word''. This caseis corrected in this code.
-
 '''
 
 class Preprocessor:
