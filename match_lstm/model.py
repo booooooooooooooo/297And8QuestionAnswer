@@ -4,6 +4,7 @@ Used by tune.py to train better tensor graph.
 import tensorflow as tf
 
 from util import *
+from tqdm import tqdm
 
 '''
 TODO:
@@ -30,18 +31,18 @@ class Model:
         self.num_units = num_units
         #build the graph
         self.build()
-    def __add_placeholder(self):
+    def add_placeholder(self):
         batch_size = self.batch_size
         pass_max_length = self.pass_max_length
         ques_max_length = self.ques_max_length
         embed_size = self.embed_size
 
-        self.ques = tf.placeholder(tf.int32, shape = (batch_size, ques_max_length, embed_size), name = "question_placeholder")
+        self.ques = tf.placeholder(tf.float32, shape = (batch_size, ques_max_length, embed_size), name = "question_placeholder")
         self.ques_sequence_length = tf.placeholder(tf.int32, shape = (batch_size), name = "question_sequence_length_placeholder")
-        self.passage = tf.placeholder(tf.int32, shape = (batch_size, pass_max_length, embed_size), name = "passage_placeholder")
+        self.passage = tf.placeholder(tf.float32, shape = (batch_size, pass_max_length, embed_size), name = "passage_placeholder")
         self.passage_sequence_length = tf.placeholder(tf.int32, shape = (batch_size), name = "passage_sequence_length_placeholder")
         self.ans = tf.placeholder(tf.int32, shape = (batch_size, 2), name = "answer_span_placeholder")
-    def __add_variables(self):
+    def add_variables(self):
         embed_size = self.embed_size
         num_units = self.num_units
 
@@ -51,7 +52,7 @@ class Model:
         with tf.variable_scope("preprocessing_layer"):
             self.lstm_pre = tf.contrib.rnn.BasicLSTMCell(num_units)
         #Match-LSTM Layer
-        with tf.variable_scope("match_ayer"):
+        with tf.variable_scope("match_layer"):
             with tf.variable_scope("Attention"):
                 self.W_q = tf.get_variable("W_q", initializer = init, shape = (num_units, num_units), dtype = tf.float32)
                 self.W_p = tf.get_variable("W_p", initializer = init, shape = (num_units, num_units), dtype = tf.float32)
@@ -71,7 +72,7 @@ class Model:
                 self.c = tf.get_variable("c", initializer = init, shape = (), dtype = tf.float32)
             with tf.variable_scope("LSTM"):
                 self.lstm_ans = tf.contrib.rnn.BasicLSTMCell(num_units)
-    def __pre_layer(self):
+    def pre_layer(self):
         '''
         return:
             H_p: (batch_size, pass_max_length, num_units)
@@ -96,7 +97,7 @@ class Model:
                                            dtype=tf.float32)
         return H_p, H_q
 
-    def __match_attention(self, H_q, h_p, h_r):
+    def match_attention(self, H_q, h_p, h_r):
         '''
         paras:
             H_q: (batch_size, ques_max_length, num_units)
@@ -124,16 +125,15 @@ class Model:
         G_1 = tf.matmul( tf.reshape(H_q, (-1, num_units)), W_q)#(batch_size * ques_max_length, num_units)
         G_1 = tf.reshape(G_1, (batch_size, -1, num_units))#(batch_size, ques_max_length, num_units)
         G_2 = tf.matmul(h_p, W_p) + tf.matmul(h_r, W_r) + b_p #(batch_size, num_units)
-        G_2 = tf.tile(G_2, ques_max_length)#(batch_size, num_units, ques_max_length)
-        G_2 = tf.transpose(G_2, (batch_size, ques_max_length, num_units))#(batch_size, ques_max_length, num_units)
+        G_2 = tf.reshape(G_2, (batch_size, 1, num_units))#(batch_size, 1, num_units)
+        G_2 = tf.tile(G_2, (1, ques_max_length, 1))#(batch_size, ques_max_length, num_units)
         G = tf.nn.tanh( G_1 + G_2 )#(batch_size, ques_max_length, num_units)
         #get alpha
         G = tf.reshape(G, (-1, num_units))#(batch_size * ques_max_length, num_units)
         alpha = tf.matmul(G, tf.reshape(w, (-1, 1))) + b #(batch_size * ques_max_length, 1)
         alpha = tf.reshape(alpha, (batch_size, -1))#(batch_size, ques_max_length)
-        #TODO: test tf.sequence_mask
-        ques_sequence_mask = tf.sequence_mask( ques_sequence_length,ques_max_length, dtype=tf.int32)#(batch_size, ques_max_length)
-        alpha = alpha * ques_sequence_mask#(batch_size, ques_max_length)
+        ques_sequence_mask = tf.sequence_mask(ques_sequence_length,ques_max_length, dtype=tf.int32)#(batch_size, ques_max_length)
+        alpha = alpha * tf.cast(ques_sequence_mask, tf.float32)#(batch_size, ques_max_length)
         alpha = tf.nn.softmax(alpha)#(batch_size, ques_max_length)
         #get att_state
         alpha = tf.reshape(alpha, (batch_size, 1, ques_max_length))#(batch_size, 1, ques_max_length)
@@ -144,13 +144,14 @@ class Model:
 
         return z
 
-    def __match_one_direct(self, H_p, H_q, direction):
+    def match_one_direct(self, H_p, H_q, direction):
         '''
         paras
-            H_p:        (None, pass_max_length, num_units)
-            H_q:        (None, ques_max_length, num_units)
+            H_p:        (batch_size, pass_max_length, num_units)
+            H_q:        (batch_size, ques_max_length, num_units)
+            direction:  "right" or "left"
         return
-            H_r_one_direct:        (None, pass_max_length, num_units)
+            H_r:        (batch_size, pass_max_length, num_units)
         '''
 
         num_units = self.num_units
@@ -160,47 +161,54 @@ class Model:
 
         h_p_lst = tf.unstack(H_p, axis = 1)
 
+        lstm_match = self.lstm_match
+        stateTuple = lstm_match.zero_state(batch_size, tf.float32)
+
         h_r_lst = []
-        with tf.variable_scope("match_ayer"):
-            with tf.variable_scope("LSTM"):
-                lstm_match = self.lstm_match
-                stateTuple = lstm_match.zero_state(batch_size, tf.float32)
-                if direction == "right":
-                    for i in xrange(pass_max_length):
-                        h_p = h_p_lst[i]
-                        z_i = self.match_attention(H_q, h_p, stateTuple[1])
-                        _, stateTuple = lstm_match(z_i, stateTuple)
-                        h_r_lst.append(stateTuple[1])
-                elif direction == "left":
-                    #TODO
-                else:
-                    raise ValueError('direction must be right or left')
-        H_r_one_direct = tf.stack(h_r_lst)# (pass_max_length, None, num_units)
-        H_r_one_direct = tf.transpose(H_r_one_direct, (1, 0, 2))# (None, pass_max_length, num_units)
-        return H_r_one_direct
-    def __match_layer(self, H_p, H_p_rev, H_q):
+        if direction == "right":
+            for i in tqdm(xrange(pass_max_length), desc = "Buding matching layer on right direction"):
+                h_p = h_p_lst[i]
+                z_i = self.match_attention(H_q, h_p, stateTuple[1])
+                _, stateTuple = lstm_match(z_i, stateTuple)
+                h_r_lst.append(stateTuple[1])
+        elif direction == "left":
+            for i in tqdm(range(pass_max_length - 1, -1, -1), desc = "Buding matching layer on left direction"):
+                h_p = h_p_lst[i]
+                z_i = self.match_attention(H_q, h_p, stateTuple[1])
+                _, stateTuple = lstm_match(z_i, stateTuple)
+                h_r_lst.append(stateTuple[1])
+            h_r_lst = h_r_lst[::-1]
+        else:
+            raise ValueError('direction must be right or left')
+        H_r = tf.stack(h_r_lst)# (pass_max_length, batch_size, num_units)
+        H_r = tf.transpose(H_r, (1, 0, 2))# (batch_size, pass_max_length, num_units)
+        return H_r
+    def match_layer(self, H_p, H_q):
         '''
         paras
-            H_r_right:        (None, pass_max_length, num_units)
-            H_r_left:         (None, ques_max_length, num_units)
+            H_p:        (batch_size, pass_max_length, num_units)
+            H_q:        (batch_size, ques_max_length, num_units)
         return
-            H_r:              (None, pass_max_length, 2 * num_units)
+            H_r:        (batch_size, pass_max_length, 2 * num_units)
         '''
-        passage_mask_cube = self.passage_mask_cube#(None, pass_max_length, num_units)
+        H_r_right = self.match_one_direct(H_p, H_q, "right")#(batch_size, pass_max_length, num_units)
+        H_r_left = self.match_one_direct(H_p, H_q, "left")#(batch_size, pass_max_length, num_units)
+        #get mask
         num_units = self.num_units
-
-        H_r_right = self.match_one_direct(H_p, H_q)#(None, pass_max_length, num_units)
-        H_r_left = self.match_one_direct(H_p_rev, H_q)#(None, pass_max_length, num_units)
+        passage_sequence_length = self.passage_sequence_length#(batch_size,)
+        pass_max_length = self.pass_max_length
+        passage_sequence_mask = tf.sequence_mask(passage_sequence_length, pass_max_length, dtype=tf.int32)#(batch_size, pass_max_length)
+        passage_encoding_mask = tf.reshape(passage_sequence_mask, (batch_size, pass_max_length, 1))#(batch_size, pass_max_length, 1)
+        passage_encoding_mask = tf.tile(passage_encoding_mask, (1,1, num_units))#(batch_size, pass_max_length, num_units)
         #masking
-        H_r_right *= passage_mask_cube#(None, pass_max_length, num_units)
-        H_r_left *= passage_mask_cube#(None, pass_max_length, num_units)
+        H_r_right = H_r_right * passage_encoding_mask
+        H_r_left = H_r_left * passage_encoding_mask
         #concat
-        H_r = tf.concat([H_r_right, H_r_left], 2)#(None, pass_max_length, 2 * num_units)
+        H_r = tf.concat([H_r_right, H_r_left], 2)#(batch_size, pass_max_length, 2 * num_units)
+
         return H_r
 
-
-
-    def __answer_attention(self, H_r, h_a):
+    def answer_attention(self, H_r, h_a):
         '''
         paras:
             H_r: (batch_size, pass_max_length, 2 * num_units)
@@ -235,7 +243,7 @@ class Model:
         input_lstm = tf.reshape(input_lstm, (-1, 2 * num_units))
 
         return beta, input_lstm
-    def __answer_layer(self, H_r):
+    def answer_layer(self, H_r):
         '''
         paras
             H_r:        (None, pass_max_length, 2 * num_units)
@@ -258,20 +266,19 @@ class Model:
         dist = tf.transpose(dist, (1,0,2))#(None, 2, pass_max_length)
         return dist
 
-    def __add_predicted_dist(self):
-        #embdding
-        pass_embed, pass_embed_rev, ques_embed = self.embed_layer()
+    def add_predicted_dist(self):
         #Preprocessing Layer
-        H_p, H_p_rev, H_q = self.pre_layer(pass_embed, pass_embed_rev, ques_embed)
+        H_p, H_q = self.pre_layer()
         #Match-LSTM Layer
-        H_r = self.match_layer(H_p, H_p_rev, H_q)
+        H_r = self.match_layer(H_p, H_q)
         #Answer Pointer Layer
-        dist = self.answer_layer(H_r)
 
-        self.dist = dist
-    def __add_loss_function(self):
+
+        # self.dist = dist
+    def add_loss_function(self):
         #TODO
-    def __add_train_op(self):
+        return
+    def add_train_op(self):
         lr = self.lr
         ans = self.ans#(None, 2, pass_max_length)
         dist = self.dist#(None, 2, pass_max_length)
@@ -282,14 +289,14 @@ class Model:
 
         self.train_op = train_op
 
-    def __build(self):
+    def build(self):
         #add placeholders
         self.add_placeholder()
         #add variables / make architectures
         self.add_variables()
         #add predicted distribution
         self.add_predicted_dist()
-        #add loss
-        self.add_loss_function()
-        #add train_op
-        self.add_train_op()
+        # #add loss
+        # self.add_loss_function()
+        # #add train_op
+        # self.add_train_op()

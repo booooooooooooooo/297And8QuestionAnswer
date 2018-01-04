@@ -82,54 +82,6 @@ def test_tensorflow():
     for b in enumerate(a):
         print b,
 
-
-def sanity_model():
-    '''
-    TODO: sanity modified Model and Config
-    '''
-    from model import Model
-    from config import Config
-
-    class Data:
-        def getTrain(self, embed_s, batch_s):
-            pass_l = 119
-            ques_l = 13
-            vocabulary = None#TODO
-            vocabulary_rev = None#TODO
-            embed_matrix = tf.ones((17, 17))
-            batch_data = None#TODO
-            return pass_l, ques_l, vocabulary, vocabulary_rev, embed_matrix, batch_data
-
-
-    batch_s = 2
-    embed_s = 3
-    num_units = 5
-    pass_l = 11
-    n_epoch = 7
-    lr = 0.1
-
-    #hyperparameters of model
-    config = Config()
-    #batch data to feed
-    data = Data()
-    batch_data = data.getTrain()
-    #build model
-    model = Model(config)
-    #train model
-
-def test_data():
-    from data import Data
-
-    data_util = Data()
-
-
-    pass_ques_ans_file = '../download/train-v1.1.json'
-    glove_file = '../download/glove.6B'
-    batch_s = 10
-    embed_s = 7
-    data_util.getTrain( pass_ques_ans_file, glove_file, batch_s, embed_s)
-
-
 def test_preprocess():
     from preprocess import Preprocessor
     pass_ques_ans_json_path = "./data_raw/fake_pass_ques_ans.json"
@@ -197,6 +149,20 @@ def test_train():
     print len(batches[0][1][0])
     print len(batches[0][2][0])
 
+def test_model():
+    from model import Model
+
+    pass_max_length = 766
+    ques_max_length = 60
+    batch_size = 97
+    embed_size = 50
+
+    num_units = 17
+
+    my_model = Model(batch_size, pass_max_length, ques_max_length, embed_size, num_units)
+
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Unit testing')
@@ -210,3 +176,5 @@ if __name__ == "__main__":
         test_midprocess()
     elif args.filename == "train":
         test_train()
+    elif args.filename == "model":
+        test_model()
