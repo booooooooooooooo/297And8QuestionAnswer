@@ -285,11 +285,14 @@ class Model:
 
         self.dist = dist
     def add_loss_function(self):
-        #TODO
+        pass_max_length = self.pass_max_length
+
         ans = self.ans#(batch_size, 2)
         dist = self.dist#(batch_size, 2, pass_max_length)
-        loss = tf.reduce_mean(tf.cast(ans, tf.float32) * tf.log(dist) * (-1))
+        loss = tf.reduce_mean( tf.one_hot(ans, pass_max_length) * tf.log(dist) )
+
         self.loss = loss
+
 
     def add_train_op(self):
         loss = self.loss
@@ -309,7 +312,7 @@ class Model:
         self.add_variables()
         #add predicted distribution
         self.add_predicted_dist()
-        # #add loss
-        # self.add_loss_function()
-        # #add train_op
-        # self.add_train_op()
+        #add loss
+        self.add_loss_function()
+        #add train_op
+        self.add_train_op()
