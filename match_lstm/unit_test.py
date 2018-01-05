@@ -152,14 +152,25 @@ def test_train():
 def test_model():
     from model import Model
 
-    pass_max_length = 766
-    ques_max_length = 60
-    batch_size = 97
-    embed_size = 50
+    # pass_max_length = 766
+    # ques_max_length = 60
+    # batch_size = 97
+    # embed_size = 50
+    #
+    # num_units = 17
+    # optimizer = "adam"
+    # lr = 0.5
 
-    num_units = 17
+    pass_max_length = 9
+    ques_max_length = 8
+    batch_size = 7
+    embed_size = 6
 
-    my_model = Model(batch_size, pass_max_length, ques_max_length, embed_size, num_units)
+    num_units = 5
+    optimizer = "adam"
+    lr = 0.5
+
+    my_model = Model(batch_size, pass_max_length, ques_max_length, embed_size, num_units, optimizer, lr)
 
 
 
