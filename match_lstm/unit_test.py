@@ -125,7 +125,12 @@ def test_tokenizer():
 def test_midprocess():
     from midprocess import Midprocessor
 
-    midprocessor = Midprocessor()
+    pass_max_length = 9
+    ques_max_length = 8
+    batch_size = 7
+    embed_size = 50
+
+    midprocessor = Midprocessor(pass_max_length, ques_max_length, batch_size, embed_size)
 
 
     passage_file = "./data_token/train.passage"
@@ -157,7 +162,7 @@ def test_model():
     pass_max_length = 9
     ques_max_length = 8
     batch_size = 7
-    embed_size = 6
+    embed_size = 50
 
     num_units = 5
     optimizer = "adam"
@@ -172,7 +177,6 @@ def test_model():
 
 
     sess = tf.Session()
-    sess.run(tf.global_variables_initializer())
 
 
     saved_model_list =  my_model.fit(sess, optimizer, lr, n_epoch, batches_file, dirToSaveModel)

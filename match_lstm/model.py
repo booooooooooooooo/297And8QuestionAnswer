@@ -2,9 +2,10 @@
 Used by tune.py to train better tensor graph.
 '''
 import tensorflow as tf
+import os
+from tqdm import tqdm
 
 from util import *
-from tqdm import tqdm
 
 '''
 TODO:
@@ -314,12 +315,12 @@ class Model:
 
         return train_op
     def run_batch(self, sess, train_op, batch):
-        ques ,ques_sequence_length, passage, passage_sequence_length, ans = batch
-        _ , batch_loss = sess.run([trainOp, self.loss], {self.ques : ques,
-                                                         self.ques_sequence_length : ques_sequence_length,
-                                                         self.passage : passage,
-                                                         self.passage_sequence_length : passage_sequence_length,
-                                                         self.ans : ans})
+        passage, passage_sequence_length, ques ,ques_sequence_length, ans = batch
+        _ , batch_loss = sess.run([train_op, self.loss], {self.passage : passage,
+                                                          self.passage_sequence_length : passage_sequence_length,
+                                                          self.ques : ques,
+                                                          self.ques_sequence_length : ques_sequence_length,
+                                                          self.ans : ans})
         return batch_loss
     def run_epoch(self, sess, train_op, batches):
         trainLoss = 0.0
@@ -328,15 +329,17 @@ class Model:
         trainLoss /= len(batches)
         return trainLoss
     def fit(self, sess, optimizer, lr, n_epoch, batches_file, dirToSaveModel):
-        saved_model_list = []
-
         train_op = self.get_train_op(optimizer, lr)
+        sess.run(tf.initialize_all_variables())#!!!!!!
+
         batches = get_batches(batches_file)#call get_batches from util.py
+        saved_model_list = []
         for epoch in tqdm(xrange(n_epoch), desc = "Trainning {} epoches".format(n_epoch) ):
             trainLoss = self.run_epoch(sess, train_op, batches)
-            file_to_save_model = os.path.join(dirToSaveModel, str(trainLoss) + "_" + str(optimizer) + "_" + str(lr)  + "_" + str(n_epoch))
+            file_to_save_model = os.path.join(dirToSaveModel, str(trainLoss) + "_" + str(optimizer) + "_" + str(lr)  + "_" + str(epoch))
             tf.train.Saver().save(sess, file_to_save_model )
             saved_model_list.append(file_to_save_model)
+            print "Epoch {} trainLoss {}".format(epoch, trainLoss)
 
         return saved_model_list
     '''
