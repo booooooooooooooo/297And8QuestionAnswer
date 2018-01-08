@@ -305,6 +305,7 @@ class Model:
     Below are functins used by train.py to train the graph
     '''
     def get_train_op(self, optimizer, lr):
+        print "Getting {} optimizer".format(optimizer)
         loss = self.loss
         if optimizer == "adam":
             train_op = tf.train.AdamOptimizer(lr).minimize(loss)

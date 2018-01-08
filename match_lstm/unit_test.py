@@ -150,16 +150,9 @@ def test_train():
     print len(batches[0][2][0])
 
 def test_model():
+    import tensorflow as tf
     from model import Model
 
-    # pass_max_length = 766
-    # ques_max_length = 60
-    # batch_size = 97
-    # embed_size = 50
-    #
-    # num_units = 17
-    # optimizer = "adam"
-    # lr = 0.5
 
     pass_max_length = 9
     ques_max_length = 8
@@ -169,10 +162,20 @@ def test_model():
     num_units = 5
     optimizer = "adam"
     lr = 0.5
+    n_epoch=5
+    batches_file="./data_feed_ready/train.batches"
+    dirToSaveModel="./tf_graph/"
 
-    my_model = Model(batch_size, pass_max_length, ques_max_length, embed_size, num_units, optimizer, lr)
 
 
+    my_model = Model(pass_max_length, ques_max_length, batch_size, embed_size, num_units)
+
+
+    sess = tf.Session()
+    sess.run(tf.global_variables_initializer())
+
+
+    saved_model_list =  my_model.fit(sess, optimizer, lr, n_epoch, batches_file, dirToSaveModel)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
