@@ -4,11 +4,16 @@ Used by tune.py to train better tensor graph.
 import tensorflow as tf
 import os
 from tqdm import tqdm
+from datetime import datetime
 
 from util import *
 
 '''
 TODO:
+
+loss seems not work!!!!!
+
+
 regularization
 gradient decent clipping
 
@@ -292,6 +297,7 @@ class Model:
         loss = tf.reduce_mean( tf.one_hot(ans, pass_max_length) * tf.log(dist) )
 
         self.loss = loss
+        print loss
     def build(self):
         #add placeholders
         self.add_placeholder()
@@ -336,7 +342,7 @@ class Model:
         saved_model_list = []
         for epoch in tqdm(xrange(n_epoch), desc = "Trainning {} epoches".format(n_epoch) ):
             trainLoss = self.run_epoch(sess, train_op, batches)
-            file_to_save_model = os.path.join(dirToSaveModel, str(trainLoss) + "_" + str(optimizer) + "_" + str(lr)  + "_" + str(epoch))
+            file_to_save_model = os.path.join(dirToSaveModel, str(trainLoss) + "_" + str(optimizer) + "_" + str(lr)  + "_" + str(epoch) + "_" + str(datetime.now()))
             tf.train.Saver().save(sess, file_to_save_model )
             saved_model_list.append(file_to_save_model)
             print "Epoch {} trainLoss {}".format(epoch, trainLoss)
