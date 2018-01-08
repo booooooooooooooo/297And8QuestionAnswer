@@ -17,16 +17,14 @@ mark public and private def
 give nice names to important tensors, include embed_size, batch_size, num_units, lr, n_epoch etc. in title of saved model
 '''
 class Model:
-    def __init__(self, batch_size, pass_max_length, ques_max_length, embed_size, num_units, optimizer, lr):
+    def __init__(self, pass_max_length, ques_max_length, batch_size, embed_size, num_units):
         #parameters used by the graph. Train, valid and test data must be consistent on these parameters.
-        self.batch_size = batch_size
         self.pass_max_length = pass_max_length
         self.ques_max_length = ques_max_length#not sure
+        self.batch_size = batch_size
         self.embed_size = embed_size
         #parameter used by the graph. It is not related to data.
         self.num_units = num_units
-        self.optimizer = optimizer
-        self.lr = lr
         #build the graph
         self.build()
     def add_placeholder(self):
@@ -289,22 +287,10 @@ class Model:
 
         ans = self.ans#(batch_size, 2)
         dist = self.dist#(batch_size, 2, pass_max_length)
+        #TODO?: indexing useful probability out from dist instead of calculuate log on every prob
         loss = tf.reduce_mean( tf.one_hot(ans, pass_max_length) * tf.log(dist) )
 
         self.loss = loss
-
-
-    def add_train_op(self):
-        loss = self.loss
-
-        optimizer = self.optimizer
-        lr = self.lr
-
-        if optimizer == "adam":
-            self.train_op = tf.train.AdamOptimizer(lr).minimize(loss)
-        else:
-            raise ValueError('Parameters are wrong')
-
     def build(self):
         #add placeholders
         self.add_placeholder()
@@ -314,5 +300,44 @@ class Model:
         self.add_predicted_dist()
         #add loss
         self.add_loss_function()
-        #add train_op
-        self.add_train_op()
+
+    '''
+    Below are functins used by train.py to train the graph
+    '''
+    def get_train_op(self, optimizer, lr):
+        loss = self.loss
+        if optimizer == "adam":
+            train_op = tf.train.AdamOptimizer(lr).minimize(loss)
+        else:
+            raise ValueError('Parameters are wrong')
+
+        return train_op
+    def run_batch(self, sess, train_op, batch):
+        ques ,ques_sequence_length, passage, passage_sequence_length, ans = batch
+        _ , batch_loss = sess.run([trainOp, self.loss], {self.ques : ques,
+                                                         self.ques_sequence_length : ques_sequence_length,
+                                                         self.passage : passage,
+                                                         self.passage_sequence_length : passage_sequence_length,
+                                                         self.ans : ans})
+        return batch_loss
+    def run_epoch(self, sess, train_op, batches):
+        trainLoss = 0.0
+        for i in xrange(len(batches)):
+            trainLoss += self.run_batch(sess, train_op, batches[i])
+        trainLoss /= len(batches)
+        return trainLoss
+    def fit(self, sess, optimizer, lr, n_epoch, batches_file, dirToSaveModel):
+        saved_model_list = []
+
+        train_op = self.get_train_op(optimizer, lr)
+        batches = get_batches(batches_file)#call get_batches from util.py
+        for epoch in tqdm(xrange(n_epoch), desc = "Trainning {} epoches".format(n_epoch) ):
+            trainLoss = self.run_epoch(sess, train_op, batches)
+            file_to_save_model = os.path.join(dirToSaveModel, str(trainLoss) + "_" + str(optimizer) + "_" + str(lr)  + "_" + str(n_epoch))
+            tf.train.Saver().save(sess, file_to_save_model )
+            saved_model_list.append(file_to_save_model)
+
+        return saved_model_list
+    '''
+    Above are functins used by train.py to train the graph
+    '''

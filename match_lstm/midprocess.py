@@ -6,11 +6,11 @@ import os
 #TODO: make passage_mask and ques_mask
 
 class Midprocessor:
-    def __init__(self):
-        self.pass_max_length = 766
-        self.ques_max_length = 60
-        self.batch_size = 97
-        self.embed_size = 50
+    def __init__(self, pass_max_length, ques_max_length, batch_size, embed_size):
+        self.pass_max_length = pass_max_length
+        self.ques_max_length = ques_max_length
+        self.batch_size = batch_size
+        self.embed_size = embed_size
     def get_vocabulary(self, passage_file, question_file):
         vocabulary = set()
         with open(passage_file) as fh:
