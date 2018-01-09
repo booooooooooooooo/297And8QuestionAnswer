@@ -9,6 +9,8 @@ embed_size=50
 num_units=10
 
 #train
+train_percent = 0.9
+
 optimizer="adam"
 lr=10
 n_epoch=5

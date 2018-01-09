@@ -1,10 +1,10 @@
-import numpy as np
 from tqdm import tqdm
 import pickle
 import os
 
-#TODO: make passage_mask and ques_mask
-
+'''
+Convert token to vector
+'''
 class Midprocessor:
     def __init__(self, pass_max_length, ques_max_length, batch_size, embed_size):
         self.pass_max_length = pass_max_length
@@ -34,7 +34,7 @@ class Midprocessor:
 
         glove_dic = {}
         with open(glove_path) as fh:
-            for line in tqdm(fh, desc="Processing {}".format(glove_path)):
+            for line in tqdm(fh, desc="Reading {}".format(glove_path)):
                 line_list = line.split()
                 word = line_list[0].decode('utf8')#decode
                 vector = line_list[1:]
@@ -76,7 +76,7 @@ class Midprocessor:
                 for i in range(len(token_list), pass_max_length):
                     datum.append(zero_vector)
                 passage_vectors.append(datum)
-                passage_sequence_length.append(len(token_list))
+                passage_sequence_length.append(min(len(token_list), pass_max_length))
         #pad or strip each question to same ques_max_length, vectorization
         question_vectors = []
         question_sequence_length = []
@@ -94,7 +94,7 @@ class Midprocessor:
                 for i in range(len(token_list), ques_max_length):
                     datum.append(zero_vector)
                 question_vectors.append(datum)
-                question_sequence_length.append(len(token_list))
+                question_sequence_length.append(min(len(token_list), ques_max_length))
         #read in answer_span
         answer_spans = []
         with open(answer_span_file) as fh:
@@ -109,13 +109,13 @@ class Midprocessor:
         amount = batch_size - len(passage_vectors) % batch_size
 
         passage_vectors += [passage_fake for i in xrange(amount)]
-        passage_sequence_length += [0] * amount
+        passage_sequence_length += [pass_max_length] * amount
         question_vectors += [question_fake for i in xrange(amount)]
-        question_sequence_length += [0] * amount
+        question_sequence_length += [ques_max_length] * amount
         answer_spans += [answer_span_fake for i in xrange(amount)]
 
         batches = []
-        for i in tqdm(range(0, len(passage_vectors) , batch_size), desc="Batching") :
+        for i in tqdm(range(0, len(passage_vectors) , batch_size), desc="Split vectors to batches") :
             batch_passage = passage_vectors[i: i + batch_size]
             batch_passage_sequence_length = passage_sequence_length[i: i + batch_size]
             batch_question = question_vectors[i: i + batch_size]
@@ -125,6 +125,10 @@ class Midprocessor:
 
         return batches
     def get_padded_vectorized_and_batched(self, passage_file, question_file, answer_span_file, glove_path, batches_file ):
+        if os.path.isfile(batches_file):
+            print "\"{}\" already exists.".format(batches_file)
+            return
+
         vocabulary = self.get_vocabulary(passage_file, question_file)
         small_glove_dic = self.get_small_size_glove(vocabulary, glove_path)
         batches = self.get_batched_vectors(passage_file, question_file, answer_span_file, small_glove_dic)

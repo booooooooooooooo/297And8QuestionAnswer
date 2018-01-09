@@ -82,15 +82,6 @@ def test_tensorflow():
     for b in enumerate(a):
         print b,
 
-def test_preprocess():
-    from preprocess import Preprocessor
-    pass_ques_ans_json_path = "./data_raw/fake_pass_ques_ans.json"
-    dir_to_save = "./data_token/"
-    train_percent = 0.9
-
-    preprocessor = Preprocessor()
-
-    preprocessor.preprocess_train_json_to_train_and_valid_token(pass_ques_ans_json_path, dir_to_save, train_percent)
 
 def test_tokenizer():
     with open("./output/failedPreprocessCase") as fh:
@@ -122,13 +113,29 @@ def test_tokenizer():
             print context_token[token_id].encode('utf8')
             print "======================="
             id_in_cur_token += 1
+
+def test_preprocess():
+    from preprocess import Preprocessor
+    pass_ques_ans_json_path = "./data_raw/train-v1.1.json"
+    dir_to_save = "./data_token/"
+    train_percent = 0.9
+
+    preprocessor = Preprocessor()
+
+    preprocessor.preprocess_train_json_to_train_and_valid_token(pass_ques_ans_json_path, dir_to_save, train_percent)
+
 def test_midprocess():
     from midprocess import Midprocessor
 
-    pass_max_length = 9
-    ques_max_length = 8
-    batch_size = 7
-    embed_size = 50
+    # pass_max_length = 9
+    # ques_max_length = 8
+    # batch_size = 7
+    # embed_size = 50
+
+    pass_max_length=766
+    ques_max_length=60
+    batch_size=97
+    embed_size=50
 
     midprocessor = Midprocessor(pass_max_length, ques_max_length, batch_size, embed_size)
 
@@ -140,46 +147,17 @@ def test_midprocess():
     batches_file = "./data_feed_ready/train.batches"
 
     midprocessor.get_padded_vectorized_and_batched(passage_file, question_file, answer_span_file, glove_path, batches_file)
-def test_train():
-    from train import get_batches
+def test_util():
+    from util import get_batches
+
     batches_file = "./data_feed_ready/train.batches"
-    batches = get_batches(batches_file)
-    print len(batches)
-    print len(batches[0])
-    print len(batches[0][0])
-    print len(batches[0][1])
-    print len(batches[0][2])
 
-    print len(batches[0][0][0])
-    print len(batches[0][1][0])
-    print len(batches[0][2][0])
+    small_size_batches = get_batches(batches_file, True)
 
-def test_model():
-    import tensorflow as tf
-    from model import Model
+    print len(small_size_batches)
 
+    print small_size_batches[0]
 
-    pass_max_length = 9
-    ques_max_length = 8
-    batch_size = 7
-    embed_size = 50
-
-    num_units = 5
-    optimizer = "adam"
-    lr = 0.5
-    n_epoch=5
-    batches_file="./data_feed_ready/train.batches"
-    dirToSaveModel="./tf_graph/"
-
-
-
-    my_model = Model(pass_max_length, ques_max_length, batch_size, embed_size, num_units)
-
-
-    sess = tf.Session()
-
-
-    saved_model_list =  my_model.fit(sess, optimizer, lr, n_epoch, batches_file, dirToSaveModel)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -192,7 +170,5 @@ if __name__ == "__main__":
         test_tokenizer()
     elif args.filename == "midprocess":
         test_midprocess()
-    elif args.filename == "train":
-        test_train()
-    elif args.filename == "model":
-        test_model()
+    elif args.filename == "util":
+        test_util()

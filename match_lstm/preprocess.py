@@ -102,6 +102,13 @@ class Preprocessor:
         return passage_list, question_list, answer_text_list, answer_span_list
 
     def preprocess_train_json_to_train_and_valid_token(self, pass_ques_ans_json_path, dir_to_save, train_percent):
+        #all exist or none exists. Checking one is checking all.
+        if os.path.isfile(os.path.join(dir_to_save, 'train.passage')):
+            print "\"{}\" has already been preprocessed to train and valid tokens.".format(pass_ques_ans_json_path)
+            return
+        if not os.path.isdir(dir_to_save):
+            os.makedirs(dir_to_save)
+
         passage_list, question_list, answer_text_list, answer_span_list = self.preprocess_pass_ques_ans_json(pass_ques_ans_json_path)
         split_index = int ( len(passage_list) * train_percent )
         with open(os.path.join(dir_to_save, 'train.passage'), 'w') as passage_file, \

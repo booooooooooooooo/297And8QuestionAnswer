@@ -2,7 +2,7 @@
 Used for Trainning.
 
 TO RUN
-python train.py para1 para2 ... paran <input-json-file-path> <output_graph_file_name_list_path>
+python train.py para1 para2 ... paran <input-batches-file-path> <output_graph_file_name_list_path>
 '''
 import tensorflow as tf
 import numpy as np
