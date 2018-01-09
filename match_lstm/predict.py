@@ -1,7 +1,10 @@
 '''
-Input: text, question, modelPath
-Output: predicted answer, score
+Used for submission.
 
-Input and output are both in json format.
+TO RUN:
+python predict.py <input-data-json-file> <output-prediction-json-path>
+
+Scripts used:
+valid_test_predict_helper.py
 
 '''

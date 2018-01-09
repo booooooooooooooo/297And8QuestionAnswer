@@ -8,9 +8,6 @@ embed_size=50
 
 num_units=10
 
-
-#test shell script
-
 #train
 optimizer="adam"
 lr=10

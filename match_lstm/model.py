@@ -294,7 +294,7 @@ class Model:
         ans = self.ans#(batch_size, 2)
         dist = self.dist#(batch_size, 2, pass_max_length)
         #TODO?: indexing useful probability out from dist instead of calculuate log on every prob
-        loss = tf.reduce_mean( tf.one_hot(ans, pass_max_length) * tf.log(dist) )
+        loss = -tf.reduce_mean( tf.one_hot(ans, pass_max_length) * tf.log(dist) )
 
         self.loss = loss
         print loss
@@ -327,6 +327,7 @@ class Model:
                                                           self.ques : ques,
                                                           self.ques_sequence_length : ques_sequence_length,
                                                           self.ans : ans})
+        # print batch_loss
         return batch_loss
     def run_epoch(self, sess, train_op, batches):
         trainLoss = 0.0
