@@ -11,15 +11,21 @@ from util import *
 '''
 TODO:
 
-gradient decent clipping
+value error when computing softmax on zero vector, apply log to zero entry in loss
+
+compute loss more efficiently
 
 efficient training: nce etc.
 
 mark public and private def
 give nice names to important tensors, include embed_size, batch_size, num_units, lr, n_epoch etc. in title of saved model
+
+whether put validation and testing fuction into Model. aka how to restore graph
+
+whether remove train part from Model
 '''
 class Model:
-    def __init__(self, pass_max_length, ques_max_length, batch_size, embed_size, num_units, dropout):
+    def __init__(self, pass_max_length, ques_max_length, batch_size, embed_size, num_units, dropout, do_clip, clip_norm):
         #parameters used by the graph. Train, valid and test data must be consistent on these parameters.
         self.pass_max_length = pass_max_length
         self.ques_max_length = ques_max_length#not sure
@@ -28,6 +34,8 @@ class Model:
         #parameter used by the graph. It is not related to data.
         self.num_units = num_units
         self.dropout = dropout
+        self.do_clip = do_clip
+        self.clip_norm = clip_norm
         #build the graph
         self.build()
     def add_placeholder(self):
@@ -291,7 +299,6 @@ class Model:
 
         ans = self.ans#(batch_size, 2)
         dist = self.dist#(batch_size, 2, pass_max_length)
-        #TODO?: indexing useful probability out from dist instead of calculuate log on every prob
         loss = -tf.reduce_mean( tf.one_hot(ans, pass_max_length) * tf.log(dist) )
 
         self.loss = loss
@@ -311,14 +318,27 @@ class Model:
     '''
     def get_train_op(self, optimizer, lr):
         print "Getting {} optimizer".format(optimizer)
+
         loss = self.loss
+        do_clip = self.do_clip
+        clip_norm = self.clip_norm
+
         if optimizer == "adam":
-            train_op = tf.train.AdamOptimizer(lr).minimize(loss)
+            optimizer_func = tf.train.AdamOptimizer(lr)
         elif optimizer == "sgd":
-            train_op = tf.train.GradientDescentOptimizer(lr).minimize(loss)
+            optimizer_func = tf.train.GradientDescentOptimizer(lr)
         else:
             raise ValueError('Parameters are wrong')
+
+        gradients, variables = zip(*optimizer_func.compute_gradients(loss))
+        if do_clip:
+            gradients_clipped, gradients_norm = tf.clip_by_global_norm(gradients, clip_norm)
+        else:
+            gradients_norm = tf.global_norm(gradients)
+        train_op = optimizer_func.apply_gradients(zip(gradients, variables))#second part of minimize()
+
         print "Finish getting {} optimizer".format(optimizer)
+
         return train_op
     def run_batch(self, sess, train_op, batch):
         passage, passage_sequence_length, ques ,ques_sequence_length, ans = batch
@@ -338,7 +358,7 @@ class Model:
     def fit(self, sess, optimizer, lr, n_epoch, batches_file, dirToSaveModel, small_size = True):
         train_op = self.get_train_op(optimizer, lr)
         print "Initilizing all varibles"
-        sess.run(tf.initialize_all_variables())#!!!!!!
+        sess.run(tf.global_variables_initializer())#Initilizing after making train_op
         print "Finish Initilizing all varibles"
         batches = get_batches(batches_file, small_size)#call get_batches from util.py
         print "Finish Reading batched data from disk......."
