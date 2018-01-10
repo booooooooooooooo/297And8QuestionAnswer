@@ -21,6 +21,7 @@ if __name__ == "__main__":
     parser.add_argument('batch_size')
     parser.add_argument('embed_size')
     parser.add_argument('num_units')
+    parser.add_argument('dropout')
     parser.add_argument('optimizer')
     parser.add_argument('lr')
     parser.add_argument('n_epoch')
@@ -30,7 +31,7 @@ if __name__ == "__main__":
     parser.add_argument("equipment")
     args = parser.parse_args()
 
-    myModel = Model(int (args.pass_max_length), int (args.ques_max_length), int (args.batch_size), int (args.embed_size), int (args.num_units))
+    myModel = Model(int (args.pass_max_length), int (args.ques_max_length), int (args.batch_size), int (args.embed_size), int (args.num_units), float(args.dropout))
     if args.equipment == "mac":
         sess = tf.Session()
         sess.run(tf.global_variables_initializer())

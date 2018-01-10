@@ -11,10 +11,6 @@ from util import *
 '''
 TODO:
 
-loss seems not work!!!!!
-
-
-regularization
 gradient decent clipping
 
 efficient training: nce etc.
@@ -23,7 +19,7 @@ mark public and private def
 give nice names to important tensors, include embed_size, batch_size, num_units, lr, n_epoch etc. in title of saved model
 '''
 class Model:
-    def __init__(self, pass_max_length, ques_max_length, batch_size, embed_size, num_units):
+    def __init__(self, pass_max_length, ques_max_length, batch_size, embed_size, num_units, dropout):
         #parameters used by the graph. Train, valid and test data must be consistent on these parameters.
         self.pass_max_length = pass_max_length
         self.ques_max_length = ques_max_length#not sure
@@ -31,6 +27,7 @@ class Model:
         self.embed_size = embed_size
         #parameter used by the graph. It is not related to data.
         self.num_units = num_units
+        self.dropout = dropout
         #build the graph
         self.build()
     def add_placeholder(self):
@@ -47,12 +44,13 @@ class Model:
     def add_variables(self):
         embed_size = self.embed_size
         num_units = self.num_units
+        dropout = self.dropout
 
         init = tf.contrib.layers.xavier_initializer()
 
         #Preprocessing Layer
         with tf.variable_scope("preprocessing_layer"):
-            self.lstm_pre = tf.contrib.rnn.BasicLSTMCell(num_units)
+            self.lstm_pre = tf.contrib.rnn.DropoutWrapper(tf.contrib.rnn.BasicLSTMCell(num_units), output_keep_prob=1.0 - dropout)
         #Match-LSTM Layer
         with tf.variable_scope("match_layer"):
             with tf.variable_scope("Attention"):
@@ -63,7 +61,7 @@ class Model:
                 self.w = tf.get_variable("w", initializer = init, shape = (num_units, ), dtype = tf.float32)
                 self.b = tf.get_variable("b", initializer = init, shape = (), dtype = tf.float32)
             with tf.variable_scope("LSTM"):
-                self.lstm_match = tf.contrib.rnn.BasicLSTMCell(num_units)
+                self.lstm_match = tf.contrib.rnn.DropoutWrapper(tf.contrib.rnn.BasicLSTMCell(num_units), output_keep_prob=1.0 - dropout)
         #Answer Pointer Layer
         with tf.variable_scope("answer_pointer_layer"):
             with tf.variable_scope("Attention"):
@@ -73,7 +71,7 @@ class Model:
                 self.v = tf.get_variable("v", initializer = init, shape = (num_units, ), dtype = tf.float32)
                 self.c = tf.get_variable("c", initializer = init, shape = (), dtype = tf.float32)
             with tf.variable_scope("LSTM"):
-                self.lstm_ans = tf.contrib.rnn.BasicLSTMCell(num_units)
+                self.lstm_ans = tf.contrib.rnn.DropoutWrapper(tf.contrib.rnn.BasicLSTMCell(num_units), output_keep_prob=1.0 - dropout)
     def pre_layer(self):
         '''
         return:
@@ -316,9 +314,11 @@ class Model:
         loss = self.loss
         if optimizer == "adam":
             train_op = tf.train.AdamOptimizer(lr).minimize(loss)
+        elif optimizer == "sgd":
+            train_op = tf.train.GradientDescentOptimizer(lr).minimize(loss)
         else:
             raise ValueError('Parameters are wrong')
-
+        print "Finish getting {} optimizer".format(optimizer)
         return train_op
     def run_batch(self, sess, train_op, batch):
         passage, passage_sequence_length, ques ,ques_sequence_length, ans = batch
@@ -337,9 +337,11 @@ class Model:
         return trainLoss
     def fit(self, sess, optimizer, lr, n_epoch, batches_file, dirToSaveModel, small_size = True):
         train_op = self.get_train_op(optimizer, lr)
+        print "Initilizing all varibles"
         sess.run(tf.initialize_all_variables())#!!!!!!
-
+        print "Finish Initilizing all varibles"
         batches = get_batches(batches_file, small_size)#call get_batches from util.py
+        print "Finish Reading batched data from disk......."
         saved_model_list = []
         for epoch in tqdm(xrange(n_epoch), desc = "Trainning {} epoches".format(n_epoch) ):
             trainLoss = self.run_epoch(sess, train_op, batches)
