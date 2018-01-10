@@ -13,6 +13,8 @@ TODO:
 
 value error when computing softmax on zero vector, apply log to zero entry in loss
 
+check initialization
+
 compute loss more efficiently
 
 efficient training: nce etc.
@@ -22,7 +24,7 @@ give nice names to important tensors, include embed_size, batch_size, num_units,
 
 whether put validation and testing fuction into Model. aka how to restore graph
 
-whether remove train part from Model
+whether remove train part from Model. whether assing optimizer etc. in __init__
 '''
 class Model:
     def __init__(self, pass_max_length, ques_max_length, batch_size, embed_size, num_units, dropout, do_clip, clip_norm):
@@ -299,10 +301,12 @@ class Model:
 
         ans = self.ans#(batch_size, 2)
         dist = self.dist#(batch_size, 2, pass_max_length)
-        loss = -tf.reduce_mean( tf.one_hot(ans, pass_max_length) * tf.log(dist) )
+
+        mask = tf.one_hot(ans, pass_max_length, dtype=tf.bool, on_value=True, off_value=False)#(batch_size, 2, pass_max_length)
+        elements = tf.boolean_mask(dist, mask)#(?,)
+        loss =  -tf.reduce_mean( tf.log( elements ) )
 
         self.loss = loss
-        # print loss
     def build(self):
         #add placeholders
         self.add_placeholder()
