@@ -25,12 +25,16 @@ if __name__ == "__main__":
     parser.add_argument('lr')
     parser.add_argument('n_epoch')
     parser.add_argument('batches_file')
-    parser.add_argument('dirToSaveModel')
+    parser.add_argument('dir_to_save_graph')
+    parser.add_argument("file_to_save_graph_name_list")
+    parser.add_argument("equipment")
     args = parser.parse_args()
 
     myModel = Model(int (args.pass_max_length), int (args.ques_max_length), int (args.batch_size), int (args.embed_size), int (args.num_units))
+    if args.equipment == "mac":
+        sess = tf.Session()
+        sess.run(tf.global_variables_initializer())
+        saved_model_list = myModel.fit(sess, args.optimizer, float (args.lr), int(args.n_epoch), args.batches_file, args.dir_to_save_graph, small_size = True)
 
-    sess = tf.Session()
-    sess.run(tf.global_variables_initializer())
-
-    saved_model_list = myModel.fit(sess, args.optimizer, float (args.lr), int(args.n_epoch), args.batches_file, args.dirToSaveModel)
+    with open(file_to_save_graph_name_list, 'w') as f:
+        pickle.dump(saved_model_list, f, pickle.HIGHEST_PROTOCOL)

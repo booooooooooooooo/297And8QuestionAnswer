@@ -3,6 +3,7 @@ import json
 from tqdm import tqdm
 import os
 import sys
+import argparse
 
 '''
 nltk.word_tokenize has some weird behaviours.
@@ -160,3 +161,16 @@ class Preprocessor:
         pass_ave_length /= count
         ques_ave_length /= count
         print "How many (passage, question, answer) tuples : {} \n pass_max_length: {} \n pass_ave_length: {}\n ques_max_length: {} \n ques_ave_length :{} \n".format(count, pass_max_length, pass_ave_length, ques_max_length, ques_ave_length)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description='Preprocessing json to tokens')
+    parser.add_argument('pass_ques_ans_json_path')
+    parser.add_argument('dir_to_save')
+    parser.add_argument('train_percent')
+    args = parser.parse_args()
+
+    my_preprocessor = Preprocessor()
+
+    my_preprocessor.preprocess_train_json_to_train_and_valid_token(args.pass_ques_ans_json_path, args.dir_to_save, float(args.train_percent) )

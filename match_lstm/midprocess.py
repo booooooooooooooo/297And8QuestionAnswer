@@ -1,6 +1,7 @@
 from tqdm import tqdm
 import pickle
 import os
+import argparse
 
 '''
 Convert token to vector
@@ -124,15 +125,35 @@ class Midprocessor:
             batches.append((batch_passage, batch_passage_sequence_length, batch_question, batch_question_sequence_length, batch_answer_span))
 
         return batches
-    def get_padded_vectorized_and_batched(self, passage_file, question_file, answer_span_file, glove_path, batches_file ):
-        if os.path.isfile(batches_file):
-            print "\"{}\" already exists.".format(batches_file)
+    def get_padded_vectorized_and_batched(self, passage_file, question_file, answer_span_file, glove_path, batches_file_path ):
+        if os.path.isfile(batches_file_path):
+            print "\"{}\" already exists.".format(batches_file_path)
             return
 
         vocabulary = self.get_vocabulary(passage_file, question_file)
         small_glove_dic = self.get_small_size_glove(vocabulary, glove_path)
         batches = self.get_batched_vectors(passage_file, question_file, answer_span_file, small_glove_dic)
-        if not os.path.isdir(os.path.dirname(batches_file)):
-            os.makedirs(os.path.dirname(batches_file) )
-        with open(batches_file, 'w') as f:
+        if not os.path.isdir(os.path.dirname(batches_file_path)):
+            os.makedirs(os.path.dirname(batches_file_path) )
+        with open(batches_file_path, 'w') as f:
             pickle.dump(batches, f, pickle.HIGHEST_PROTOCOL)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description='Midprocessing token to vector')
+    parser.add_argument('pass_max_length')
+    parser.add_argument('ques_max_length')
+    parser.add_argument('batch_size')
+    parser.add_argument('embed_size')
+    parser.add_argument('passage_file')
+    parser.add_argument('question_file')
+    parser.add_argument('answer_span_file')
+    parser.add_argument('glove_path')
+    parser.add_argument('batches_file_path')
+    parser.add_argument("function_name")
+    args = parser.parse_args()
+
+    my_midprocessor = Midprocessor(int(args.pass_max_length) , int(args.ques_max_length), int(args.batch_size), int(args.embed_size) )
+    if args.function_name == "get_padded_vectorized_and_batched":
+        my_midprocessor.get_padded_vectorized_and_batched(args.passage_file, args.question_file, args.answer_span_file, args.glove_path, args.batches_file_path)

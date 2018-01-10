@@ -297,7 +297,7 @@ class Model:
         loss = -tf.reduce_mean( tf.one_hot(ans, pass_max_length) * tf.log(dist) )
 
         self.loss = loss
-        print loss
+        # print loss
     def build(self):
         #add placeholders
         self.add_placeholder()
@@ -335,11 +335,11 @@ class Model:
             trainLoss += self.run_batch(sess, train_op, batches[i])
         trainLoss /= len(batches)
         return trainLoss
-    def fit(self, sess, optimizer, lr, n_epoch, batches_file, dirToSaveModel):
+    def fit(self, sess, optimizer, lr, n_epoch, batches_file, dirToSaveModel, small_size = True):
         train_op = self.get_train_op(optimizer, lr)
         sess.run(tf.initialize_all_variables())#!!!!!!
 
-        batches = get_batches(batches_file)#call get_batches from util.py
+        batches = get_batches(batches_file, small_size)#call get_batches from util.py
         saved_model_list = []
         for epoch in tqdm(xrange(n_epoch), desc = "Trainning {} epoches".format(n_epoch) ):
             trainLoss = self.run_epoch(sess, train_op, batches)

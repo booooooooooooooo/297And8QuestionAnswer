@@ -9,4 +9,4 @@ def get_batches(batches_file, small_size = False):
     if not small_size:
         return batches
     else:
-        return batches[0 : len(batches) / 20]
+        return batches[0 : len(batches) / 200]
