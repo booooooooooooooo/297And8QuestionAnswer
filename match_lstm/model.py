@@ -48,10 +48,10 @@ class Model:
         ques_max_length = self.ques_max_length
         embed_size = self.embed_size
 
-        self.ques = tf.placeholder(tf.float32, shape = (batch_size, ques_max_length, embed_size), name = "question_placeholder")
-        self.ques_sequence_length = tf.placeholder(tf.int32, shape = (batch_size), name = "question_sequence_length_placeholder")
         self.passage = tf.placeholder(tf.float32, shape = (batch_size, pass_max_length, embed_size), name = "passage_placeholder")
         self.passage_sequence_length = tf.placeholder(tf.int32, shape = (batch_size), name = "passage_sequence_length_placeholder")
+        self.ques = tf.placeholder(tf.float32, shape = (batch_size, ques_max_length, embed_size), name = "question_placeholder")
+        self.ques_sequence_length = tf.placeholder(tf.int32, shape = (batch_size), name = "question_sequence_length_placeholder")
         self.ans = tf.placeholder(tf.int32, shape = (batch_size, 2), name = "answer_span_placeholder")
     def add_variables(self):
         embed_size = self.embed_size
@@ -288,7 +288,7 @@ class Model:
                     _, stateTuple = lstm_ans(att_encoding, stateTuple)
                     dist_lst.append(beta)
         dist = tf.stack(dist_lst)#(2, batch_size, pass_max_length)
-        dist = tf.transpose(dist, (1,0,2))#(batch_size, 2, pass_max_length)
+        dist = tf.transpose(dist, (1,0,2), name='dist')#(batch_size, 2, pass_max_length)
         return dist
 
     def add_predicted_dist(self):
