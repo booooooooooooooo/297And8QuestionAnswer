@@ -11,7 +11,9 @@ from util import *
 '''
 TODO:
 
-value error when computing softmax on zero vector, apply log to zero entry in loss
+value error when computing softmax on zero vector,
+
+why there is zero entry in elements. the zero entry causes log to produce nan
 
 check initialization
 
@@ -140,6 +142,7 @@ class Model:
         G = tf.reshape(G, (-1, num_units))#(batch_size * ques_max_length, num_units)
         alpha = tf.matmul(G, tf.reshape(w, (-1, 1))) + b #(batch_size * ques_max_length, 1)
         alpha = tf.reshape(alpha, (batch_size, -1))#(batch_size, ques_max_length)
+        alpha += 0.001 # avoid zero entry in non-mask entries
         ques_sequence_mask = tf.sequence_mask(ques_sequence_length,ques_max_length, dtype=tf.int32)#(batch_size, ques_max_length)
         alpha = alpha * tf.cast(ques_sequence_mask, tf.float32)#(batch_size, ques_max_length)
         alpha = tf.nn.softmax(alpha)#(batch_size, ques_max_length)
@@ -254,6 +257,7 @@ class Model:
         F = tf.reshape(F, (-1, num_units))#(batch_size * pass_max_length, num_units)
         beta = tf.matmul(F, tf.reshape(v, (-1, 1))) + c #(batch_size * pass_max_length, 1)
         beta = tf.reshape(beta, (batch_size, pass_max_length))#(batch_size, pass_max_length)
+        beta += 0.001 # avoid zero entry in non-mask entries
         pass_sequence_mask = tf.sequence_mask(passage_sequence_length,pass_max_length, dtype=tf.int32)#(batch_size, pass_max_length)
         beta = beta * tf.cast(pass_sequence_mask, tf.float32)#(batch_size, pass_max_length)
         beta = tf.nn.softmax(beta)#(batch_size, pass_max_length)
@@ -283,8 +287,8 @@ class Model:
                     beta, att_encoding = self.answer_attention(H_r, stateTuple[1])
                     _, stateTuple = lstm_ans(att_encoding, stateTuple)
                     dist_lst.append(beta)
-        dist = tf.stack(dist_lst)#(2, None, pass_max_length)
-        dist = tf.transpose(dist, (1,0,2))#(None, 2, pass_max_length)
+        dist = tf.stack(dist_lst)#(2, batch_size, pass_max_length)
+        dist = tf.transpose(dist, (1,0,2))#(batch_size, 2, pass_max_length)
         return dist
 
     def add_predicted_dist(self):
@@ -298,6 +302,7 @@ class Model:
         self.dist = dist
     def add_loss_function(self):
         pass_max_length = self.pass_max_length
+        batch_size = self.batch_size
 
         ans = self.ans#(batch_size, 2)
         dist = self.dist#(batch_size, 2, pass_max_length)
