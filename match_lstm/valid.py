@@ -7,43 +7,45 @@ python valid.py <input_graph_file_name_list_path> <input-batches-file-path> <out
 Scripts used:
 valid_test_predict_helper.py
 '''
+import argparse
 import pickle
 import tensorflow as tf
 
-with open("./output/graph_name_list", 'rb') as f:
-    file_to_save_graph_name_list = pickle.load(f)
-for f in file_to_save_graph_name_list:
-    print f
-
-targetFile = file_to_save_graph_name_list[0]
+from evaluate-v1.1.py import evaluate
 
 
+def validate(dataset_file, token_file, batches_file, graph_path_list_file):
+    best_exact_match = -1
+    best_f1 = -1
+    best_graph_path = ""
+    with open(graph_path_list_file , 'rb') as f:
+        graph_path_list = pickle.load(f)
+    with open(dataset_file) as f:
+        dataset_json = json.load(f)
+        dataset = dataset_json['data']
+    for trained_graph in graph_path_list:
+        predictions = get_json_predictions(batches_file, token_file, trained_graph)
+        score = evaluate(dataset, predictions)#{'exact_match': exact_match, 'f1': f1}
+        #TODO: compare and update in more smart way
+        if score["f1"] > best_f1:
+            best_f1 = score["f1"]
+            best_exact_match = score["exact_match"]
+            best_graph_path = trained_graph
+    return best_graph_path
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description='Validating tensorflow graph')
+    parser.add_argument('dataset_file')
+    parser.add_argument('token_file')
+    parser.add_argument('batches_file')
+    parser.add_argument('graph_path_list_file')
+    parser.add_argument('best_graph_path_file')
+    parser.add_argument('equipment')
+    args = parser.parse_args()
 
-with tf.Session() as sess:
-    saver = tf.train.import_meta_graph(targetFile + '.meta')
-    saver.restore(sess, targetFile)
-    print("Model restored.")
+    #TODO: config equipment
 
-
-    # for v in tf.global_variables():
-    #     print v
-    #     print type(v)
-    #     print sess.run(v)
-    #     break
-
-    passage_ph = tf.get_default_graph().get_tensor_by_name("passage_placeholder:0")
-    passage_sequence_length_ph = tf.get_default_graph().get_tensor_by_name("passage_sequence_length_placeholder:0")
-    ques_ph = tf.get_default_graph().get_tensor_by_name("question_placeholder:0")
-    ques_sequence_length_ph = tf.get_default_graph().get_tensor_by_name("question_sequence_length_placeholder:0")
-    dist = tf.get_default_graph().get_tensor_by_name("dist:0")
-    print passage_ph
-    print passage_sequence_length_ph
-    print ques_ph
-    print ques_sequence_length_ph
-    print dist
-
-    # predicted_dist = sess.run(dist, {passage_ph : passage,
-    #                                                   passage_sequence_length_ph : passage_sequence_length,
-    #                                                   ques_ph : ques,
-    #                                                   ques_sequence_length_ph : ques_sequence_length)
+    best_graph_path = validate(args.dataset_file, args.token_file, args.batches_file, args.graph_path_list_file )
+    with open(args.best_graph_path_file, 'w') as f:
+        pickle.dump(best_graph_path, f, pickle.HIGHEST_PROTOCOL)

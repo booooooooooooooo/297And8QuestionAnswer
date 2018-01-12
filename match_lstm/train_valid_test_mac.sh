@@ -10,7 +10,8 @@ ques_max_length=7
 batch_size=97
 embed_size=50
 
-##train
+######train#######
+##################
 #preprocess
 pass_ques_ans_json_path="./data_raw/train-v1.1.json"
 dir_to_save="./data_token/"
@@ -37,3 +38,24 @@ dir_to_save_graph="./tf_graph/"
 file_to_save_graph_name_list="./output/graph_name_list"
 equipment="mac"
 python train.py $pass_max_length $ques_max_length $batch_size $embed_size $num_units $dropout $do_clip $clip_norm $optimizer $lr $n_epoch $batches_file $dir_to_save_graph $file_to_save_graph_name_list $equipment
+
+
+######valid#######
+##################
+#preprocess
+pass_ques_ans_json_path="./data_raw/train-v1.1.json"
+dir_to_save="./data_token/"
+train_percent=0.9
+python preprocess.py $pass_ques_ans_json_path $dir_to_save $train_percent
+#midprocess
+valid_passage_file="./data_token/valid.passage"
+valid_question_file="./data_token/valid.question"
+valid_answer_span_file="./data_token/valid.answer_span"
+glove_path="./data_raw/glove.6B/glove.6B.50d.txt"
+valid_batches_file_path="./data_feed_ready/valid.batches"
+valid_function_name="get_padded_vectorized_and_batched"
+python midprocess.py $pass_max_length $ques_max_length $batch_size $embed_size $passage_file $question_file $answer_span_file $glove_path $batches_file_path $function_name
+#valid graphs in $file_to_save_graph_name_list
+best_graph_path_file="./output/best_graph_path"
+valid_equipment="mac"
+python valid.py $valid_batches_file_path $valid_answer_span_file $valid_passage_file $file_to_save_graph_name_list $best_graph_path_file $valid_equipment
