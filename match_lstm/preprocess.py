@@ -55,12 +55,12 @@ class Preprocessor:
 
 
 
-    def preprocess_pass_ques_ans_json(self, pass_ques_ans_json_path):
+    def preprocess_split_answers(self, json_file):
         '''
         Splits out pass, ques and ans from json file.
 
         paras
-            pass_ques_ans_json_path
+            json_file
             dir_to_save
 
         '''
@@ -68,11 +68,11 @@ class Preprocessor:
         question_list = []
         answer_text_list = []
         answer_span_list = []
-        with open(pass_ques_ans_json_path) as fh:
+        with open(json_file) as fh:
             data_json = json.load(fh)
 
 
-        for article_id in tqdm(xrange(len(data_json['data'])), desc="Preprocessing {}".format(pass_ques_ans_json_path)):
+        for article_id in tqdm(xrange(len(data_json['data'])), desc="Preprocessing {}".format(json_file)):
             paragraphs = data_json['data'][article_id]['paragraphs']
             for paragraph_id in xrange(len(paragraphs)):
                 context = paragraphs[paragraph_id]['context']
@@ -95,53 +95,97 @@ class Preprocessor:
                         answer_text_list.append(text)#untokenized
                         answer_span_list.append([str(a_s), str(a_e)])
 
-                        # print context_token
-                        # print question_token
-                        # print text
-                        # print [a_s, a_e]
+        return  passage_list, question_list, answer_text_list, answer_span_list
 
-        return passage_list, question_list, answer_text_list, answer_span_list
+    def preprocess_not_split_answers(self, json_file):
+        '''
 
-    def preprocess_train_json_to_train_and_valid_token(self, pass_ques_ans_json_path, dir_to_save, train_percent):
-        #all exist or none exists. Checking one is checking all.
-        if os.path.isfile(os.path.join(dir_to_save, 'train.passage')):
-            print "\"{}\" has already been preprocessed to train and valid tokens.".format(pass_ques_ans_json_path)
-            return
+        '''
+        question_id_list = []
+        passage_list = []
+        question_list = []
+
+        with open(json_file) as fh:
+            data_json = json.load(fh)
+
+
+        for article_id in tqdm(xrange(len(data_json['data'])), desc="Preprocessing {}".format(json_file)):
+            paragraphs = data_json['data'][article_id]['paragraphs']
+            for paragraph_id in xrange(len(paragraphs)):
+                context = paragraphs[paragraph_id]['context']
+                context_token = self.tokenize(context)
+                qas = paragraphs[paragraph_id]['qas']
+                for qas_id in range(len(qas)):
+                    question_id = qas[qas_id]['id']
+                    question = qas[qas_id]['question']
+                    question_token = self.tokenize(question)
+
+                    question_id_list.append(question_id)
+                    passage_list.append(context_token)
+                    question_list.append(question_token)
+
+
+        return question_id_list, passage_list, question_list
+
+    def preprocess_train_json_to_train_and_valid_token(self, json_file, dir_to_save, train_percent, train_token_path_file, valid_token_path_file):
+        train_percent = float(train_percent)
+
         if not os.path.isdir(dir_to_save):
             os.makedirs(dir_to_save)
+        #get train tokens
+        if not os.path.isfile(os.path.join(dir_to_save, 'train.passage')):#all exist or none exists
+            passage_list, question_list, answer_text_list, answer_span_list = self.preprocess_split_answers(json_file)
+            split_index = int ( len(passage_list) * train_percent )
+            with open(os.path.join(dir_to_save, 'train.passage'), 'w') as passage_file, \
+                 open(os.path.join(dir_to_save, 'train.question'), 'w') as question_file, \
+                 open(os.path.join(dir_to_save, 'train.answer_text'), 'w') as ans_text_file, \
+                 open(os.path.join(dir_to_save, 'train.answer_span'), 'w') as ans_span_file:
+                 for i in tqdm(range(0, split_index), desc="Writing my train tokens to {} folder".format(dir_to_save)):
+                     passage_file.write(' '.join([token.encode('utf8') for token in passage_list[i]]) + '\n')
+                     question_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
+                     ans_text_file.write(answer_text_list[i].encode('utf8') + '\n')
+                     ans_span_file.write(' '.join(answer_span_list[i]) + '\n')
+        else:
+            print "Train tokens has already been retrieved from \"{}\".".format(json_file)
+        #write train token path
+        train_token_path_dic = {}
+        train_token_path_dic['passage'] = os.path.join(dir_to_save, 'train.passage')
+        train_token_path_dic['question'] = os.path.join(dir_to_save, 'train.question')
+        train_token_path_dic['answer_text'] = os.path.join(dir_to_save, 'train.answer_text')
+        train_token_path_dic['answer_span'] = os.path.join(dir_to_save, 'train.answer_span')
+        with open(train_token_path_file, 'w') as f:
+            f.write(json.dumps(train_token_path_dic))
+        #get valid tokens
+        if not os.path.isfile(os.path.join(dir_to_save, 'valid.passage')):#all exist or none exists
+            question_id_list_not_split, passage_list_not_split, question_list_not_split = self.preprocess_not_split_answers(json_file)
+            split_index_not_split = int (len(passage_list_not_split) * train_percent)
+            with open(os.path.join(dir_to_save, 'valid.passage'), 'w') as passage_file, \
+                 open(os.path.join(dir_to_save, 'valid.question'), 'w') as question_file, \
+                 open(os.path.join(dir_to_save, 'valid.question_id'), 'w') as question_id_file:
+                 for i in tqdm(range(split_index_not_split, len(passage_list_not_split)), desc="Writing my valid tokens to {} folder".format(dir_to_save)):
+                     passage_file.write(' '.join([token.encode('utf8') for token in passage_list_not_split[i]]) + '\n')
+                     question_file.write(' '.join([token.encode('utf8') for token in question_list_not_split[i]]) + '\n')
+                     question_id_file.write(question_id_list_not_split[i].encode('utf8') + '\n')
+        else:
+            print "Valid tokens has already been retrieved from \"{}\".".format(json_file)
+        #write valid token path
+        valid_token_path_dic = {}
+        valid_token_path_dic["passage"] = os.path.join(dir_to_save, 'valid.passage')
+        valid_token_path_dic["question"] = os.path.join(dir_to_save, 'valid.question')
+        valid_token_path_dic["question_id"] = os.path.join(dir_to_save, 'valid.question_id')
+        with open(valid_token_path_file, 'w') as f:
+            f.write(json.dumps(valid_token_path_dic))
 
-        passage_list, question_list, answer_text_list, answer_span_list = self.preprocess_pass_ques_ans_json(pass_ques_ans_json_path)
-        split_index = int ( len(passage_list) * train_percent )
-        with open(os.path.join(dir_to_save, 'train.passage'), 'w') as passage_file, \
-             open(os.path.join(dir_to_save, 'train.question'), 'w') as question_file, \
-             open(os.path.join(dir_to_save, 'train.answer_text'), 'w') as ans_text_file, \
-             open(os.path.join(dir_to_save, 'train.answer_span'), 'w') as ans_span_file:
-             for i in tqdm(range(0, split_index), desc="Writing my train tokens to {} folder".format(dir_to_save)):
-                 passage_file.write(' '.join([token.encode('utf8') for token in passage_list[i]]) + '\n')
-                 question_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
-                 ans_text_file.write(answer_text_list[i].encode('utf8') + '\n')
-                 ans_span_file.write(' '.join(answer_span_list[i]) + '\n')
-
-        with open(os.path.join(dir_to_save, 'valid.passage'), 'w') as passage_file, \
-             open(os.path.join(dir_to_save, 'valid.question'), 'w') as question_file, \
-             open(os.path.join(dir_to_save, 'valid.answer_text'), 'w') as ans_text_file, \
-             open(os.path.join(dir_to_save, 'valid.answer_span'), 'w') as ans_span_file:
-             for i in tqdm(range(split_index, len(passage_list)), desc="Writing my valid tokens to {} folder".format(dir_to_save)):
-                 passage_file.write(' '.join([token.encode('utf8') for token in passage_list[i]]) + '\n')
-                 question_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
-                 ans_text_file.write(answer_text_list[i].encode('utf8') + '\n')
-                 ans_span_file.write(' '.join(answer_span_list[i]) + '\n')
-
-    def analyze_pass_ques_ans_json(self, pass_ques_ans_json_path):
+    def analyze_pass_ques_ans_json(self, json_file):
         count = 0
         pass_max_length = 0
         pass_ave_length = 0
         ques_max_length = 0
         ques_ave_length = 0
 
-        with open(pass_ques_ans_json_path) as fh:
+        with open(json_file) as fh:
             data_json = json.load(fh)
-        for article_id in tqdm(xrange(len(data_json['data'])), desc="Analyzing {}".format(pass_ques_ans_json_path)):
+        for article_id in tqdm(xrange(len(data_json['data'])), desc="Analyzing {}".format(json_file)):
             paragraphs = data_json['data'][article_id]['paragraphs']
             for paragraph_id in xrange(len(paragraphs)):
                 context = paragraphs[paragraph_id]['context']
@@ -166,11 +210,12 @@ class Preprocessor:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Preprocessing json to tokens')
-    parser.add_argument('pass_ques_ans_json_path')
-    parser.add_argument('dir_to_save')
-    parser.add_argument('train_percent')
+    parser.add_argument('function_name')
+    parser.add_argument('parameters', metavar='para', type=str, nargs='+',
+                        help='sequence of parameters')
     args = parser.parse_args()
 
     my_preprocessor = Preprocessor()
 
-    my_preprocessor.preprocess_train_json_to_train_and_valid_token(args.pass_ques_ans_json_path, args.dir_to_save, float(args.train_percent) )
+    if args.function_name == "preprocess_train_json_to_train_and_valid_token":
+        my_preprocessor.preprocess_train_json_to_train_and_valid_token(*args.parameters)

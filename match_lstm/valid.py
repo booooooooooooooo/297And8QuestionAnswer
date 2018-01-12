@@ -11,7 +11,7 @@ import argparse
 import pickle
 import tensorflow as tf
 
-from evaluate-v1.1.py import evaluate
+from evaluate-v1.1 import evaluate
 
 
 def validate(dataset_file, token_file, batches_file, graph_path_list_file):

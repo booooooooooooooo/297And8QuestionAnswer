@@ -7,11 +7,6 @@ import argparse
 Convert token to vector
 '''
 class Midprocessor:
-    def __init__(self, pass_max_length, ques_max_length, batch_size, embed_size):
-        self.pass_max_length = pass_max_length
-        self.ques_max_length = ques_max_length
-        self.batch_size = batch_size
-        self.embed_size = embed_size
     def get_vocabulary(self, passage_file, question_file):
         vocabulary = set()
         with open(passage_file) as fh:
@@ -137,23 +132,21 @@ class Midprocessor:
             os.makedirs(os.path.dirname(batches_file_path) )
         with open(batches_file_path, 'w') as f:
             pickle.dump(batches, f, pickle.HIGHEST_PROTOCOL)
-
+    def midprocess_train_token(self, pass_max_length, ques_max_length, batch_size, embed_size, train_token_path_file, glove_path, train_batches_path_file):
+        #TODO
+        pass_max_length = int(pass_max_length)
+        ques_max_length = int(ques_max_length)
+        batch_size = int(batch_size)
+        embed_size = int(embed_size)
+        return
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Midprocessing token to vector')
-    parser.add_argument('pass_max_length')
-    parser.add_argument('ques_max_length')
-    parser.add_argument('batch_size')
-    parser.add_argument('embed_size')
-    parser.add_argument('passage_file')
-    parser.add_argument('question_file')
-    parser.add_argument('answer_span_file')
-    parser.add_argument('glove_path')
-    parser.add_argument('batches_file_path')
-    parser.add_argument("function_name")
+    parser.add_argument('function_name')
+    parser.add_argument('parameters', metavar='para', type=str, nargs='+',
+                        help='sequence of parameters')
     args = parser.parse_args()
-
-    my_midprocessor = Midprocessor(int(args.pass_max_length) , int(args.ques_max_length), int(args.batch_size), int(args.embed_size) )
-    if args.function_name == "get_padded_vectorized_and_batched":
-        my_midprocessor.get_padded_vectorized_and_batched(args.passage_file, args.question_file, args.answer_span_file, args.glove_path, args.batches_file_path)
+    my_midprocessor = Midprocessor( )
+    if args.function_name == "midprocess_train_token":
+        my_midprocessor.midprocess_train_token(*args.parameters)
