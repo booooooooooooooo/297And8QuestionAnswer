@@ -11,18 +11,23 @@ embed_size=50
 ######train#######
 ##################
 #preprocess
-function_name="preprocess_train_json_to_train_and_valid_token"
+function_name="split_train"
 train_and_valid_json_file="./data_raw/train-v1.1.json"
-dir_to_save="./data_token/"
 train_percent=0.9
-train_token_path_file="./output/train_token_path"
-valid_token_path_file="./output/valid_token_path"
-python preprocess.py $function_name $train_and_valid_json_file $dir_to_save $train_percent $train_token_path_file $valid_token_path_file
-#midprocess
-function_name="midprocess_train_token"
-glove_path="./data_raw/glove.6B/glove.6B.50d.txt"
-train_batches_path_file="./data_feed_ready/train.batches"
-python midprocess.py $function_name $pass_max_length $ques_max_length $batch_size $embed_size $train_token_path_file $glove_path $train_batches_path_file
+python preprocess.py $function_name $train_and_valid_json_file $train_percent
+
+# function_name="preprocess_train_json_to_train_and_valid_token"
+# train_json_file="./data_raw/train-v1.1.json"
+# dir_to_save="./data_token/"
+# train_percent=0.9
+# train_token_path_file="./output/train_token_path"
+# valid_token_path_file="./output/valid_token_path"
+# python preprocess.py $function_name $train_and_valid_json_file $dir_to_save $train_percent $train_token_path_file $valid_token_path_file
+# #midprocess
+# function_name="midprocess_train_token"
+# glove_path="./data_raw/glove.6B/glove.6B.50d.txt"
+# train_batches_path_file="./data_feed_ready/train.batches"
+# python midprocess.py $function_name $pass_max_length $ques_max_length $batch_size $embed_size $train_token_path_file $glove_path $train_batches_path_file
 # #fit graph
 # num_units=10
 # dropout=0.5
