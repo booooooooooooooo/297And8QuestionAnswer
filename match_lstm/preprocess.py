@@ -206,7 +206,7 @@ class Preprocessor:
                  question_id_file.write(question_id_list[i].encode('utf8') + '\n')
 
 
-
+    
 
 
     '''
@@ -334,7 +334,7 @@ class Preprocessor:
         '''
         could exclude question_ids
         '''
-        
+
         if os.path.isfile(os.path.join(dir_to_save, prefix + ".batches" )):
             print "All {} batches are ready!".format(prefix)
             return

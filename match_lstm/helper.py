@@ -32,7 +32,6 @@ def get_json_predictions(batches_file, passage_tokens_file, question_ids_file, t
                                     ques_sequence_length_ph : ques_sequence_length})
         pred_dist_list.append(pred_dist)
     predictions_dist = np.concatenate(pred_dist_list)#(-1, 2, pass_max_length)
-    print predictions_dist.shape
 
     #turn predictions_dist to prediction
     pred_dic = {}

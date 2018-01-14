@@ -23,6 +23,7 @@ def test_helper():
     pred_dic = get_json_predictions(batches_file, passage_tokens_file, question_ids_file, trained_graph)
     # print pred_dic
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Unit testing')
