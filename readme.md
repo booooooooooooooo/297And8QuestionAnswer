@@ -1,7 +1,7 @@
 ## My Memo
 navigate to folder match_lstm
 
-docker run -it --rm -p 8888:8888 -v \`pwd\`:/297And8QuestionAnswer  accessfloydhub
+docker run -it --rm -p 8888:8888 -v `pwd`:/297And8QuestionAnswer  accessfloydhub
 
 docker exec -i -t container_id  /bin/bash
 
@@ -36,6 +36,7 @@ docker image rm $(docker image ls -a -q)   # Remove all images from this machine
 
 
 git rm -r --cached .
+git reset HEAD~
 
 # Question Answerer
 

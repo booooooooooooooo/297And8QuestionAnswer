@@ -30,7 +30,6 @@ if __name__ == "__main__":
     parser.add_argument('n_epoch')
     parser.add_argument('batches_file')
     parser.add_argument('dir_to_save_graph')
-    parser.add_argument("graph_path_list_file")
     args = parser.parse_args()
 
     myModel = Model(int (args.pass_max_length), int (args.ques_max_length), int (args.batch_size), int (args.embed_size), int (args.num_units), float(args.dropout), bool(args.do_clip), float(args.clip_norm))
@@ -38,5 +37,4 @@ if __name__ == "__main__":
     sess = tf.Session()
     saved_model_list = myModel.fit(sess, args.optimizer, float (args.lr), int(args.n_epoch), args.batches_file, args.dir_to_save_graph, small_size = True)
 
-    with open(args.graph_path_list_file, 'w') as f:
-        f.write(json.dumps(saved_model_list))
+    # print saved_model_list
