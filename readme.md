@@ -1,9 +1,17 @@
 ## My Memo
-Always run code in 297And8QuestionAnswer!
+navigate to folder match_lstm
 
-docker run -it --rm -p 8888:8888 -v \`pwd\`:/297And8QuestionAnswer  masterproject_2
+docker run -it --rm -p 8888:8888 -v \`pwd\`:/297And8QuestionAnswer  accessfloydhub
 
-docker exec -i -t 5b0bb9b8547d  /bin/bash
+docker exec -i -t container_id  /bin/bash
+
+floyd login -token
+
+copy authentication token from dashboard
+
+floyd run --env tensorflow-1.4:py2 --data bo.nov29/datasets/squad/1:/data_raw --data bo.nov29/projects/match_lstm/11/output:/data_json "python unit_test.py floyd"
+
+##my Memoooooooo
 
 docker build -t friendlyname .  # Create image using this directory's Dockerfile
 
