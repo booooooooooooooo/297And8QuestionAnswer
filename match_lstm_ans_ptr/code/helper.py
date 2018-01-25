@@ -7,6 +7,7 @@ from util import *
 '''
 batches_file is equal or longer than token_file due to fake datum
 '''
+#TODO: pass sess as parameter
 def get_json_predictions(batches_file, passage_tokens_file, question_ids_file, trained_graph):
     '''
         return: json

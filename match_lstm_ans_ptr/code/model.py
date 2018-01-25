@@ -99,12 +99,15 @@ class Model:
         batch_size = self.batch_size
         initial_state = lstm_pre.zero_state(batch_size, dtype=tf.float32)
 
-        H_p, _ = tf.nn.dynamic_rnn(lstm_pre, passage, sequence_length = passage_sequence_length,
-                                           initial_state=initial_state,
-                                           dtype=tf.float32)
-        H_q, _ = tf.nn.dynamic_rnn(lstm_pre, ques, sequence_length = ques_sequence_length,
-                                           initial_state=initial_state,
-                                           dtype=tf.float32)
+        #TODO：add dropout to embeddings or not?
+
+        with tf.variable_scope("preprocessing_layer"):
+            H_p, _ = tf.nn.dynamic_rnn(lstm_pre, passage, sequence_length = passage_sequence_length,
+                                               initial_state=initial_state,
+                                               dtype=tf.float32)
+            H_q, _ = tf.nn.dynamic_rnn(lstm_pre, ques, sequence_length = ques_sequence_length,
+                                               initial_state=initial_state,
+                                               dtype=tf.float32)
         return H_p, H_q
 
     def match_attention(self, H_q, h_p, h_r):
@@ -131,6 +134,8 @@ class Model:
         w = self.w
         b = self.b
 
+        #TODO: use tf.expand_dims to calcualte
+
         #get G
         G_1 = tf.matmul( tf.reshape(H_q, (-1, num_units)), W_q)#(batch_size * ques_max_length, num_units)
         G_1 = tf.reshape(G_1, (batch_size, -1, num_units))#(batch_size, ques_max_length, num_units)
@@ -142,8 +147,8 @@ class Model:
         G = tf.reshape(G, (-1, num_units))#(batch_size * ques_max_length, num_units)
         alpha = tf.matmul(G, tf.reshape(w, (-1, 1))) + b #(batch_size * ques_max_length, 1)
         alpha = tf.reshape(alpha, (batch_size, -1))#(batch_size, ques_max_length)
-        alpha += 0.001 # avoid zero entry in non-mask entries
         ques_sequence_mask = tf.sequence_mask(ques_sequence_length,ques_max_length, dtype=tf.int32)#(batch_size, ques_max_length)
+        alpha += 1.0 / (ques_max_length * 100) # avoid zero vector
         alpha = alpha * tf.cast(ques_sequence_mask, tf.float32)#(batch_size, ques_max_length)
         alpha = tf.nn.softmax(alpha)#(batch_size, ques_max_length)
         #get att_encoding
@@ -210,6 +215,8 @@ class Model:
         pass_max_length = self.pass_max_length
         batch_size = self.batch_size
 
+        #TODO: make match_lstm cell and use tf.nn.dynamic_rnn to get H_r or not?
+
         #get attention encoding or both directions
         H_r_right = self.match_one_direct(H_p, H_q, "right")#(batch_size, pass_max_length, num_units)
         H_r_left = self.match_one_direct(H_p, H_q, "left")#(batch_size, pass_max_length, num_units)
@@ -246,6 +253,8 @@ class Model:
         v = self.v#(num_units, )
         c = self.c#()
 
+        #TODO: use tf.expand_dims to calculate
+
         #get F
         F_1 = tf.matmul(tf.reshape(H_r, (-1, 2 * num_units)), V)#(batch_size * pass_max_length, num_units)
         F_1 = tf.reshape(F_1, (batch_size, pass_max_length, num_units))#(batch_size, pass_max_length, num_units)
@@ -257,8 +266,8 @@ class Model:
         F = tf.reshape(F, (-1, num_units))#(batch_size * pass_max_length, num_units)
         beta = tf.matmul(F, tf.reshape(v, (-1, 1))) + c #(batch_size * pass_max_length, 1)
         beta = tf.reshape(beta, (batch_size, pass_max_length))#(batch_size, pass_max_length)
-        beta += 0.001 # avoid zero entry in non-mask entries
         pass_sequence_mask = tf.sequence_mask(passage_sequence_length,pass_max_length, dtype=tf.int32)#(batch_size, pass_max_length)
+        beta += 1.0 / (pass_max_length * 100) # avoid zero vector
         beta = beta * tf.cast(pass_sequence_mask, tf.float32)#(batch_size, pass_max_length)
         beta = tf.nn.softmax(beta)#(batch_size, pass_max_length)
         #get att_encoding
@@ -322,64 +331,4 @@ class Model:
         #add loss
         self.add_loss_function()
 
-    '''
-    Below are functins used by train.py to train the graph
-    '''
-    def get_train_op(self, optimizer, lr):
-        print "Getting {} optimizer".format(optimizer)
-
-        loss = self.loss
-        do_clip = self.do_clip
-        clip_norm = self.clip_norm
-
-        if optimizer == "adam":
-            optimizer_func = tf.train.AdamOptimizer(lr)
-        elif optimizer == "sgd":
-            optimizer_func = tf.train.GradientDescentOptimizer(lr)
-        else:
-            raise ValueError('Parameters are wrong')
-
-        gradients, variables = zip(*optimizer_func.compute_gradients(loss))
-        if do_clip:
-            gradients_clipped, gradients_norm = tf.clip_by_global_norm(gradients, clip_norm)
-        else:
-            gradients_norm = tf.global_norm(gradients)
-        train_op = optimizer_func.apply_gradients(zip(gradients, variables))#second part of minimize()
-
-        print "Finish getting {} optimizer".format(optimizer)
-
-        return train_op
-    def run_batch(self, sess, train_op, batch):
-        passage, passage_sequence_length, ques ,ques_sequence_length, ans = batch
-        _ , batch_loss = sess.run([train_op, self.loss], {self.passage : passage,
-                                                          self.passage_sequence_length : passage_sequence_length,
-                                                          self.ques : ques,
-                                                          self.ques_sequence_length : ques_sequence_length,
-                                                          self.ans : ans})
-        # print batch_loss
-        return batch_loss
-    def run_epoch(self, sess, train_op, batches):
-        trainLoss = 0.0
-        for i in xrange(len(batches)):
-            trainLoss += self.run_batch(sess, train_op, batches[i])
-        trainLoss /= len(batches)
-        return trainLoss
-    def fit(self, sess, optimizer, lr, n_epoch, batches_file, dirToSaveModel, small_size = True):
-        train_op = self.get_train_op(optimizer, lr)
-        print "Initilizing all varibles"
-        sess.run(tf.global_variables_initializer())#Initilizing after making train_op
-        print "Finish Initilizing all varibles"
-        batches = get_batches(batches_file, small_size)#call get_batches from util.py
-        print "Finish Reading batched data from disk......."
-        saved_model_list = []
-        for epoch in tqdm(xrange(n_epoch), desc = "Trainning {} epoches".format(n_epoch) ):
-            trainLoss = self.run_epoch(sess, train_op, batches)
-            file_to_save_model = os.path.join(dirToSaveModel, str(trainLoss) + "_" + str(optimizer) + "_" + str(lr)  + "_" + str(epoch) + "_" + str(datetime.now()))
-            tf.train.Saver().save(sess, file_to_save_model )
-            saved_model_list.append(file_to_save_model)
-            print "Epoch {} trainLoss {}".format(epoch, trainLoss)
-
-        return saved_model_list
-    '''
-    Above are functins used by train.py to train the graph
-    '''
+    

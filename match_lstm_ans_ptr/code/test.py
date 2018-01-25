@@ -19,7 +19,8 @@ def test(json_file, passage_tokens_file, question_ids_file, batches_file, best_g
         data_json = json.load(f)
         dataset = data_json['data']
 
-
+    #TODO: create sess here and pass sess as parameter to get_json_predictions
+    
     predictions = get_json_predictions(batches_file, passage_tokens_file, question_ids_file, trained_graph)
     score = evaluate(dataset, predictions)#{'exact_match': exact_match, 'f1': f1}
 

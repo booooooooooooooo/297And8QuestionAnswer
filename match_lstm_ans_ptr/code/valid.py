@@ -10,6 +10,8 @@ from helper import *
 from evaluate_v_1_1 import evaluate
 
 def validate(json_file, passage_tokens_file, question_ids_file, batches_file, graph_path_list_file):
+
+    #TODO: create sess here and pass sess as parameter to get_json_predictions
     best_exact_match = -1
     best_f1 = -1
     best_graph_path = ""
@@ -41,6 +43,7 @@ if __name__ == "__main__":
     parser.add_argument('graph_path_list_file')
     parser.add_argument('best_graph_info_file')
     args = parser.parse_args()
+
 
 
     best_graph_info = validate(args.json_file, args.passage_tokens_file, args.question_ids_file, args.batches_file, args.graph_path_list_file )
