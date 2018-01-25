@@ -98,7 +98,6 @@ class Model:
         batch_size = self.batch_size
         initial_state = lstm_pre.zero_state(batch_size, dtype=tf.float32)
 
-        #TODO：add dropout to embeddings or not?
 
         with tf.variable_scope("preprocessing_layer"):
             H_p, _ = tf.nn.dynamic_rnn(lstm_pre, passage, sequence_length = passage_sequence_length,

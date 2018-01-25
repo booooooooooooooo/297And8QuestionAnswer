@@ -16,16 +16,44 @@ floyd run --gpu --env tensorflow-1.4:py2 --data $data_mount:/data "python consol
 To run on mac:
 
 
-datafolder = "../mac/data"
-outputfolder="../mac/output"
+dir_data = "../mac/data"
+dir_output="../mac/output"
 pass_max_length=13
 ques_max_length=7
 batch_size=97
 embed_size=50
 
-python console.py ..........
+num_units=10
+dropout=0.5
+do_clip=false
+clip_norm=5
+optimizer="adam"
+lr=10
+n_epoch=5
+train_batches_sub_path="/data_feed_ready/train.batches"
+valid_json_sub_path="/data_json/valid.json"
+valid_passage_tokens_sub_path="/data_token/valid.passage"
+valid_question_ids_sub_path="/data_token/valid.question_id"
+valid_batches_sub_path="/data_feed_ready/valid.batches"
+test_json_sub_path="/data_json/test.json"
+test_passage_tokens_sub_path="/data_token/test.passage"
+test_question_ids_sub_path="/data_token/test.question_id"
+test_batches_sub_path="/data_feed_ready/test.batches"
+
+python console.py $dir_data $dir_output $pass_max_length $ques_max_length $batch_size $embed_size $num_units $dropout $do_clip $clip_norm $optimizer $lr $n_epoch $train_batches_sub_path $valid_json_sub_path $valid_passage_tokens_sub_path $valid_question_ids_sub_path $valid_batches_sub_path $test_json_sub_path $test_passage_tokens_sub_path $test_question_ids_sub_path $test_batches_sub_path
+
 
 '''
+
+
+import argparse
+import pickle
+import tensorflow as tf
+import os
+
+from train import train
+from valid import valid
+from test import test
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Running match_lstm_ans_ptr')
@@ -60,54 +88,9 @@ if __name__ == "__main__":
 
     graph_sub_paths_list = train(int (args.pass_max_length), int (args.ques_max_length), int (args.batch_size), int (args.embed_size), int (args.num_units), float(args.dropout), bool(args.do_clip), float(args.clip_norm), args.optimizer, float (args.lr), int(args.n_epoch), args.train_batches_sub_path, args.dir_data, args.dir_output)
 
-    valid_result = valid(args.valid_json_sub_path, args.valid_passage_tokens_sub_path, args.valid_question_ids_sub_path, args.valid_batches_sub_path, args.graph_path_list_file , args.dir_data, args.dir_output)
+    valid_result = valid(args.valid_json_sub_path, args.valid_passage_tokens_sub_path, args.valid_question_ids_sub_path, args.valid_batches_sub_path, graph_sub_paths_list , args.dir_data, args.dir_output)
 
     test_result = test(args.test_json_sub_path, args.test_passage_tokens_sub_path, args.test_question_ids_sub_path, args.test_batches_sub_path, valid_result, args.dir_data, args.dir_output)
 
     print valid_result
     print test_result
-
-#not related to preprocess
-
-
-
-######train############################################
-#######################################################
-num_units=10
-dropout=0.5
-do_clip=false
-clip_norm=5
-optimizer="adam"
-lr=10
-n_epoch=5
-batches_file="/data/data_feed_ready/train.batches"
-dir_to_save_graph="/output/tf_graph/"
-floyd run --env tensorflow-1.4:py2 --data $datafolder:/data "python train.py $pass_max_length $ques_max_length $batch_size $embed_size $num_units $dropout $do_clip $clip_norm $optimizer $lr $n_epoch $batches_file $dir_to_save_graph"
-
-
-
-######valid############################################
-#######################################################
-trainoutputfolder="TBD"
-valid_json="/data/data_json/valid.json"
-valid_passage="/data/data_token/valid.passage"
-valid_question_id="/data/data_token/valid.question_id"
-valid_batches="/data/data_feed_ready/valid.batches"
-dir_to_save_graph="/model/tf_graph/"
-best_graph_info_json_file="/output/best_graph_info.json"
-floyd run --env tensorflow-1.4:py2 --data $datafolder:/data --data $trainoutputfolder:/model "python valid.py $valid_json $valid_passage $valid_question_id $valid_batches $dir_to_save_graph $best_graph_info_json_file"
-
-
-
-
-
-######test############################################
-######################################################
-validoutputfolder="TBD"
-test_json="/data/data_json/test.json"
-test_passage="/data/data_token/test.passage"
-test_question_id="/data/data_token/test.question_id"
-test_batches="/data/data_feed_ready/test.batches"
-best_graph_info_json_file="/model/best_graph_info.json"
-test_score_info_file="/output/test_score_info"
-floyd run --env tensorflow-1.4:py2 --data $datafolder:/data --data $validoutputfolder:/model "python test.py $test_json $test_passage $test_question_id $test_batches $best_graph_info_json_file $test_score_info_file"

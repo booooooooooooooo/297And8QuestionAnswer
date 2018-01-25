@@ -7,8 +7,12 @@ import numpy as np
 import pickle
 import argparse
 import json
+import os
+from tqdm import tqdm
+from datetime import datetime
 
 from model import Model
+from util import *
 
 
 def get_train_op(model, do_clip, clip_norm, optimizer, lr):
@@ -40,23 +44,25 @@ def run_epoch(sess, model, train_op, batches):
     trainLoss /= len(batches)
     return trainLoss
 def fit(model, do_clip, clip_norm, optimizer, lr, n_epoch, train_batches_sub_path, dir_data, dir_output):
+    print dir_data
+    print os.path.join(dir_data, train_batches_sub_path)
     print "Start getting train_op"
     train_op = get_train_op(model, do_clip, clip_norm, optimizer, lr)
     print "Finish getting train_op"
     print "Start intializing graph"
-    sess = tf.Session()
-    sess.run(tf.global_variables_initializer())#Initilizing after making train_op
-    print "Finish intializing graph"
-    print "Start Reading batched data from disk"
-    batches = get_batches(os.path.join(dir_data, train_batches_sub_path))#call get_batches from util.py
-    print "Finish Reading batched data from disk"
-    graph_sub_paths_list = []
-    for epoch in tqdm(xrange(n_epoch), desc = "Trainning {} epoches".format(n_epoch) ):
-        trainLoss = run_epoch(sess, model, train_op, batches)
-        graph_sub_path = os.path.join(dir_output, "/graphes", str(trainLoss) + "_" + str(optimizer) + "_" + str(lr)  + "_" + str(epoch) + "_" + str(datetime.now()))
-        tf.train.Saver().save(sess, graph_sub_path )
-        graph_sub_paths_list.append(graph_sub_path)
-        print "Epoch {} trainLoss {}".format(epoch, trainLoss)
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())#Initilizing after making train_op
+        print "Finish intializing graph"
+        print "Start Reading batched data from disk"
+        batches = get_batches(os.path.join(dir_data, train_batches_sub_path))#call get_batches from util.py
+        print "Finish Reading batched data from disk"
+        graph_sub_paths_list = []
+        for epoch in tqdm(xrange(n_epoch), desc = "Trainning {} epoches".format(n_epoch) ):
+            trainLoss = run_epoch(sess, model, train_op, batches)
+            graph_sub_path = os.path.join(dir_output, "graphes/", str(trainLoss) + "_" + str(optimizer) + "_" + str(lr)  + "_" + str(epoch) + "_" + str(datetime.now()))
+            tf.train.Saver().save(sess, graph_sub_path )
+            graph_sub_paths_list.append(graph_sub_path)
+            print "Epoch {} trainLoss {}".format(epoch, trainLoss)
     return graph_sub_paths_list
 
 def train(pass_max_length, ques_max_length, batch_size, embed_size, num_units, dropout, do_clip, clip_norm, optimizer, lr, n_epoch, train_batches_sub_path, dir_data, dir_output):
