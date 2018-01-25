@@ -1,5 +1,5 @@
 '''
-Used by tune.py to train better tensor graph.
+Part of graph used by both train, valid and test.
 '''
 import tensorflow as tf
 import os
@@ -28,8 +28,9 @@ whether put validation and testing fuction into Model. aka how to restore graph
 
 whether remove train part from Model. whether assing optimizer etc. in __init__
 '''
+
 class Model:
-    def __init__(self, pass_max_length, ques_max_length, batch_size, embed_size, num_units, dropout, do_clip, clip_norm):
+    def __init__(self, pass_max_length, ques_max_length, batch_size, embed_size, num_units, dropout):
         #parameters used by the graph. Train, valid and test data must be consistent on these parameters.
         self.pass_max_length = pass_max_length
         self.ques_max_length = ques_max_length#not sure
@@ -38,8 +39,6 @@ class Model:
         #parameter used by the graph. It is not related to data.
         self.num_units = num_units
         self.dropout = dropout
-        self.do_clip = do_clip
-        self.clip_norm = clip_norm
         #build the graph
         self.build()
     def add_placeholder(self):
@@ -330,5 +329,3 @@ class Model:
         self.add_predicted_dist()
         #add loss
         self.add_loss_function()
-
-    

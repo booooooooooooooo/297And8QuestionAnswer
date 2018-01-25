@@ -58,11 +58,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
 
-    saved_model_list = train(int (args.pass_max_length), int (args.ques_max_length), int (args.batch_size), int (args.embed_size), int (args.num_units), float(args.dropout), bool(args.do_clip), float(args.clip_norm), args.optimizer, float (args.lr), int(args.n_epoch), args.train_batches_sub_path, args.dir_data, args.dir_output)
+    graph_sub_paths_list = train(int (args.pass_max_length), int (args.ques_max_length), int (args.batch_size), int (args.embed_size), int (args.num_units), float(args.dropout), bool(args.do_clip), float(args.clip_norm), args.optimizer, float (args.lr), int(args.n_epoch), args.train_batches_sub_path, args.dir_data, args.dir_output)
 
-    best_graph_info = valid(args.json_file, args.passage_tokens_file, args.question_ids_file, args.batches_file, args.graph_path_list_file )
+    valid_result = valid(args.valid_json_sub_path, args.valid_passage_tokens_sub_path, args.valid_question_ids_sub_path, args.valid_batches_sub_path, args.graph_path_list_file , args.dir_data, args.dir_output)
 
-    test_score = test(args.json_file, args.passage_tokens_file, args.question_ids_file, args.batches_file, args.best_graph_info_file)
+    test_result = test(args.test_json_sub_path, args.test_passage_tokens_sub_path, args.test_question_ids_sub_path, args.test_batches_sub_path, valid_result, args.dir_data, args.dir_output)
+
+    print valid_result
+    print test_result
 
 #not related to preprocess
 
