@@ -77,7 +77,7 @@ class Model:
             with tf.variable_scope("LSTM"):
                 self.lstm_ans = tf.contrib.rnn.BasicLSTMCell(num_units)
                 self.lstm_ans_dropout = tf.contrib.rnn.DropoutWrapper(self.lstm_ans, output_keep_prob=1.0 - dropout)
-    def pre_layer(self):
+    def pre_layer(self, useDropout):
         '''
         return:
             H_p: (batch_size, pass_max_length, num_units)
@@ -88,26 +88,32 @@ class Model:
         passage_sequence_length = self.passage_sequence_length
         ques_sequence_length = self.ques_sequence_length
 
-        lstm_pre = self.lstm_pre
-        lstm_pre_dropout = self.lstm_pre_dropout
+
         batch_size = self.batch_size
-        initial_state = lstm_pre.zero_state(batch_size, dtype=tf.float32)
 
 
-        with tf.variable_scope("preprocessing_layer"):
-            H_p, _ = tf.nn.dynamic_rnn(lstm_pre, passage, sequence_length = passage_sequence_length,
-                                               initial_state=initial_state,
-                                               dtype=tf.float32)
-            H_q, _ = tf.nn.dynamic_rnn(lstm_pre, ques, sequence_length = ques_sequence_length,
-                                               initial_state=initial_state,
-                                               dtype=tf.float32)
-            H_p_dropout, _ = tf.nn.dynamic_rnn(lstm_pre_dropout, passage, sequence_length = passage_sequence_length,
-                                               initial_state=initial_state,
-                                               dtype=tf.float32)
-            H_q_dropout, _ = tf.nn.dynamic_rnn(lstm_pre_dropout, ques, sequence_length = ques_sequence_length,
-                                               initial_state=initial_state,
-                                               dtype=tf.float32)
-        return H_p, H_q, H_p_dropout, H_q_dropout
+        if useDropout:
+            lstm_pre_dropout = self.lstm_pre_dropout
+            initial_state = lstm_pre_dropout.zero_state(batch_size, dtype=tf.float32)
+            with tf.variable_scope("preprocessing_layer"):
+                H_p_dropout, _ = tf.nn.dynamic_rnn(lstm_pre_dropout, passage, sequence_length = passage_sequence_length,
+                                                   initial_state=initial_state,
+                                                   dtype=tf.float32)
+                H_q_dropout, _ = tf.nn.dynamic_rnn(lstm_pre_dropout, ques, sequence_length = ques_sequence_length,
+                                                   initial_state=initial_state,
+                                                   dtype=tf.float32)
+                return H_p_dropout, H_q_dropout
+        else:
+            lstm_pre = self.lstm_pre
+            initial_state = lstm_pre.zero_state(batch_size, dtype=tf.float32)
+            with tf.variable_scope("preprocessing_layer"):
+                H_p, _ = tf.nn.dynamic_rnn(lstm_pre, passage, sequence_length = passage_sequence_length,
+                                                   initial_state=initial_state,
+                                                   dtype=tf.float32)
+                H_q, _ = tf.nn.dynamic_rnn(lstm_pre, ques, sequence_length = ques_sequence_length,
+                                                   initial_state=initial_state,
+                                                   dtype=tf.float32)
+                return H_p, H_q
 
     def match_attention(self, H_q, h_p, h_r):
         '''
@@ -146,7 +152,7 @@ class Model:
 
         return z
 
-    def match_one_direct(self, H_p, H_q, direction):
+    def match_one_direct(self, H_p, H_q, direction, useDropout):
         '''
         paras
             H_p:        (batch_size, pass_max_length, num_units)
@@ -163,32 +169,59 @@ class Model:
 
         h_p_lst = tf.unstack(H_p, axis = 1)
 
-        lstm_match = self.lstm_match
-        stateTuple = lstm_match.zero_state(batch_size, tf.float32)
 
-        h_r_lst = []
-        #use name scope to avoid "kernel already exists, disallowed" error
-        with tf.variable_scope("match_ayer"):
-              with tf.variable_scope("LSTM"):
-                if direction == "right":
-                    for i in tqdm(xrange(pass_max_length), desc = "Buding matching layer on right direction"):
-                        h_p = h_p_lst[i]
-                        z_i = self.match_attention(H_q, h_p, stateTuple[1])
-                        _, stateTuple = lstm_match(z_i, stateTuple)
-                        h_r_lst.append(stateTuple[1])
-                elif direction == "left":
-                    for i in tqdm(range(pass_max_length - 1, -1, -1), desc = "Buding matching layer on left direction"):
-                        h_p = h_p_lst[i]
-                        z_i = self.match_attention(H_q, h_p, stateTuple[1])
-                        _, stateTuple = lstm_match(z_i, stateTuple)
-                        h_r_lst.append(stateTuple[1])
-                    h_r_lst = h_r_lst[::-1]
-                else:
-                    raise ValueError('direction must be right or left')
-        H_r = tf.stack(h_r_lst)# (pass_max_length, batch_size, num_units)
-        H_r = tf.transpose(H_r, (1, 0, 2))# (batch_size, pass_max_length, num_units)
-        return H_r
-    def match_layer(self, H_p, H_q):
+
+        if useDropout:
+            lstm_match_dropout = self.lstm_match_dropout
+            stateTuple = lstm_match_dropout.zero_state(batch_size, tf.float32)
+            h_r_lst = []
+            #use name scope to avoid "kernel already exists, disallowed" error
+            with tf.variable_scope("match_ayer"):
+                  with tf.variable_scope("LSTM"):
+                    if direction == "right":
+                        for i in tqdm(xrange(pass_max_length), desc = "Buding matching layer on right direction"):
+                            h_p = h_p_lst[i]
+                            z_i = self.match_attention(H_q, h_p, stateTuple[1])
+                            _, stateTuple = lstm_match_dropout(z_i, stateTuple)
+                            h_r_lst.append(stateTuple[1])
+                    elif direction == "left":
+                        for i in tqdm(range(pass_max_length - 1, -1, -1), desc = "Buding matching layer on left direction"):
+                            h_p = h_p_lst[i]
+                            z_i = self.match_attention(H_q, h_p, stateTuple[1])
+                            _, stateTuple = lstm_match_dropout(z_i, stateTuple)
+                            h_r_lst.append(stateTuple[1])
+                        h_r_lst = h_r_lst[::-1]
+                    else:
+                        raise ValueError('direction must be right or left')
+            H_r_dropout = tf.stack(h_r_lst)# (pass_max_length, batch_size, num_units)
+            H_r_dropout = tf.transpose(H_r_dropout, (1, 0, 2))# (batch_size, pass_max_length, num_units)
+            return H_r_dropout
+        else:
+            lstm_match = self.lstm_match
+            stateTuple = lstm_match.zero_state(batch_size, tf.float32)
+            h_r_lst = []
+            #use name scope to avoid "kernel already exists, disallowed" error
+            with tf.variable_scope("match_ayer"):
+                  with tf.variable_scope("LSTM"):
+                    if direction == "right":
+                        for i in tqdm(xrange(pass_max_length), desc = "Buding matching layer on right direction"):
+                            h_p = h_p_lst[i]
+                            z_i = self.match_attention(H_q, h_p, stateTuple[1])
+                            _, stateTuple = lstm_match(z_i, stateTuple)
+                            h_r_lst.append(stateTuple[1])
+                    elif direction == "left":
+                        for i in tqdm(range(pass_max_length - 1, -1, -1), desc = "Buding matching layer on left direction"):
+                            h_p = h_p_lst[i]
+                            z_i = self.match_attention(H_q, h_p, stateTuple[1])
+                            _, stateTuple = lstm_match(z_i, stateTuple)
+                            h_r_lst.append(stateTuple[1])
+                        h_r_lst = h_r_lst[::-1]
+                    else:
+                        raise ValueError('direction must be right or left')
+            H_r = tf.stack(h_r_lst)# (pass_max_length, batch_size, num_units)
+            H_r = tf.transpose(H_r, (1, 0, 2))# (batch_size, pass_max_length, num_units)
+            return H_r
+    def match_layer(self, H_p, H_q, useDropout):
         '''
         paras
             H_p:        (batch_size, pass_max_length, num_units)
@@ -204,8 +237,8 @@ class Model:
         #TODO: make match_lstm cell and use tf.nn.dynamic_rnn to get H_r or not?
 
         #get attention encoding or both directions
-        H_r_right = self.match_one_direct(H_p, H_q, "right")#(batch_size, pass_max_length, num_units)
-        H_r_left = self.match_one_direct(H_p, H_q, "left")#(batch_size, pass_max_length, num_units)
+        H_r_right = self.match_one_direct(H_p, H_q, "right", useDropout)#(batch_size, pass_max_length, num_units)
+        H_r_left = self.match_one_direct(H_p, H_q, "left", useDropout)#(batch_size, pass_max_length, num_units)
         #get mask
         passage_sequence_mask = tf.sequence_mask(passage_sequence_length, pass_max_length, dtype=tf.int32)#(batch_size, pass_max_length)
         passage_encoding_mask = tf.reshape(passage_sequence_mask, (batch_size, pass_max_length, 1))#(batch_size, pass_max_length, 1)
@@ -250,7 +283,7 @@ class Model:
 
         return beta, att_v
 
-    def answer_layer(self, H_r):
+    def answer_layer(self, H_r, useDropout):
         '''
         paras
             H_r:        (batch_size, pass_max_length, 2 * num_units)
@@ -259,41 +292,65 @@ class Model:
         '''
         num_units = self.num_units
         batch_size = self.batch_size
-        lstm_ans = self.lstm_ans
 
-        stateTuple = lstm_ans.zero_state(batch_size, tf.float32)
-
-        dist_lst = []
-        with tf.variable_scope("answer_pointer_layer"):
-              with tf.variable_scope("LSTM"):
-                for i in tqdm(xrange(2), desc = "Building answer pointer layer") :
-                    beta, att_v = self.answer_attention(H_r, stateTuple[1])
-                    _, stateTuple = lstm_ans(att_v, stateTuple)
-                    dist_lst.append(beta)
-        dist = tf.stack(dist_lst)#(2, batch_size, pass_max_length)
-        dist = tf.transpose(dist, (1,0,2), name='dist')#(batch_size, 2, pass_max_length)
-        return dist
+        if useDropout:
+            lstm_ans_dropout = self.lstm_ans_dropout
+            stateTuple = lstm_ans_dropout.zero_state(batch_size, tf.float32)
+            dist_lst = []
+            with tf.variable_scope("answer_pointer_layer"):
+                  with tf.variable_scope("LSTM"):
+                    for i in tqdm(xrange(2), desc = "Building answer pointer layer") :
+                        beta, att_v = self.answer_attention(H_r, stateTuple[1])
+                        _, stateTuple = lstm_ans_dropout(att_v, stateTuple)
+                        dist_lst.append(beta)
+            dist_dropout = tf.stack(dist_lst)#(2, batch_size, pass_max_length)
+            dist_dropout = tf.transpose(dist_dropout, (1,0,2), name='dist')#(batch_size, 2, pass_max_length)
+            return dist_dropout
+        else:
+            lstm_ans = self.lstm_ans
+            stateTuple = lstm_ans.zero_state(batch_size, tf.float32)
+            dist_lst = []
+            with tf.variable_scope("answer_pointer_layer"):
+                  with tf.variable_scope("LSTM"):
+                    for i in tqdm(xrange(2), desc = "Building answer pointer layer") :
+                        beta, att_v = self.answer_attention(H_r, stateTuple[1])
+                        _, stateTuple = lstm_ans(att_v, stateTuple)
+                        dist_lst.append(beta)
+            dist = tf.stack(dist_lst)#(2, batch_size, pass_max_length)
+            dist = tf.transpose(dist, (1,0,2), name='dist')#(batch_size, 2, pass_max_length)
+            return dist
 
     def add_predicted_dist(self):
         #Preprocessing Layer
-        H_p, H_q, H_p_dropout, H_q_dropout = self.pre_layer()
+        H_p, H_q = self.pre_layer(False)
         #Match-LSTM Layer
-        H_r = self.match_layer(H_p, H_q)
+        H_r = self.match_layer(H_p, H_q, False)
         #Answer Pointer Layer
-        dist = self.answer_layer(H_r)
-
+        dist = self.answer_layer(H_r, False)
         self.dist = dist
+
+        #Preprocessing Layer
+        H_p_dropout, H_q_dropout = self.pre_layer(True)
+        #Match-LSTM Layer
+        H_r_dropout = self.match_layer(H_p, H_q, True)
+        #Answer Pointer Layer
+        dist_dropout = self.answer_layer(H_r, True)
+        self.dist_dropout = dist_dropout
     def add_loss_function(self):
         pass_max_length = self.pass_max_length
         batch_size = self.batch_size
 
         ans = self.ans#(batch_size, 2)
-        dist = self.dist#(batch_size, 2, pass_max_length)
 
+        dist = self.dist#(batch_size, 2, pass_max_length)
         loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
                 logits=dist, labels=ans)
-
         self.loss = loss
+
+        dist_dropout = self.dist_dropout#(batch_size, 2, pass_max_length)
+        loss_dropout = tf.nn.sparse_softmax_cross_entropy_with_logits(
+                logits=dist_dropout, labels=ans)
+        self.loss_dropout = loss_dropout
     def build(self):
         #add placeholders
         self.add_placeholder()

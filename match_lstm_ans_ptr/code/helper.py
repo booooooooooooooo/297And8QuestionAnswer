@@ -44,7 +44,7 @@ def get_json_predictions(batches_file, passage_tokens_file, question_ids_file, t
         tokens = passage_tokens_list[i].split()
         start = np.argmax(predictions_dist[i][0])
         end = np.argmax(predictions_dist[i][1])
-        answer =  ' '.join(tokens[start : end + 1])
+        answer =  ' '.join(tokens[min(start, len(tokens) - 1) : min(end + 1, len(tokens))])
         question_id = question_id_list[i].split()[0]
         pred_dic[question_id] = answer
         # print tokens

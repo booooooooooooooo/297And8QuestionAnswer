@@ -5,6 +5,7 @@ import os
 import sys
 import argparse
 import pickle
+import random
 
 '''
 nltk.word_tokenize has some weird behaviours.
@@ -121,11 +122,12 @@ class Preprocessor:
 
         return c_id_to_token_id_map
 
-    def get_token_with_answers(self, json_file, dir_to_save, prefix):
+    def get_token_with_answers(self, json_file, dir_to_save, prefix, pass_max_length):
+        #TODO: trancate passage and question here instead of in embedding?
         if os.path.isfile(os.path.join(dir_to_save, prefix + ".passage" )):
             print "All {} tokens are ready!".format(prefix)
             return
-
+        pass_max_length = int (pass_max_length)
         passage_list = []
         question_list = []
         answer_text_list = []
@@ -149,6 +151,11 @@ class Preprocessor:
                         answer_end = answer_start + len(text) - 1
                         a_s = c_id_to_token_id_map[answer_start]
                         a_e = c_id_to_token_id_map[answer_end]
+                        #TODO: truncate a_s and a_e according to pass_max_length
+                        if a_e >= pass_max_length:
+                            a_e = pass_max_length - 1
+                        if a_s >= pass_max_length:
+                            a_s = random.randrange(0, pass_max_length)
 
                         passage_list.append(context_token)
                         question_list.append(question_token)
@@ -170,6 +177,7 @@ class Preprocessor:
 
 
     def get_token_without_answers(self, json_file, dir_to_save, prefix):
+        #TODO: trancate passage and question here instead of in embedding?
         if os.path.isfile(os.path.join(dir_to_save, prefix + ".passage" )):
             print "All {} tokens are ready!".format(prefix)
             return
@@ -206,7 +214,7 @@ class Preprocessor:
                  question_id_file.write(question_id_list[i].encode('utf8') + '\n')
 
 
-    
+
 
 
     '''

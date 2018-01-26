@@ -22,8 +22,8 @@ def get_train_op(model, do_clip, clip_norm, optimizer, lr):
         optimizer_func = tf.train.GradientDescentOptimizer(lr)
     else:
         raise ValueError('Parameters are wrong')
-    loss = model.loss
-    gradients, variables = zip(*optimizer_func.compute_gradients(loss))
+    loss_dropout = model.loss_dropout
+    gradients, variables = zip(*optimizer_func.compute_gradients(loss_dropout))
     if do_clip:
         gradients, _ = tf.clip_by_global_norm(gradients, clip_norm)
     train_op = optimizer_func.apply_gradients(zip(gradients, variables))#second part of minimize()
