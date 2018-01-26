@@ -345,12 +345,12 @@ class Model:
         dist = self.dist#(batch_size, 2, pass_max_length)
         loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
                 logits=dist, labels=ans)
-        self.loss = loss
+        self.loss = tf.reduce_mean(loss)
 
         dist_dropout = self.dist_dropout#(batch_size, 2, pass_max_length)
         loss_dropout = tf.nn.sparse_softmax_cross_entropy_with_logits(
                 logits=dist_dropout, labels=ans)
-        self.loss_dropout = loss_dropout
+        self.loss_dropout = tf.reduce_mean(loss_dropout)
     def build(self):
         #add placeholders
         self.add_placeholder()

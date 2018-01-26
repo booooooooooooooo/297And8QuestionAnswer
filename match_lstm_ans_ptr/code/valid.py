@@ -20,8 +20,7 @@ def valid(valid_json_sub_path, valid_passage_tokens_sub_path, valid_question_ids
     with open(os.path.join(dir_data, valid_json_sub_path)) as f:
         data_json = json.load(f)
         dataset = data_json['data']
-    for graph_sub_path in graph_sub_paths_list:
-        trained_graph = os.path.join(dir_output, graph_sub_path)
+    for trained_graph in graph_sub_paths_list:
         predictions = get_json_predictions(os.path.join(dir_data, valid_batches_sub_path), os.path.join(dir_data, valid_passage_tokens_sub_path), os.path.join(dir_data, valid_question_ids_sub_path), trained_graph)
         score = evaluate(dataset, predictions)#{'exact_match': exact_match, 'f1': f1}
         #TODO: compare and update in more smart way
@@ -30,7 +29,7 @@ def valid(valid_json_sub_path, valid_passage_tokens_sub_path, valid_question_ids
             best_exact_match = score["exact_match"]
             best_graph_path = trained_graph
             best_predictions = predictions
-    with open(os.path.join(dir_output, "valid_predictions.json")) as f:
+    with open(os.path.join(dir_output, "valid_predictions.json"), 'w') as f:
         f.write(json.dump(best_predictions))
     valid_result = {"graph_path": best_graph_path, 'exact_match': best_exact_match, 'f1': best_f1, "predictions_path": os.path.join(dir_output, "valid_predictions.json")}
 

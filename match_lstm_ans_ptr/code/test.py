@@ -14,7 +14,7 @@ from evaluate_v_1_1 import evaluate
 def test(test_json_sub_path, test_passage_tokens_sub_path, test_question_ids_sub_path, test_batches_sub_path, valid_result, dir_data, dir_output):
     trained_graph = valid_result['graph_path']
 
-    with open(os.path.join(dir_data, test_json_sub_path)) as f:
+    with open(test_json_sub_path) as f:
         data_json = json.load(f)
         dataset = data_json['data']
 

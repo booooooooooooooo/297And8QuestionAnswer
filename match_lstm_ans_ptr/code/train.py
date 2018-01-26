@@ -31,7 +31,7 @@ def get_train_op(model, do_clip, clip_norm, optimizer, lr):
 
 def run_batch(sess, model, train_op, batch):
     passage, passage_sequence_length, ques ,ques_sequence_length, ans = batch
-    _ , batch_loss = sess.run([train_op, model.loss], {model.passage : passage,
+    _ , batch_loss = sess.run([train_op, model.loss_dropout], {model.passage : passage,
                                                       model.passage_sequence_length : passage_sequence_length,
                                                       model.ques : ques,
                                                       model.ques_sequence_length : ques_sequence_length,
@@ -39,7 +39,7 @@ def run_batch(sess, model, train_op, batch):
     return batch_loss
 def run_epoch(sess, model, train_op, batches):
     trainLoss = 0.0
-    for i in xrange(len(batches)):
+    for i in tqdm(xrange(len(batches)), desc = "Training epoch") :
         trainLoss += run_batch(sess, model, train_op, batches[i])
     trainLoss /= len(batches)
     return trainLoss
@@ -57,9 +57,10 @@ def fit(model, do_clip, clip_norm, optimizer, lr, n_epoch, train_batches_sub_pat
         batches = get_batches(os.path.join(dir_data, train_batches_sub_path))#call get_batches from util.py
         print "Finish Reading batched data from disk"
         graph_sub_paths_list = []
-        for epoch in tqdm(xrange(n_epoch), desc = "Trainning {} epoches".format(n_epoch) ):
+        for epoch in xrange(n_epoch) :
             trainLoss = run_epoch(sess, model, train_op, batches)
-            graph_sub_path = os.path.join(dir_output, "graphes/", str(trainLoss) + "_" + str(optimizer) + "_" + str(lr)  + "_" + str(epoch) + "_" + str(datetime.now()))
+            # graph_sub_path = os.path.join(dir_output, "graphes/", str(trainLoss) + "_" + str(optimizer) + "_" + str(lr)  + "_" + str(epoch) + "_" + str(datetime.now()))
+            graph_sub_path = os.path.join(dir_output, "graphes/", str(epoch) + "_" + str(datetime.now()))
             tf.train.Saver().save(sess, graph_sub_path )
             graph_sub_paths_list.append(graph_sub_path)
             print "Epoch {} trainLoss {}".format(epoch, trainLoss)
