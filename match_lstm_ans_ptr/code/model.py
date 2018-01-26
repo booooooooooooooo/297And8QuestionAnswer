@@ -11,24 +11,13 @@ from util import *
 '''
 TODO:
 
-use dropout in trian, do not use dropout in valid and test
-
-value error when computing softmax on zero vector,
-
-why there is zero entry in elements. the zero entry causes log to produce nan
-
-check initialization
-
-compute loss more efficiently
-
-efficient training: nce etc.
-
 mark public and private def
+
 give nice names to important tensors, include embed_size, batch_size, num_units, lr, n_epoch etc. in title of saved model
 
-whether put validation and testing fuction into Model. aka how to restore graph
+manage scope
 
-whether remove train part from Model. whether assing optimizer etc. in __init__
+use more abstract ood design instead of using a lot of functions?
 '''
 
 class Model:

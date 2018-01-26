@@ -11,6 +11,9 @@ from helper import *
 from evaluate_v_1_1 import evaluate
 
 def valid(valid_json_sub_path, valid_passage_tokens_sub_path, valid_question_ids_sub_path, valid_batches_sub_path, graph_sub_paths_list, dir_data, dir_output ):
+    if not os.path.isdir(dir_output):
+        os.makedirs(dir_output)
+
     #TODO: create sess here and pass sess as parameter to get_json_predictions
     best_exact_match = -1
     best_f1 = -1
@@ -29,8 +32,11 @@ def valid(valid_json_sub_path, valid_passage_tokens_sub_path, valid_question_ids
             best_exact_match = score["exact_match"]
             best_graph_path = trained_graph
             best_predictions = predictions
-    with open(os.path.join(dir_output, "valid_predictions.json"), 'w') as f:
-        f.write(json.dump(best_predictions))
     valid_result = {"graph_path": best_graph_path, 'exact_match': best_exact_match, 'f1': best_f1, "predictions_path": os.path.join(dir_output, "valid_predictions.json")}
+
+    with open(os.path.join(dir_output, "valid_predictions.json"), 'w') as f:
+        f.write(json.dumps(best_predictions))
+    with open(os.path.join(dir_output, "valid_result.json"), 'w') as f:
+        f.write(json.dumps(valid_result))
 
     return valid_result

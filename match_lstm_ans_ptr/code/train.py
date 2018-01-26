@@ -44,6 +44,12 @@ def run_epoch(sess, model, train_op, batches):
     trainLoss /= len(batches)
     return trainLoss
 def fit(model, do_clip, clip_norm, optimizer, lr, n_epoch, train_batches_sub_path, dir_data, dir_output):
+    if not os.path.isdir(dir_output):
+        os.makedirs(dir_output)
+    if not os.path.isdir(os.path.join(dir_output, "graphes/")):
+        os.makedirs(os.path.join(dir_output, "graphes/"))
+
+
     print dir_data
     print os.path.join(dir_data, train_batches_sub_path)
     print "Start getting train_op"
@@ -64,6 +70,8 @@ def fit(model, do_clip, clip_norm, optimizer, lr, n_epoch, train_batches_sub_pat
             tf.train.Saver().save(sess, graph_sub_path )
             graph_sub_paths_list.append(graph_sub_path)
             print "Epoch {} trainLoss {}".format(epoch, trainLoss)
+    with open(os.path.join(dir_output, "graph_sub_paths_list.json"), 'w') as f:
+        f.write(json.dumps(graph_sub_paths_list))
     return graph_sub_paths_list
 
 def train(pass_max_length, ques_max_length, batch_size, embed_size, num_units, dropout, do_clip, clip_norm, optimizer, lr, n_epoch, train_batches_sub_path, dir_data, dir_output):

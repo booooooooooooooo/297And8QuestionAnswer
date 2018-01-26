@@ -8,11 +8,11 @@ embed_size=50
 
 num_units=10
 dropout=0.5
-do_clip=false
+do_clip=True
 clip_norm=5
 optimizer="adam"
 lr=10
-n_epoch=5
+n_epoch=1
 train_batches_sub_path="data_feed_ready/train.batches"
 valid_json_sub_path="data_json/valid.json"
 valid_passage_tokens_sub_path="data_token/valid.passage"

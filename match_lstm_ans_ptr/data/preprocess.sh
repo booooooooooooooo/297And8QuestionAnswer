@@ -17,5 +17,5 @@ python preprocess.py "get_batches_without_answers" $pass_max_length $ques_max_le
 
 ######preprocess test#######
 python preprocess.py "get_all_json" "./data_raw/train-v1.1.json" "./data_raw/dev-v1.1.json" 0.9 "./data_json/"
-python preprocess.py "get_token_without_answers" "./data_json/test.json" "./data_token/" "test" 
+python preprocess.py "get_token_without_answers" "./data_json/test.json" "./data_token/" "test"
 python preprocess.py "get_batches_without_answers" $pass_max_length $ques_max_length $batch_size $embed_size "./data_token/test.passage" "./data_token/test.question" "./data_token/test.question_id" "./data_raw/glove.6B/glove.6B.50d.txt" "./data_feed_ready/" "test"

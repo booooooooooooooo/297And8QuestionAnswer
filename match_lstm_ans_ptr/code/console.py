@@ -87,8 +87,5 @@ if __name__ == "__main__":
 
 
     graph_sub_paths_list = train(int (args.pass_max_length), int (args.ques_max_length), int (args.batch_size), int (args.embed_size), int (args.num_units), float(args.dropout), bool(args.do_clip), float(args.clip_norm), args.optimizer, float (args.lr), int(args.n_epoch), args.train_batches_sub_path, args.dir_data, args.dir_output)
-    print graph_sub_paths_list
     valid_result = valid(args.valid_json_sub_path, args.valid_passage_tokens_sub_path, args.valid_question_ids_sub_path, args.valid_batches_sub_path, graph_sub_paths_list , args.dir_data, args.dir_output)
-    print valid_result
     test_result = test(args.test_json_sub_path, args.test_passage_tokens_sub_path, args.test_question_ids_sub_path, args.test_batches_sub_path, valid_result, args.dir_data, args.dir_output)
-    print test_result
