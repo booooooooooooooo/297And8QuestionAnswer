@@ -15,6 +15,7 @@ Second, it tokenizes "word" to ``word''. This caseis corrected in this code.
 
 class Preprocessor:
     def analyze(self, json_file):
+        #TODO: get nice statistics about data
         count = 0
         pass_max_length = 0
         pass_ave_length = 0

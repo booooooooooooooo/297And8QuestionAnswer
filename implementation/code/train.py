@@ -11,9 +11,9 @@ import os
 from tqdm import tqdm
 from datetime import datetime
 
-from model import Model
 from util import *
 
+from model_match_lstm_ans_ptr import MatchLSTMAnsPtr
 
 def get_train_op(model, do_clip, clip_norm, optimizer, lr):
     if optimizer == "adam":
@@ -49,9 +49,6 @@ def fit(model, do_clip, clip_norm, optimizer, lr, n_epoch, train_batches_sub_pat
     if not os.path.isdir(os.path.join(dir_output, "graphes/")):
         os.makedirs(os.path.join(dir_output, "graphes/"))
 
-
-    print dir_data
-    print os.path.join(dir_data, train_batches_sub_path)
     print "Start getting train_op"
     train_op = get_train_op(model, do_clip, clip_norm, optimizer, lr)
     print "Finish getting train_op"
@@ -75,6 +72,6 @@ def fit(model, do_clip, clip_norm, optimizer, lr, n_epoch, train_batches_sub_pat
     return graph_sub_paths_list
 
 def train(pass_max_length, ques_max_length, batch_size, embed_size, num_units, dropout, do_clip, clip_norm, optimizer, lr, n_epoch, train_batches_sub_path, dir_data, dir_output):
-    model = Model(pass_max_length, ques_max_length, batch_size, embed_size, num_units, dropout)
+    model = MatchLSTMAnsPtr(pass_max_length, ques_max_length, batch_size, embed_size, num_units, dropout)
     graph_sub_paths_list = fit(model, do_clip, clip_norm, optimizer, lr, n_epoch, train_batches_sub_path, dir_data, dir_output)
     return graph_sub_paths_list

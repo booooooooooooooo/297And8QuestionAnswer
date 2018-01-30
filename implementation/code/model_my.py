@@ -11,6 +11,17 @@ from util import *
 '''
 TODO:
 
+simplify ans-ptr layer
+
+write MatchLSTMCell
+
+avoiding zero entry in softmax might cause problem in getting loss
+
+
+shuffle data
+
+exponential decay learning rate
+
 mark public and private def
 
 give nice names to important tensors, include embed_size, batch_size, num_units, lr, n_epoch etc. in title of saved model
@@ -20,7 +31,7 @@ manage scope
 use more abstract ood design instead of using a lot of functions?
 '''
 
-class Model:
+class MyModel:
     def add_placeholder(self):
         batch_size = self.batch_size
         pass_max_length = self.pass_max_length

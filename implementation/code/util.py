@@ -4,8 +4,6 @@ import json
 import numpy as np
 
 def get_batches(batches_file, small_size = False):
-
-    print "Reading batched data from disk......."
     with open(batches_file, 'rb') as f:
         batches = pickle.load(f)
     if not small_size:

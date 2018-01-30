@@ -2,7 +2,7 @@
 
 pass_max_length=766
 ques_max_length=60
-batch_size=97
+batch_size=17
 embed_size=50
 
 ######preprocess train#######
