@@ -11,24 +11,10 @@ from util import *
 '''
 TODO:
 
-simplify ans-ptr layer
+encode: bidirectional lstm
+mix: passage-question mix + self-mix
+pointer: disgard lstm. Use trival function like origional paper
 
-write MatchLSTMCell
-
-avoiding zero entry in softmax might cause problem in getting loss
-
-
-shuffle data
-
-exponential decay learning rate
-
-mark public and private def
-
-give nice names to important tensors, include embed_size, batch_size, num_units, lr, n_epoch etc. in title of saved model
-
-manage scope
-
-use more abstract ood design instead of using a lot of functions?
 '''
 
 class MyModel:

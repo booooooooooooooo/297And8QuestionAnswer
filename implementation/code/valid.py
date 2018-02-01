@@ -11,6 +11,7 @@ from helper import *
 from evaluate_v_1_1 import evaluate
 
 def valid(valid_json_sub_path, valid_passage_tokens_sub_path, valid_question_ids_sub_path, valid_batches_sub_path, graph_sub_paths_list, dir_data, dir_output ):
+    print "Start validating trained graphes...."
     if not os.path.isdir(dir_output):
         os.makedirs(dir_output)
 
@@ -38,5 +39,5 @@ def valid(valid_json_sub_path, valid_passage_tokens_sub_path, valid_question_ids
         f.write(json.dumps(best_predictions))
     with open(os.path.join(dir_output, "valid_result.json"), 'w') as f:
         f.write(json.dumps(valid_result))
-
+    print "Finish validating trained graphes...."
     return valid_result

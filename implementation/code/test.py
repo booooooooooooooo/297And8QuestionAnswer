@@ -12,6 +12,7 @@ from helper import *
 from evaluate_v_1_1 import evaluate
 
 def test(test_json_sub_path, test_passage_tokens_sub_path, test_question_ids_sub_path, test_batches_sub_path, valid_result, dir_data, dir_output):
+    print "Start testing best graph...."
     if not os.path.isdir(dir_output):
         os.makedirs(dir_output)
 
@@ -30,4 +31,5 @@ def test(test_json_sub_path, test_passage_tokens_sub_path, test_question_ids_sub
         f.write(json.dumps(predictions))
     with open(os.path.join(dir_output, "test_result.json"), "w") as f:
         f.write(json.dumps(test_result))
+    print "Finish testing best graph...."
     return test_result

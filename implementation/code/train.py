@@ -39,7 +39,7 @@ def run_batch(sess, model, train_op, batch):
     return batch_loss
 def run_epoch(sess, model, train_op, batches):
     trainLoss = 0.0
-    for i in tqdm(xrange(len(batches)), desc = "Training epoch") :
+    for i in tqdm(xrange(len(batches)), desc = "Training batches") :
         trainLoss += run_batch(sess, model, train_op, batches[i])
     trainLoss /= len(batches)
     return trainLoss
@@ -61,6 +61,7 @@ def fit(model, do_clip, clip_norm, optimizer, lr, n_epoch, train_batches_sub_pat
         print "Finish Reading batched data from disk"
         graph_sub_paths_list = []
         for epoch in xrange(n_epoch) :
+            print "Epoch {}".format(epoch)
             trainLoss = run_epoch(sess, model, train_op, batches)
             # graph_sub_path = os.path.join(dir_output, "graphes/", str(trainLoss) + "_" + str(optimizer) + "_" + str(lr)  + "_" + str(epoch) + "_" + str(datetime.now()))
             graph_sub_path = os.path.join(dir_output, "graphes/", str(epoch) + "_" + str(datetime.now()))

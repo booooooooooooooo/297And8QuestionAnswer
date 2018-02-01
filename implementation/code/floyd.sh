@@ -21,6 +21,7 @@ pass_max_length=766
 ques_max_length=60
 batch_size=97
 embed_size=50
+num_units=10
 elif [ "$1" = 4 ]
 then
 echo "$1"
@@ -29,17 +30,27 @@ pass_max_length=766
 ques_max_length=60
 batch_size=17
 embed_size=50
+num_units=10
+elif [ "$1" = 5 ]
+then
+echo "$1"
+data_mount="bo.nov29/datasets/squad/5"
+pass_max_length=97
+ques_max_length=29
+batch_size=17
+embed_size=50
+num_units=50
 else
 echo "Please indicate version of dataset to use"
 fi
 
-num_units=50
+
 dropout=0.5
 do_clip=True
 clip_norm=5
 optimizer="adam"
 lr=10
-n_epoch=3
+n_epoch=1
 
 
 
@@ -50,7 +61,7 @@ floyd run --gpu --env tensorflow-1.4:py2 --data $data_mount:/data "python consol
 elif [ "$2" = "cpu" ]
 then
 echo "Using floyd $2"
-# floyd run --env tensorflow-1.4:py2 --data $data_mount:/data "python console.py $dir_data $dir_output $pass_max_length $ques_max_length $batch_size $embed_size $num_units $dropout $do_clip $clip_norm $optimizer $lr $n_epoch $train_batches_sub_path $valid_json_sub_path $valid_passage_tokens_sub_path $valid_question_ids_sub_path $valid_batches_sub_path $test_json_sub_path $test_passage_tokens_sub_path $test_question_ids_sub_path $test_batches_sub_path"
+floyd run --env tensorflow-1.4:py2 --data $data_mount:/data "python console.py $dir_data $dir_output $pass_max_length $ques_max_length $batch_size $embed_size $num_units $dropout $do_clip $clip_norm $optimizer $lr $n_epoch $train_batches_sub_path $valid_json_sub_path $valid_passage_tokens_sub_path $valid_question_ids_sub_path $valid_batches_sub_path $test_json_sub_path $test_passage_tokens_sub_path $test_question_ids_sub_path $test_batches_sub_path"
 else
 echo "Please indicate cpu or gpu"
 fi

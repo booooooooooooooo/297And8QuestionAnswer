@@ -1,4 +1,3 @@
-import tensorflow as tf
 import pickle
 import json
 import numpy as np
