@@ -6,6 +6,7 @@ import sys
 import argparse
 import pickle
 import random
+import matplotlib.pyplot as plt
 
 '''
 nltk.word_tokenize has some weird behaviours.
@@ -22,6 +23,9 @@ class Preprocessor:
         ques_max_length = 0
         ques_ave_length = 0
 
+        pass_lengths = []
+        ques_lengths = []
+
         with open(json_file) as fh:
             data_json = json.load(fh)
         for article_id in tqdm(xrange(len(data_json['data'])), desc="Analyzing {}".format(json_file)):
@@ -36,6 +40,8 @@ class Preprocessor:
                     answers = qas[qas_id]['answers']
                     for answer_id in xrange(len(answers)):
                         text = answers[answer_id]['text']
+                        pass_lengths.append(len(context_token))
+                        ques_lengths.append(len(question_token))
                         count += 1
                         pass_max_length = max(pass_max_length, len(context_token))
                         pass_ave_length += len(context_token)
@@ -43,9 +49,11 @@ class Preprocessor:
                         ques_ave_length += len(question_token)
         pass_ave_length /= count
         ques_ave_length /= count
-        print "How many (passage, question, answer) tuples : {} \n pass_max_length: {} \n pass_ave_length: {}\n ques_max_length: {} \n ques_ave_length :{} \n".format(count, pass_max_length, pass_ave_length, ques_max_length, ques_ave_length)
-
-
+        print "How many (passage, question, answer) tuples : {} \npass_max_length: {} \npass_ave_length: {}\nques_max_length: {} \nques_ave_length :{} \n".format(count, pass_max_length, pass_ave_length, ques_max_length, ques_ave_length)
+        plt.figure("Passage lengths")
+        plt.plot(pass_lengths)
+        plt.figure("Question lengths")
+        plt.plot(ques_lengths)
 
 
 
@@ -307,7 +315,7 @@ class Preprocessor:
         #add fake datums to make totol amount % batch_size = 0
         passage_fake = [zero_vector for i in xrange(pass_max_length)]
         question_fake = [zero_vector for i in xrange(ques_max_length)]
-        answer_span_fake = [0, 0]
+        answer_span_fake_func = lambda :[random.randrange(0, pass_max_length), random.randrange(0, pass_max_length)]
 
         amount = batch_size - len(passage_vectors) % batch_size
 
@@ -315,7 +323,7 @@ class Preprocessor:
         passage_sequence_length += [pass_max_length] * amount
         question_vectors += [question_fake for i in xrange(amount)]
         question_sequence_length += [ques_max_length] * amount
-        answer_spans += [answer_span_fake for i in xrange(amount)]
+        answer_spans += [answer_span_fake_func() for i in xrange(amount)]
         #split to batches
         batches = []
         for i in range(0, len(passage_vectors), batch_size) :

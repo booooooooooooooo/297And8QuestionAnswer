@@ -1,7 +1,7 @@
 #!/bin/bash
 
-pass_max_length=766
-ques_max_length=60
+pass_max_length=199
+ques_max_length=37
 batch_size=17
 embed_size=50
 

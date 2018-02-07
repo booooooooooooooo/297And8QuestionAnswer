@@ -40,6 +40,15 @@ ques_max_length=29
 batch_size=17
 embed_size=50
 num_units=50
+elif [ "$1" = 6 ]
+then
+echo "$1"
+data_mount="bo.nov29/datasets/squad/6"
+pass_max_length=199
+ques_max_length=37
+batch_size=17
+embed_size=50
+num_units=50
 else
 echo "Please indicate version of dataset to use"
 fi
