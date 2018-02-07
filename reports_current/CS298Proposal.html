@@ -1,0 +1,77 @@
+
+<!-- Instructions:
+
+     1. Search and replace Your_Name with student's name
+     2. Insert description at location Description_Here.
+     3. Complete the Schedule of activities for 297 by for each week:
+        (a) Replacing Calender_Week_i with the dates for that week.
+            For example, Feb.1-7.
+        (b) Replacing Read_And_Do_i with what will be accomplished that week.
+     4. Five descriptions of each deliverable by replacing Deliverable_i
+        with the description of that deliverable.
+     5. Fill in a list of references according to the example in that section.
+-->
+<<!--#echo var="center" -->>
+<h1>CS298 Proposal</h1>
+<h1>A Question Answering System on SQuAD Dataset Using an End-to-end Neural Network</h1>
+<p>Bo Li (bo.nov29@gmail.com)</p>
+<p>Date: Feb 7, 2018</p>
+
+<<!--#echo var="centerend" -->>
+
+<p><b>Advisor:</b> Dr. Chris Pollett</p>
+
+<p><b>Description</b></p>
+
+<p>
+  Question Answering (QA) is a subfield of artificial intelligence concerned with developing computer systems capable of answering natural language questions automatically. QA techniques are used widely in search engines, personal assistant applications on smartphones, voice control systems and a lot more other applications. In recent years, more end-to-end neural network architectures have been built to do question answering tasks. In contrast, traditional QA solutions use syntactic and semantic analyses as well as hand made features. Today, end-to-end neural network approaches give more accurate result. In this project, the Stanford Question Answering Dataset (SQuAD)[1] is used. It includes questions asked by human beings on Wikipedia articles. The answer to each question is a segment of the corresponding Wikipedia article[1]. In total, SQuAD contains 100,000+ question-answer pairs on 500+ articles[1]. The goal of this project includes two parts. First, we will build a baseline QA system on SQuAD using an end-to-end neural network architecture. Second, we will experiment different architectures to find out to what extent do different architectures influence the system’s performance.
+</p>
+
+<p><b>CS297 Results</b></p>
+
+<ul>
+  <li>Calculation of Back Propagation on a feed forward network example</li>
+  <li>Implementation of word embedding using neural probabilistic language model and skip-gram model</li>
+  <li>System design of a baseline question answering system on SQuAD using the match-lstm and answer pointer model in [2]</li>
+</ul>
+
+<p><b>CS298 Schedule</b></p>
+
+<table  border="1" cellpadding="4"
+summary="This table has two columns. The left column indicates each
+week on the semester in turn. The right column indicates the task
+to be completed for that week."
+>
+<tr><td> Week 1 - 2: 01/29 - 02/11</td><td valign="top"><b>Deliverable #1 </b>: A baseline QA system on SQuAD based on [2]</td></tr>
+<tr><td> Week 3 - 4: 02/12 - 02/25</td><td valign="top"><b>Deliverable #2 </b>: An extension of the build QA system to support doing experiments on different architectures </td></tr>
+<tr><td> Week 5 - 6: 02/26 - 03/11</td><td valign="top"><b>Deliverable #3 </b>: Experimental results of different architectures</td></tr>
+<tr><td> Week 7 - 9: 03/12 - 04/01</td><td valign="top"><b>Deliverable #4 </b>: CS298 Report</td></tr>
+<tr><td> Week 10 - 16: 04/02 - 05/20</td><td valign="top"> Oral Defense </td></tr>
+</table>
+
+<p><b>Deliverables</b></p>
+
+<ul>
+<li><b>Deliverable #1</b>: A baseline QA system on SQuAD based on [2]. This deliverable is a complicated implementation which includes processing data, training the QA system and deploying the QA system.</li>
+<li><b>Deliverable #2</b>: An extension of the build QA system to support doing experiments on different architectures. In this deliverable, various architectures will be added the the QA system. </li>
+<li><b>Deliverable #3</b>: Experimental results of different architectures. In this deliverable, we will try to find a better model, which might saves memory or gives better accuracy. [3-7] are part of the books or papers we may refer to.</li>
+<li><b>Deliverable #4</b>: CS298 report.</li>
+</ul>
+
+<p><b>Innovations and Challenges</b></p>
+<ul>
+  <li>There are many challenges in this project. First, since attention mechanism is used, training time is a big challenge. Second, since Tensorflow API does not support the attention mechanism we will use, I need to implement the attention mechanism of match-lstm from scratch. The last but not the least, data processing, which includes tokenization, building vocabulary, building embedding matrix and a lot more other works, is quite time consuming.</li>
+  <li>This project has several quite exciting innovations. First, the technique we are using is the state-of-art technique. Second, we will do experiments on different architectures to try to find a better model, which might saves memory or gives better accuracy.</li>
+</ul>
+
+<p><b>References</b></p>
+
+<ol>
+  <li>https://rajpurkar.github.io/SQuAD-explorer/</li>
+  <li>Wang, Shuohang, and Jing Jiang. "Machine comprehension using match-lstm and answer pointer." arXiv preprint arXiv:1608.07905 (2016).</li>
+  <li>Goodfellow, Ian, Yoshua Bengio, and Aaron Courville. Deep learning. MIT press, 2016.</li>
+  <li>Wang, Wenhui, et al. "Gated self-matching networks for reading comprehension and question answering." Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). Vol. 1. 2017.</li>
+  <li>Hu, Minghao, Yuxing Peng, and Xipeng Qiu. "Reinforced mnemonic reader for machine comprehension." CoRR, abs/1705.02798 (2017).</li>
+  <li>Huang, Hsin-Yuan, et al. "FusionNet: Fusing via Fully-Aware Attention with Application to Machine Comprehension." arXiv preprint arXiv:1711.07341 (2017).</li>
+  <li>Liu, Rui, et al. "Phase Conductor on Multi-layered Attentions for Machine Comprehension." arXiv preprint arXiv:1710.10504 (2017).</li>
+</ol>
