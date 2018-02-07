@@ -15,6 +15,9 @@ Second, it tokenizes "word" to ``word''. This caseis corrected in this code.
 '''
 
 class Preprocessor:
+    def download(self):
+        #TODO
+        return
     def analyze(self, json_file):
         #TODO: get nice statistics about data
         count = 0
