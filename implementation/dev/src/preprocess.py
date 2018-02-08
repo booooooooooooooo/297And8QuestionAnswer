@@ -150,11 +150,10 @@ class Preprocessor:
 
         return c_id_to_token_id_map
 
-    def get_token_with_answers(self, json_file, dir_to_save, prefix, pass_max_length):
+    def get_tokens_for_train(self, json_file, dir_to_save, prefix):
         if os.path.isfile(os.path.join(dir_to_save, prefix + ".passage" )):
             print "All {} tokens are ready!".format(prefix)
             return
-        pass_max_length = int (pass_max_length)
         passage_list = []
         question_list = []
         answer_text_list = []
@@ -178,11 +177,7 @@ class Preprocessor:
                         answer_end = answer_start + len(text) - 1
                         a_s = c_id_to_token_id_map[answer_start]
                         a_e = c_id_to_token_id_map[answer_end]
-                        #truncate a_s and a_e according to pass_max_length
-                        if a_e >= pass_max_length:
-                            a_e = pass_max_length - 1
-                        if a_s >= pass_max_length:
-                            a_s = random.randrange(0, pass_max_length)
+
 
                         passage_list.append(context_token)
                         question_list.append(question_token)
@@ -203,7 +198,7 @@ class Preprocessor:
                  ans_span_file.write(' '.join(answer_span_list[i]) + '\n')
 
 
-    def get_token_without_answers(self, json_file, dir_to_save, prefix):
+    def get_token_for_valid_and_test(self, json_file, dir_to_save, prefix):
         #TODO: trancate passage and question here instead of in embedding?
         if os.path.isfile(os.path.join(dir_to_save, prefix + ".passage" )):
             print "All {} tokens are ready!".format(prefix)
@@ -244,13 +239,13 @@ class Preprocessor:
     '''
     Make voc, rev_voc using train and valid tokens  (!!DO NOT use test tokens)
     '''
-    def makeVoc(self, voc_path , token_paths):
+    def make_voc(self, voc_path , token_paths):
         voc = Set()
         for path in token_paths:
             with open(path) as f:
                 for line in f:
                     for token in line.split():
-                        voc.add(token)
+                        voc.add(token.lower())
         voc = self._START_VOCAB + list(voc)
         with open(voc_path, "w") as f:
             for token in voc:
@@ -261,30 +256,49 @@ class Preprocessor:
     '''
     Make embedding matrix using train and valid tokens (!!DO NOT use test tokens)
     '''
-    def load_glove(self, embed_size, glove_file):
+    def make_embed(self, voc_path, glove_file, embed_size, embed_path):
         #check whether glove_file contains the word vectors with embed_size
         with open(glove_file) as fh:
             line = fh.readline()
             line_list = line.split()
             if len(line_list) - 1 != embed_size:
                 raise ValueError("No gloVe word vector has size {}".formate(embed_size))
-        print "Loading Glove word vectors."
-        glove_dic = {}
+        #load voc
+        voc = []
+        with open(voc_path) as f:
+            for line in f:
+                tokens = line.split()
+                voc.append(tokens[0].decode('utf8'))
+        #get embed_matrix
+        embed_matrix = np.random.randn(len(voc), embed_size)
         with open(glove_file) as fh:
             for line in fh:
                 line_list = line.split()
                 word = line_list[0].decode('utf8')#decode
                 vector = line_list[1:]
-                glove_dic[word] = vector
-        return glove_dic
+                if word.lower() in voc:
+                    idx = voc.index(word.lower())
+                    embed_matrix[idx, :] = vector
+        #save embed_matrix
+        np.save(embed_path, embed_matrix)
+        print "Embed matrix is save in {}".format(embed_path)
 
     '''
-    Make train ids, valid ids and test ids
+    Make train token_ids, valid token_ids and test token_ids
     '''
+    def tokens_to_token_ids(self, voc_file, token_file, token_id_file):
+        #load voc
+        voc = []
+        with open(voc_path) as f:
+            for line in f:
+                tokens = line.split()
+                voc.append(tokens[0].decode('utf8'))
+        with open(token_file) as tf, open(token_id_file, 'w') as idf:
+            for line in f:
+                token_list = line.decode('utf8').split()
+                token_id_list = [voc.index(token) for token in token_list]
+                idf.write(' '.join(token_id_list) + '\n')
 
-    '''
-    Make masked train ids, valid ids and test ids
-    '''
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -297,3 +311,31 @@ if __name__ == "__main__":
     my_preprocessor = Preprocessor()
 
     getattr(my_preprocessor, args.function_name)(*args.parameters)
+    '''
+
+    ######Download raw data#######
+    #TODO#
+
+    ######Split raw data to train.json, valid.json, test.json #######
+    python preprocess.py "get_all_json" "../data/data_raw/train-v1.1.json" "../data/data_raw/dev-v1.1.json" 0.9 "../data/data_json/"
+
+
+
+
+    #####Tokenize train.json, valid.json and test.json######
+    python preprocess.py "get_token_with_answers" "../data/data_json/train.json" "../data/data_clean/" "train" $pass_max_length
+    python preprocess.py "get_token_without_answers" "../data/data_json/valid.json" "../data/data_clean/" "valid" $pass_max_length
+
+    ######Make voc, rev_voc using train and valid tokens  (!!DO NOT use test tokens)#######
+    #TODO#
+
+    ######Make embedding matrix using train and valid tokens (!!DO NOT use test tokens)#####
+    #TODO#
+
+    ######Make train ids, valid ids and test ids#######
+    #TODO#
+
+    ######Make masked train ids, valid ids and test ids#######
+    #TODO#
+
+    '''
