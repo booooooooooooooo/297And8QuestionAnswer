@@ -14,6 +14,10 @@ First, it tokenizes ''word'' to "word". This case is not corrected in this code.
 Second, it tokenizes "word" to ``word''. This caseis corrected in this code.
 '''
 
+'''
+json.load(json_file) decodes everyting to unicode automatically
+'''
+
 class Preprocessor:
     def __init__(self):
         self._PAD = b"<pad>"
@@ -200,6 +204,7 @@ class Preprocessor:
                  ans_text_file.write(answer_text_list[i].encode('utf8') + '\n')
                  ans_span_file.write(' '.join(answer_span_list[i]) + '\n')
 
+        print "{} tokens are saved in folder {}".format(prefix, dir_to_save)
 
     def get_token_for_valid_and_test(self, json_file, dir_to_save, prefix):
         #TODO: shuffle
@@ -238,33 +243,45 @@ class Preprocessor:
                  question_tokens_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
                  question_id_file.write(question_id_list[i].encode('utf8') + '\n')
 
-
+        print "{} tokens are saved in folder {}".format(prefix, dir_to_save)
     '''
     Make voc, rev_voc using train and valid tokens  (!!DO NOT use test tokens)
     '''
-    def make_voc(self, voc_path , token_paths):
-        if os.path.isfile(voc_path):
-            print "{} is ready!".format(voc_path)
+    def make_voc(self, voc_file , token_paths):
+        if os.path.isfile(voc_file):
+            print "{} is ready!".format(voc_file)
             return
 
         voc = set()
         for path in token_paths:
             with open(path) as f:
-                for line in f:
+                lines = f.readlines()
+                for i in tqdm(xrange(len(lines)), desc = "Making vocabulary from {}".format(path)):
+                    line = lines[i]
+                    line = line.decode('utf8')
                     for token in line.split():
                         voc.add(token.lower())
         voc = self._START_VOCAB + list(voc)
-        with open(voc_path, "w") as f:
+        with open(voc_file, "w") as f:
             for token in voc:
-                f.write(token + "\n")
-
+                f.write(token.encode('utf8') + "\n")
+        print "Vocabulary is save in {}".format(voc_file)
 
 
     '''
     Make embedding matrix using train and valid tokens (!!DO NOT use test tokens)
     '''
-    def make_embed(self, voc_path, glove_file, embed_size, embed_path):
-        if os.path.isfile(embed_path):
+    def load_vocabulary(self, voc_file):
+        voc = []
+        with open(voc_file) as f:
+            lines = f.readlines()
+            for i in tqdm(xrange(len(lines)), desc = "Loading vocabulary form {}".format(voc_file)):
+                line = lines[i]
+                tokens = line.decode('utf8').split()
+                voc.append(tokens[0])
+        return voc
+    def make_embed(self, voc_file, glove_file, embed_size, embed_path):
+        if os.path.isfile(embed_path + ".npy"):
             print "{} is ready!".format(embed_path)
             return
 
@@ -275,17 +292,15 @@ class Preprocessor:
             if len(line_list) - 1 != embed_size:
                 raise ValueError("No gloVe word vector has size {}".formate(embed_size))
         #load voc
-        voc = []
-        with open(voc_path) as f:
-            for line in f:
-                tokens = line.split()
-                voc.append(tokens[0].decode('utf8'))
+        voc = self.load_vocabulary(voc_file)
         #get embed_matrix
-        embed_matrix = np.random.randn(len(voc), embed_size)
+        # embed_matrix = np.random.randn(len(voc), embed_size)
+        embed_matrix = np.zeros((len(voc), embed_size))
         with open(glove_file) as fh:
-            for line in fh:
-                line_list = line.split()
-                word = line_list[0].decode('utf8')#decode
+            lines = fh.readlines()
+            for i in tqdm(xrange(len(lines)), desc = "Iterating glove word vectors to make embed matrix"):
+                line_list = lines[i].split()
+                word = line_list[0]
                 vector = line_list[1:]
                 if word.lower() in voc:
                     idx = voc.index(word.lower())
@@ -302,16 +317,35 @@ class Preprocessor:
             print "{} is ready!".format(token_id_file)
             return
         #load voc
-        voc = []
-        with open(voc_path) as f:
-            for line in f:
-                tokens = line.split()
-                voc.append(tokens[0].decode('utf8'))
+        voc = self.load_vocabulary(voc_file)
+        #make rev_voc
+        rev_voc = {}
+        for i in xrange(len(voc)):
+            rev_voc[voc[i]] = i
         with open(token_file) as tf, open(token_id_file, 'w') as idf:
-            for line in f:
-                token_list = line.decode('utf8').split()
-                token_id_list = [voc.index(token) for token in token_list]
+            lines = tf.readlines()
+            for i in tqdm(xrange(len(lines)), desc = "Convert tokens in {} to token_ids".format(token_file)):
+                token_list = lines[i].decode('utf8').split()
+                token_id_list = [str(rev_voc[token.lower()]) for token in token_list]
                 idf.write(' '.join(token_id_list) + '\n')
+    def tokens_to_token_ids_for_test(self, voc_file, token_file, token_id_file):
+        # if os.path.isfile(token_id_file):
+        #     print "{} is ready!".format(token_id_file)
+        #     return
+        #load voc
+        voc = self.load_vocabulary(voc_file)
+        #make rev_voc
+        rev_voc = {}
+        for i in xrange(len(voc)):
+            rev_voc[voc[i]] = i
+        with open(token_file) as tf, open(token_id_file, 'w') as idf:
+            lines = tf.readlines()
+            for i in tqdm(xrange(len(lines)), desc = "Convert tokens in {} to token_ids".format(token_file)):
+                token_list = lines[i].decode('utf8').split()
+                #if vocabulary does not include the token, treat is as self._UNK
+                token_id_list = [str(rev_voc[token.lower()]) if token.lower() in rev_voc else str(self.UNK_ID) for token in token_list]
+                idf.write(' '.join(token_id_list) + '\n')
+
 
 
 if __name__ == "__main__":
@@ -344,10 +378,10 @@ if __name__ == "__main__":
     # '''Make embedding matrix using vocabulary and glove'''
     # my_preprocessor.make_embed("../data/data_clean/vocabulary", "../data/data_raw/glove.6B/glove.6B.50d.txt", 50, "../data/data_clean/embed_matrix")
 
-    # '''Make train ids, valid ids and test ids'''
-    # my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/train.passage", "../data/data_clean/train.passage.token_id")
-    # my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/train.question", "../data/data_clean/train.question.token_id")
-    # my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/valid.passage", "../data/data_clean/valid.passage.token_id")
-    # my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/valid.question", "../data/data_clean/valid.question.token_id")
-    # my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/test.passage", "../data/data_clean/test.passage.token_id")
-    # my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/test.question", "../data/data_clean/test.question.token_id")
+    '''Make train ids, valid ids and test ids'''
+    my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/train.passage", "../data/data_clean/train.passage.token_id")
+    my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/train.question", "../data/data_clean/train.question.token_id")
+    my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/valid.passage", "../data/data_clean/valid.passage.token_id")
+    my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/valid.question", "../data/data_clean/valid.question.token_id")
+    my_preprocessor.tokens_to_token_ids_for_test("../data/data_clean/vocabulary", "../data/data_clean/test.passage", "../data/data_clean/test.passage.token_id")
+    my_preprocessor.tokens_to_token_ids_for_test("../data/data_clean/vocabulary", "../data/data_clean/test.question", "../data/data_clean/test.question.token_id")
