@@ -20,7 +20,7 @@ class Preprocessor:
         self._PAD = b"<pad>"
         self._SOS = b"<sos>"#no _SOS in this project
         self._UNK = b"<unk>"
-        self._START_VOCAB = [_PAD, _SOS, _UNK]
+        self._START_VOCAB = [self._PAD, self._SOS, self._UNK]
 
         self.PAD_ID = 0
         self.SOS_ID = 1
@@ -68,6 +68,7 @@ class Preprocessor:
                         ques_ave_length += len(question_token)
         pass_ave_length /= count
         ques_ave_length /= count
+        print "Statistics of {}".format(json_file)
         print "How many (passage, question, answer) tuples : {} \npass_max_length: {} \npass_ave_length: {}\nques_max_length: {} \nques_ave_length :{} \n".format(count, pass_max_length, pass_ave_length, ques_max_length, ques_ave_length)
         plt.figure("Passage lengths")
         plt.plot(pass_lengths)
@@ -284,7 +285,7 @@ class Preprocessor:
         print "Embed matrix is save in {}".format(embed_path)
 
     '''
-    Make train token_ids, valid token_ids and test token_ids
+    Make token_ids using tokens and vocabulary
     '''
     def tokens_to_token_ids(self, voc_file, token_file, token_id_file):
         #load voc
@@ -301,41 +302,48 @@ class Preprocessor:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description='Preprocessing json to tokens')
-    parser.add_argument('function_name')
-    parser.add_argument('parameters', metavar='para', type=str, nargs='+',
-                        help='sequence of parameters')
-    args = parser.parse_args()
-
     my_preprocessor = Preprocessor()
 
-    getattr(my_preprocessor, args.function_name)(*args.parameters)
-    '''
-
-    ######Download raw data#######
-    #TODO#
-
-    ######Split raw data to train.json, valid.json, test.json #######
-    python preprocess.py "get_all_json" "../data/data_raw/train-v1.1.json" "../data/data_raw/dev-v1.1.json" 0.9 "../data/data_json/"
-
+    # parser = argparse.ArgumentParser(
+    #     description='Preprocessing json to tokens')
+    # parser.add_argument('function_name')
+    # parser.add_argument('parameters', metavar='para', type=str, nargs='+',
+    #                     help='sequence of parameters')
+    # args = parser.parse_args()
+    # getattr(my_preprocessor, args.function_name)(*args.parameters)
 
 
+    '''Download raw data'''
 
-    #####Tokenize train.json, valid.json and test.json######
-    python preprocess.py "get_token_with_answers" "../data/data_json/train.json" "../data/data_clean/" "train" $pass_max_length
-    python preprocess.py "get_token_without_answers" "../data/data_json/valid.json" "../data/data_clean/" "valid" $pass_max_length
+    '''Get statistics'''
+    my_preprocessor.analyze("../data/data_raw/train-v1.1.json")
+    my_preprocessor.analyze("../data/data_raw/dev-v1.1.json")
 
-    ######Make voc, rev_voc using train and valid tokens  (!!DO NOT use test tokens)#######
-    #TODO#
-
-    ######Make embedding matrix using train and valid tokens (!!DO NOT use test tokens)#####
-    #TODO#
-
-    ######Make train ids, valid ids and test ids#######
-    #TODO#
-
-    ######Make masked train ids, valid ids and test ids#######
-    #TODO#
-
-    '''
+    # '''Split raw data to train.json, valid.json, test.json '''
+    # my_preprocessor.get_all_json("../data/data_raw/train-v1.1.json",
+    #                              "../data/data_raw/dev-v1.1.json", 0.9,
+    #                              "../data/data_clean/")
+    #
+    # '''Tokenize train.json, valid.json and test.json'''
+    # my_preprocessor.get_token_with_answers("../data/data_clean/train.json" ,
+    #                                        "../data/data_clean/", "train")
+    # my_preprocessor.get_token_without_answers("../data/data_clean/valid.json" ,
+    #                                           "../data/data_clean/", "valid")
+    # my_preprocessor.get_token_without_answers("../data/data_clean/test.json" ,
+    #                                           "../data/data_clean/", "test")
+    #
+    # '''Make voc, rev_voc using train and valid tokens  (!!DO NOT use test tokens)'''
+    # my_preprocessor.make_voc("../data/data_clean/vocabulary" ,
+    #                         ["../data/data_clean/train.passage", "../data/data_clean/train.question",
+    #                         "../data/data_clean/valid.passage", "../data/data_clean/valid.question"])
+    #
+    # '''Make embedding matrix using vocabulary and glove'''
+    # my_preprocessor.make_embed("../data/data_clean/vocabulary", "../data/data_raw/glove.6B/glove.6B.50d.txt", 50, "../data/data_clean/embed_matrix")
+    #
+    # '''Make train ids, valid ids and test ids'''
+    # my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/train.passage", "../data/data_clean/train.passage.token_id")
+    # my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/train.question", "../data/data_clean/train.question.token_id")
+    # my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/valid.passage", "../data/data_clean/valid.passage.token_id")
+    # my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/valid.question", "../data/data_clean/valid.question.token_id")
+    # my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/test.passage", "../data/data_clean/test.passage.token_id")
+    # my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/test.question", "../data/data_clean/test.question.token_id")
