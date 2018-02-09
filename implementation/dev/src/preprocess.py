@@ -294,8 +294,8 @@ class Preprocessor:
         #load voc
         voc = self.load_vocabulary(voc_file)
         #get embed_matrix
-        # embed_matrix = np.random.randn(len(voc), embed_size)
-        embed_matrix = np.zeros((len(voc), embed_size))
+        embed_matrix = np.random.randn(len(voc), embed_size)
+        # embed_matrix = np.zeros((len(voc), embed_size))
         with open(glove_file) as fh:
             lines = fh.readlines()
             for i in tqdm(xrange(len(lines)), desc = "Iterating glove word vectors to make embed matrix"):
@@ -329,9 +329,9 @@ class Preprocessor:
                 token_id_list = [str(rev_voc[token.lower()]) for token in token_list]
                 idf.write(' '.join(token_id_list) + '\n')
     def tokens_to_token_ids_for_test(self, voc_file, token_file, token_id_file):
-        # if os.path.isfile(token_id_file):
-        #     print "{} is ready!".format(token_id_file)
-        #     return
+        if os.path.isfile(token_id_file):
+            print "{} is ready!".format(token_id_file)
+            return
         #load voc
         voc = self.load_vocabulary(voc_file)
         #make rev_voc
@@ -375,8 +375,8 @@ if __name__ == "__main__":
                             ["../data/data_clean/train.passage", "../data/data_clean/train.question",
                             "../data/data_clean/valid.passage", "../data/data_clean/valid.question"])
 
-    # '''Make embedding matrix using vocabulary and glove'''
-    # my_preprocessor.make_embed("../data/data_clean/vocabulary", "../data/data_raw/glove.6B/glove.6B.50d.txt", 50, "../data/data_clean/embed_matrix")
+    '''Make embedding matrix using vocabulary and glove'''
+    my_preprocessor.make_embed("../data/data_clean/vocabulary", "../data/data_raw/glove.6B/glove.6B.50d.txt", 50, "../data/data_clean/embed_matrix")
 
     '''Make train ids, valid ids and test ids'''
     my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/train.passage", "../data/data_clean/train.passage.token_id")
