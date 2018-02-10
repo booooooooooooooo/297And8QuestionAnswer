@@ -190,6 +190,9 @@ class Preprocessor:
                         question_list.append(question_token)
                         answer_text_list.append(text)#untokenized
                         answer_span_list.append([str(a_s), str(a_e)])
+        #TODO: shuffle passage_list, question_list, answer_text_list and answer_span_list accordingly
+        indices = range(len(passage_list))
+        np.random.shuffle(indices)
 
         if not os.path.isdir(dir_to_save):
             os.makedirs(dir_to_save)
@@ -198,7 +201,7 @@ class Preprocessor:
              open(os.path.join(dir_to_save, prefix + '.question'), 'w') as question_tokens_file, \
              open(os.path.join(dir_to_save, prefix + '.answer_text'), 'w') as ans_text_file, \
              open(os.path.join(dir_to_save, prefix + '.answer_span'), 'w') as ans_span_file:
-             for i in tqdm(xrange(len(passage_list)), desc="Writing {} tokens to {}".format(prefix, dir_to_save)):
+             for i in tqdm(indices, desc="Writing {} tokens to {}".format(prefix, dir_to_save)):
                  passage_tokens_file.write(' '.join([token.encode('utf8') for token in passage_list[i]]) + '\n')
                  question_tokens_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
                  ans_text_file.write(answer_text_list[i].encode('utf8') + '\n')
@@ -231,6 +234,9 @@ class Preprocessor:
                     question_id_list.append(question_id)
                     passage_list.append(context_token)
                     question_list.append(question_token)
+        #TODO: shuffle passage_list, question_list and question_id_list accordingly
+        indices = range(len(passage_list))
+        np.random.shuffle(indices)
 
         if not os.path.isdir(dir_to_save):
             os.makedirs(dir_to_save)
@@ -238,7 +244,7 @@ class Preprocessor:
         with open(os.path.join(dir_to_save, prefix + '.passage'), 'w') as passage_tokens_file, \
              open(os.path.join(dir_to_save, prefix + '.question'), 'w') as question_tokens_file, \
              open(os.path.join(dir_to_save, prefix + '.question_id'), 'w') as question_id_file:
-             for i in tqdm(xrange(len(passage_list)), desc="Writing my {} tokens to {} folder".format(prefix, dir_to_save)):
+             for i in tqdm(indices, desc="Writing my {} tokens to {} folder".format(prefix, dir_to_save)):
                  passage_tokens_file.write(' '.join([token.encode('utf8') for token in passage_list[i]]) + '\n')
                  question_tokens_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
                  question_id_file.write(question_id_list[i].encode('utf8') + '\n')
@@ -293,6 +299,7 @@ class Preprocessor:
                 raise ValueError("No gloVe word vector has size {}".formate(embed_size))
         #load voc
         voc = self.load_vocabulary(voc_file)
+        voc_set = set(voc)
         #get embed_matrix
         embed_matrix = np.random.randn(len(voc), embed_size)
         # embed_matrix = np.zeros((len(voc), embed_size))
@@ -300,9 +307,9 @@ class Preprocessor:
             lines = fh.readlines()
             for i in tqdm(xrange(len(lines)), desc = "Iterating glove word vectors to make embed matrix"):
                 line_list = lines[i].split()
-                word = line_list[0]
+                word = line_list[0].decode('utf8').lower()
                 vector = line_list[1:]
-                if word.lower() in voc:
+                if word in voc_set:
                     idx = voc.index(word.lower())
                     embed_matrix[idx, :] = vector
         #save embed_matrix
