@@ -137,7 +137,16 @@ class MatchLSTMAnsPtr:
             self.v = tf.get_variable("v", shape = (num_units, ), dtype = tf.float32, initializer = init)
             self.c = tf.get_variable("c", shape = (), dtype = tf.float32, initializer = init)
 
-    def encode_preprocess(self, passage, passage_sequence_length, ques, ques_sequence_length, keep_prob,lstm_pre ):
+    def get_embed(self, passage, ques, embed_matrix, keep_prob):
+        passage_embed = tf.nn.embedding_lookup(embed_matrix, passage)
+        ques_embed = tf.nn.embedding_lookup(embed_matrix, ques)
+
+        passage_embed = tf.nn.dropout(passage_embed, keep_prob=keep_prob)
+        ques_embed = tf.nn.dropout(ques_embed, keep_prob=keep_prob)
+
+        return passage_embed, ques_embed
+
+    def encode_preprocess(self, passage_embed, passage_sequence_length, ques_embed, ques_sequence_length, lstm_pre_fw, lstm_pre_bw, keep_prob ):
         '''
         return:
             H_p: (batch_size, pass_max_length, 2 *num_units)
@@ -145,17 +154,17 @@ class MatchLSTMAnsPtr:
         '''
 
         with tf.variable_scope("preprocessing_layer"):
-            H_p, _ = tf.nn.bidirectional_dynamic_rnn(lstm_pre_fw, lstm_pre_bw, passage,
+            H_p, _ = tf.nn.bidirectional_dynamic_rnn(lstm_pre_fw, lstm_pre_bw, passage_embed,
                                        sequence_length = passage_sequence_length,
                                        dtype=tf.float32)
-            H_q, _ = tf.nn.dynamic_rnn(lstm_pre_fw, lstm_pre_bw, ques,
+            H_q, _ = tf.nn.dynamic_rnn(lstm_pre_fw, lstm_pre_bw, ques_embed,
                                        sequence_length = ques_sequence_length,
                                        dtype=tf.float32)
             H_p = tf.nn.dropout(H_p, keep_prob=keep_prob)
             H_q = tf.nn.dropout(H_q, keep_prob=keep_prob)
         return H_p, H_q
 
-    def encode_match(self, H_p, passage_sequence_length, keep_prob, lstm_gru_fw, lstm_gru_bw):
+    def encode_match(self, H_p, passage_sequence_length, lstm_gru_fw, lstm_gru_bw, keep_prob):
         '''
         paras
             H_p:        (batch_size, pass_max_length, 2 * num_units)
@@ -185,7 +194,7 @@ class MatchLSTMAnsPtr:
         pass_max_length = tf.shape(H_r)[1]
         pass_sequence_mask = tf.sequence_mask(passage_sequence_length,pass_max_length, dtype=tf.float32)#(batch_size, pass_max_length)
 
-
+        #TODO: add dropout?
 
         F_s = tf.tanh( tf.matmul(H_r, tf.tile(tf.expand_dims(V, [0]), [batch_size, 1, 1]))
                        + b_a)#(batch_size, pass_max_length, num_units)
@@ -210,53 +219,92 @@ class MatchLSTMAnsPtr:
 
 
     def add_predicted_dist(self):
-        #Preprocessing Layer
-        H_p, H_q = self.encode_preprocess(False)
-        #Match-LSTM Layer
-        H_r = self.encode_match(H_p, H_q, False)
-        #Answer Pointer Layer
-        dist = self.decode_ans_ptr(H_r, False)
-        self.dist = dist
+        passage_embed, ques_embed = self.get_embed(self.passage, self.ques, self.embed_matrix, self.keep_prob)
+        H_p, H_q = self.encode_preprocess(passage_embed, self.passage_sequence_length, ques_embed, self.ques_sequence_length, self.lstm_pre_fw, self.lstm_pre_bw, self.keep_prob )
+        H_r = self.encode_match(H_p, self.passage_sequence_length, self.lstm_gru_fw, self.lstm_gru_bw, self.keep_prob)
+        dist = self.decode_ans_ptr(H_r, self.passage_sequence_length, self.V, self.W_a, self.b_a, self.v, self.c, self.keep_prob)
 
-        #Preprocessing Layer
-        H_p_dropout, H_q_dropout = self.encode_preprocess(True)
-        #Match-LSTM Layer
-        H_r_dropout = self.encode_match(H_p, H_q, True)
-        #Answer Pointer Layer
-        dist_dropout = self.decode_ans_ptr(H_r, True)
-        self.dist_dropout = dist_dropout
+        self.dist = tf.identity(dist, name = "dist")#dist is used in validation and test
+
     def add_loss_function(self):
-        pass_max_length = self.pass_max_length
-        batch_size = self.batch_size
+        self.loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
+                logits=self.dist, labels=self.ans))
 
-        ans = self.ans#(batch_size, 2)
+    def add_train_op(self, do_clip, clip_norm, optimizer, lr):
+        if optimizer == "adam":
+            optimizer_func = tf.train.AdamOptimizer(lr)
+        elif optimizer == "sgd":
+            optimizer_func = tf.train.GradientDescentOptimizer(lr)
+        else:
+            raise ValueError('Parameters are wrong')
+        loss = self.loss
+        gradients, variables = zip(*optimizer_func.compute_gradients(loss))
+        if do_clip:
+            gradients, _ = tf.clip_by_global_norm(gradients, clip_norm)
+        train_op = optimizer_func.apply_gradients(zip(gradients, variables))#second part of minimize()
 
-        dist = self.dist#(batch_size, 2, pass_max_length)
-        loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
-                logits=dist, labels=ans)
-        self.loss = tf.reduce_mean(loss)
+        self.train_op = tf.identity(train_op, name = "train_op")
 
-        dist_dropout = self.dist_dropout#(batch_size, 2, pass_max_length)
-        loss_dropout = tf.nn.sparse_softmax_cross_entropy_with_logits(
-                logits=dist_dropout, labels=ans)
-        self.loss_dropout = tf.reduce_mean(loss_dropout)
-    def build(self):
-        #add placeholders
-        self.add_placeholder()
-        #add variables / make architectures
-        self.add_variables()
-        #add predicted distribution
-        self.add_predicted_dist()
-        #add loss
-        self.add_loss_function()
-    def __init__(self, pass_max_length, ques_max_length, batch_size, embed_size, num_units, dropout):
-        #parameters used by the graph. Train, valid and test data must be consistent on these parameters.
+    def __init__(self, embed_matrix, pass_max_length, ques_max_length, embed_size, num_units, dropout, do_clip, clip_norm, optimizer, lr, n_epoch):
+        #Train, valid and test data must be consistent on these parameters.
+        self.embed_matrix = embed_matrix
         self.pass_max_length = pass_max_length
         self.ques_max_length = ques_max_length#not sure
-        self.batch_size = batch_size
         self.embed_size = embed_size
         #parameter used by the graph. It is not related to data.
         self.num_units = num_units
         self.dropout = dropout
+        self.do_clip,
+        self.clip_norm,
+        self.optimizer,
+        self.lr
+        self.n_epoch = n_epoch
         #build the graph
-        self.build()
+        self.add_placeholder()
+        self.add_variables()
+        self.add_predicted_dist()
+        self.add_loss_function()
+        self.add_train_op()
+
+    def run_batch(sess, batch):
+        passage, passage_sequence_length, ques ,ques_sequence_length, ans = batch
+        _ , batch_loss = sess.run([self.train_op, self.loss], {self.passage : passage,
+                                                          self.passage_sequence_length : passage_sequence_length,
+                                                          self.ques : ques,
+                                                          self.ques_sequence_length : ques_sequence_length,
+                                                          self.ans : ans})
+        return batch_loss
+    def run_epoch(sess, batches):
+        trainLoss = 0.0
+        for i in tqdm(xrange(len(batches)), desc = "Training batches") :
+            trainLoss += run_batch(sess, batches[i])
+        trainLoss /= len(batches)
+        return trainLoss
+    def fit(train_batches_sub_path, dir_data, dir_output):
+        if not os.path.isdir(dir_output):
+            os.makedirs(dir_output)
+        if not os.path.isdir(os.path.join(dir_output, "graphes/")):
+            os.makedirs(os.path.join(dir_output, "graphes/"))
+
+        print "Start getting train_op"
+        train_op = self.train_op
+        print "Finish getting train_op"
+        print "Start intializing graph"
+        with tf.Session() as sess:
+            sess.run(tf.global_variables_initializer())#Initilizing after making train_op
+            print "Finish intializing graph"
+            print "Start Reading batched data from disk"
+            batches = get_batches(os.path.join(dir_data, train_batches_sub_path))#call get_batches from util.py
+            print "Finish Reading batched data from disk"
+            graph_sub_paths_list = []
+            for epoch in xrange(self.n_epoch) :
+                print "Epoch {}".format(epoch)
+                trainLoss = run_epoch(sess, batches)
+                # graph_sub_path = os.path.join(dir_output, "graphes/", str(trainLoss) + "_" + str(optimizer) + "_" + str(lr)  + "_" + str(epoch) + "_" + str(datetime.now()))
+                graph_sub_path = os.path.join(dir_output, "graphes/", str(epoch) + "_" + str(datetime.now()))
+                tf.train.Saver().save(sess, graph_sub_path )
+                graph_sub_paths_list.append(graph_sub_path)
+                print "Epoch {} trainLoss {}".format(epoch, trainLoss)
+        with open(os.path.join(dir_output, "graph_sub_paths_list.json"), 'w') as f:
+            f.write(json.dumps(graph_sub_paths_list))
+        return graph_sub_paths_list
