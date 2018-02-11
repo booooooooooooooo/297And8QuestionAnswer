@@ -231,21 +231,22 @@ class MatchLSTMAnsPtr:
                 logits=self.dist, labels=self.ans))
 
     def add_train_op(self, do_clip, clip_norm, optimizer, lr):
+        decay_lr = tf.train.exponential_decay(lr, tf.Variable(0, trainable=False),
+                                                       1000, 0.96, staircase=True)
         if optimizer == "adam":
-            optimizer_func = tf.train.AdamOptimizer(lr)
+            optimizer_func = tf.train.AdamOptimizer(decay_lr)
         elif optimizer == "sgd":
-            optimizer_func = tf.train.GradientDescentOptimizer(lr)
+            optimizer_func = tf.train.GradientDescentOptimizer(decay_lr)
         else:
             raise ValueError('Parameters are wrong')
-        loss = self.loss
-        gradients, variables = zip(*optimizer_func.compute_gradients(loss))
-        if do_clip:
-            gradients, _ = tf.clip_by_global_norm(gradients, clip_norm)
+
+        gradients, variables = zip(*optimizer_func.compute_gradients(self.loss))
+        gradients, _ = tf.clip_by_global_norm(gradients, clip_norm)
         train_op = optimizer_func.apply_gradients(zip(gradients, variables))#second part of minimize()
 
         self.train_op = tf.identity(train_op, name = "train_op")
 
-    def __init__(self, embed_matrix, pass_max_length, ques_max_length, embed_size, num_units, dropout, do_clip, clip_norm, optimizer, lr, n_epoch):
+    def __init__(self, embed_matrix, pass_max_length, ques_max_length, embed_size, num_units, dropout, clip_norm, optimizer, lr, n_epoch):
         #Train, valid and test data must be consistent on these parameters.
         self.embed_matrix = embed_matrix
         self.pass_max_length = pass_max_length
@@ -254,10 +255,9 @@ class MatchLSTMAnsPtr:
         #parameter used by the graph. It is not related to data.
         self.num_units = num_units
         self.dropout = dropout
-        self.do_clip,
-        self.clip_norm,
-        self.optimizer,
-        self.lr
+        self.clip_norm = clip_norm
+        self.optimizer = optimizer
+        self.lr = lr
         self.n_epoch = n_epoch
         #build the graph
         self.add_placeholder()
@@ -266,45 +266,50 @@ class MatchLSTMAnsPtr:
         self.add_loss_function()
         self.add_train_op()
 
-    def run_batch(sess, batch):
-        passage, passage_sequence_length, ques ,ques_sequence_length, ans = batch
+    def run_batch(self, sess, batch, dir_output):
+        passage, passage_sequence_length, ques ,ques_sequence_length, ans, keep_prob = batch
         _ , batch_loss = sess.run([self.train_op, self.loss], {self.passage : passage,
                                                           self.passage_sequence_length : passage_sequence_length,
                                                           self.ques : ques,
                                                           self.ques_sequence_length : ques_sequence_length,
-                                                          self.ans : ans})
-        return batch_loss
-    def run_epoch(sess, batches):
-        trainLoss = 0.0
-        for i in tqdm(xrange(len(batches)), desc = "Training batches") :
-            trainLoss += run_batch(sess, batches[i])
-        trainLoss /= len(batches)
-        return trainLoss
-    def fit(train_batches_sub_path, dir_data, dir_output):
+                                                          self.ans : ans
+                                                          self.keep_prob : keep_prob})
+
+
+
+        graph_file = os.path.join(dir_output, "graphes/", str(datetime.now()))
+        tf.train.Saver().save(sess, graph_file )
+
+        #TODO: do validation per batch?
+
+        batch_stat = {"batch_train_loss": batch_loss, "graph_file": graph_file}
+
+        #TODO:print reader-friendly batch result
+        print "batch_train_loss: {}".format(batch_loss)
+
+        return batch_stat
+    def run_epoch(self, sess, batches, dir_output):
+        epoch_loss = 0.0
+        for i in tqdm(xrange(len(batches)), desc = "Under training") :
+            batch_stat = self.run_batch(sess, batches[i], dir_output)
+            epoch_stat.append(batch_stat)
+        #TODO: print reader-friendly epoch result
+        return epoch_stat
+    def fit(self, sess, batches, dir_output):
         if not os.path.isdir(dir_output):
             os.makedirs(dir_output)
         if not os.path.isdir(os.path.join(dir_output, "graphes/")):
             os.makedirs(os.path.join(dir_output, "graphes/"))
 
-        print "Start getting train_op"
-        train_op = self.train_op
-        print "Finish getting train_op"
+        #Just in case. sess para should be already initialized
         print "Start intializing graph"
-        with tf.Session() as sess:
-            sess.run(tf.global_variables_initializer())#Initilizing after making train_op
-            print "Finish intializing graph"
-            print "Start Reading batched data from disk"
-            batches = get_batches(os.path.join(dir_data, train_batches_sub_path))#call get_batches from util.py
-            print "Finish Reading batched data from disk"
-            graph_sub_paths_list = []
-            for epoch in xrange(self.n_epoch) :
-                print "Epoch {}".format(epoch)
-                trainLoss = run_epoch(sess, batches)
-                # graph_sub_path = os.path.join(dir_output, "graphes/", str(trainLoss) + "_" + str(optimizer) + "_" + str(lr)  + "_" + str(epoch) + "_" + str(datetime.now()))
-                graph_sub_path = os.path.join(dir_output, "graphes/", str(epoch) + "_" + str(datetime.now()))
-                tf.train.Saver().save(sess, graph_sub_path )
-                graph_sub_paths_list.append(graph_sub_path)
-                print "Epoch {} trainLoss {}".format(epoch, trainLoss)
-        with open(os.path.join(dir_output, "graph_sub_paths_list.json"), 'w') as f:
-            f.write(json.dumps(graph_sub_paths_list))
-        return graph_sub_paths_list
+        sess.run(tf.global_variables_initializer())#Initilizing after making train_op
+        print "Finish intializing graph"
+
+        stats = []
+        for epoch in xrange(self.n_epoch) :
+            print "Epoch {}".format(epoch)
+            epoch_stat = self.run_epoch(sess, batches, dir_output)
+            stats.append(epoch_stat)
+        #TODO: print reader-friendly final result
+        return stats
