@@ -109,11 +109,11 @@ class MatchLSTMAnsPtr:
         ques_max_length = self.ques_max_length
         embed_size = self.embed_size
 
-        self.passage = tf.placeholder(tf.float32, shape = (batch_size, pass_max_length, embed_size), name = "passage_placeholder")
-        self.passage_sequence_length = tf.placeholder(tf.int32, shape = (batch_size), name = "passage_sequence_length_placeholder")
-        self.ques = tf.placeholder(tf.float32, shape = (batch_size, ques_max_length, embed_size), name = "question_placeholder")
-        self.ques_sequence_length = tf.placeholder(tf.int32, shape = (batch_size), name = "question_sequence_length_placeholder")
-        self.ans = tf.placeholder(tf.int32, shape = (batch_size, 2), name = "answer_span_placeholder")
+        self.passage = tf.placeholder(tf.float32, shape = (None, pass_max_length, embed_size), name = "passage_placeholder")
+        self.passage_sequence_length = tf.placeholder(tf.int32, shape = (None), name = "passage_sequence_length_placeholder")
+        self.ques = tf.placeholder(tf.float32, shape = (None, ques_max_length, embed_size), name = "question_placeholder")
+        self.ques_sequence_length = tf.placeholder(tf.int32, shape = (None), name = "question_sequence_length_placeholder")
+        self.ans = tf.placeholder(tf.int32, shape = (None, 2), name = "answer_span_placeholder")
         self.keep_prob = tf.placeholder(tf.float32, shape = (), name = "keep_prob_placeholder")
     def add_variables(self):
         embed_size = self.embed_size
@@ -246,7 +246,7 @@ class MatchLSTMAnsPtr:
 
         self.train_op = tf.identity(train_op, name = "train_op")
 
-    def __init__(self, embed_matrix, pass_max_length, ques_max_length, embed_size, num_units, dropout, clip_norm, optimizer, lr, n_epoch):
+    def __init__(self, embed_matrix, pass_max_length, ques_max_length, embed_size, num_units, clip_norm, optimizer, lr, n_epoch):
         #Train, valid and test data must be consistent on these parameters.
         self.embed_matrix = embed_matrix
         self.pass_max_length = pass_max_length
@@ -254,7 +254,6 @@ class MatchLSTMAnsPtr:
         self.embed_size = embed_size
         #parameter used by the graph. It is not related to data.
         self.num_units = num_units
-        self.dropout = dropout
         self.clip_norm = clip_norm
         self.optimizer = optimizer
         self.lr = lr
@@ -272,7 +271,7 @@ class MatchLSTMAnsPtr:
                                                           self.passage_sequence_length : passage_sequence_length,
                                                           self.ques : ques,
                                                           self.ques_sequence_length : ques_sequence_length,
-                                                          self.ans : ans
+                                                          self.ans : ans,
                                                           self.keep_prob : keep_prob})
 
 
@@ -289,7 +288,6 @@ class MatchLSTMAnsPtr:
 
         return batch_stat
     def run_epoch(self, sess, batches, dir_output):
-        epoch_loss = 0.0
         for i in tqdm(xrange(len(batches)), desc = "Under training") :
             batch_stat = self.run_batch(sess, batches[i], dir_output)
             epoch_stat.append(batch_stat)

@@ -87,21 +87,21 @@ if __name__ == "__main__":
     # Unit testing
     # '''
     #
-    # data_util = DataUtil()
-    #
-    # pass_token_id_file = "../data/data_clean/train.passage.token_id"
-    # pass_max_len = 199
-    # ans_span_file = "../data/data_clean/train.answer_span"
-    # pass_trim, passage_sequence_length, ans_span_trim = data_util.pad_or_truncate_pass_and_ans(pass_token_id_file, pass_max_len, ans_span_file)
-    #
-    #
-    # ques_token_id_file = "../data/data_clean/train.question.token_id"
-    # ques_max_len = 139
-    # ques_trim, ques_sequence_length = data_util.pad_or_truncate_itself(ques_token_id_file, ques_max_len)
-    #
-    #
-    # print pass_trim[0]
-    # print passage_sequence_length[0]
-    # print ans_span_trim[0]
-    # print ques_trim[0]
-    # print ques_sequence_length[0]
+    data_util = DataUtil()
+
+    pass_token_id_file = "../data/data_clean/train.passage.token_id"
+    pass_max_len = 199
+    ans_span_file = "../data/data_clean/train.answer_span"
+    pass_trim, passage_sequence_length, ans_span_trim = data_util.pad_or_truncate_pass_and_ans(pass_token_id_file, pass_max_len, ans_span_file)
+
+
+    ques_token_id_file = "../data/data_clean/train.question.token_id"
+    ques_max_len = 139
+    ques_trim, ques_sequence_length = data_util.pad_or_truncate_itself(ques_token_id_file, ques_max_len)
+
+
+    print pass_trim[0]
+    print passage_sequence_length[0]
+    print ans_span_trim[0]
+    print ques_trim[0]
+    print ques_sequence_length[0]
