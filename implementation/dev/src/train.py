@@ -16,6 +16,17 @@ from util_data import DataUtil
 
 
 def train(embed_matrix_path, pass_max_len, ques_max_len, embed_size, num_units, clip_norm, optimizer, lr, n_epoch, dir_data, batch_size, keep_prob, dir_output):
+    # print type(keep_prob)
+
+
+    #read embed_matrix
+    print "Start reading embed_matrix from {}".format(embed_matrix_path)
+    embed_matrix = np.load(embed_matrix_path)
+    embed_matrix = embed_matrix.astype(np.float32)
+    # print type(embed_matrix[0][0])
+    print "Finish reading embed_matrix"
+
+
     #read batches from dir_data
     print "Start reading batches from {}".format(dir_data)
     pass_token_id_file = os.path.join(dir_data, "train.passage.token_id")
@@ -29,16 +40,9 @@ def train(embed_matrix_path, pass_max_len, ques_max_len, embed_size, num_units, 
         batch_ques_trim = ques_trim[i * batch_size : (i + 1) * batch_size]
         batch_ques_sequence_length = ques_sequence_length[i * batch_size : (i + 1) * batch_size]
         batch_ans_span_trim = ans_span_trim[i * batch_size : (i + 1) * batch_size]
-        batch_keep_prob = [keep_prob] * batch_size
-        batches.append([batch_pass_trim, batch_passage_sequence_length, batch_ques_trim, batch_ques_sequence_length, batch_ans_span_trim, batch_keep_prob])
+        batches.append([batch_pass_trim, batch_passage_sequence_length, batch_ques_trim, batch_ques_sequence_length, batch_ans_span_trim, keep_prob])
     #ignore the remain data
     print "Finish reading batches"
-
-    #read embed_matrix
-    print "Start reading embed_matrix from {}".format(embed_matrix_path)
-    embed_matrix = np.load(embed_matrix_path)
-    print "Finish reading embed_matrix"
-
 
     #create graph and fit
     model = MatchLSTMAnsPtr(embed_matrix, pass_max_len, ques_max_len, embed_size, num_units, clip_norm, optimizer, lr, n_epoch)
@@ -56,13 +60,13 @@ if __name__ == "__main__":
     # Unit testing
     # '''
     embed_matrix_path = "../data/data_clean/embed_matrix.npy"
-    pass_max_len = 99
-    ques_max_len= 37
+    pass_max_len = 213
+    ques_max_len= 77
     embed_size = 50
     num_units = 50
-    clip_norm = 5
+    clip_norm = 5.0
     optimizer = "adam"
-    lr = 1
+    lr = 1.0
     n_epoch = 1
     dir_data = "../data/data_clean"
     batch_size = 77

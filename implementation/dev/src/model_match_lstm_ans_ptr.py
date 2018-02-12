@@ -61,22 +61,22 @@ class MatchGRUCell(tf.nn.rnn_cell.RNNCell):
 
             init = tf.contrib.layers.xavier_initializer()
             #attention
-            self.W_q = tf.get_variable("W_q", initializer = init, shape = (_input_size, _input_size), dtype = tf.float32)
-            self.W_p = tf.get_variable("W_p", initializer = init, shape = (_input_size, _input_size), dtype = tf.float32)
-            self.W_r = tf.get_variable("W_r", initializer = init, shape = (_state_size, _input_size), dtype = tf.float32)
-            self.b_p = tf.get_variable("b_p", initializer = init, shape = (_input_size, ), dtype = tf.float32)
-            self.w = tf.get_variable("w", initializer = init, shape = (_input_size, ), dtype = tf.float32)
-            self.b = tf.get_variable("b", initializer = init, shape = (), dtype = tf.float32)
+            W_q = tf.get_variable("W_q", initializer = init, shape = (_input_size, _input_size), dtype = tf.float32)
+            W_p = tf.get_variable("W_p", initializer = init, shape = (_input_size, _input_size), dtype = tf.float32)
+            W_r_0 = tf.get_variable("W_r_0", initializer = init, shape = (_state_size, _input_size), dtype = tf.float32)
+            b_p = tf.get_variable("b_p", initializer = init, shape = (_input_size, ), dtype = tf.float32)
+            w = tf.get_variable("w", initializer = init, shape = (_input_size, ), dtype = tf.float32)
+            b = tf.get_variable("b", initializer = init, shape = (), dtype = tf.float32)
 
             G = tf.tanh(tf.matmul(H_q, tf.tile(tf.expand_dims(W_q, axis = [0]), [batch_size, 1, 1]))
-                    + tf.expand_dims(tf.matmul(inputs, W_p) + tf.matmul(state, W_r) + b_p, [1]))#(batch_size, ques_max_length, _input_size)
+                    + tf.expand_dims(tf.matmul(inputs, W_p) + tf.matmul(state, W_r_0) + b_p, [1]))#(batch_size, ques_max_length, _input_size)
             alpha = tf.reshape(tf.matmul(G, tf.tile(tf.reshape(w, [1, _input_size, 1]), [batch_size, 1, 1])), [batch_size, -1])#(batch_size, ques_max_length)
             #TODO:use 10e-1 to mask alpha before appling softmax ??
             alpha = tf.nn.softmax(alpha)#(batch_size, ques_max_length)
             ques_sequence_mask = tf.sequence_mask(ques_sequence_length,ques_max_length, dtype=tf.float32)#(batch_size, ques_max_length)
             alpha = alpha * ques_sequence_mask#(batch_size, ques_max_length)
             att_v = tf.reshape(tf.matmul(tf.expand_dims(alpha, [1]), H_q), [batch_size, _input_size])#(batch_size, _input_size)
-            z = tf.concat([h_p, att_v], 1)#(batch_size, 2 * _input_size)
+            z = tf.concat([inputs, att_v], 1)#(batch_size, 2 * _input_size)
 
             #gru cell
             #TODO: change 2 * _input_size to _input_size + tf.shape(inputs)[1] ??
@@ -84,7 +84,7 @@ class MatchGRUCell(tf.nn.rnn_cell.RNNCell):
             U_z = tf.get_variable('U_z', (_state_size, _state_size), tf.float32, init)
             b_z = tf.get_variable('b_z', (_state_size,), tf.float32, init)
 
-            W_r = tf.get_variable('W_r', (2 * _input_size, _state_size), tf.float32, init)
+            W_r_1 = tf.get_variable('W_r_1', (2 * _input_size, _state_size), tf.float32, init)
             U_r = tf.get_variable('U_r', (_state_size, _state_size), tf.float32, init)
             b_r = tf.get_variable('b_r', (_state_size,), tf.float32, init)
 
@@ -95,7 +95,7 @@ class MatchGRUCell(tf.nn.rnn_cell.RNNCell):
 
 
             z_gru = tf.nn.sigmoid(tf.matmul(z, W_z) + tf.matmul(state, U_z) + b_z)
-            r_gru = tf.nn.sigmoid(tf.matmul(z, W_r) + tf.matmul(state_size, U_r) + b_r)
+            r_gru = tf.nn.sigmoid(tf.matmul(z, W_r_1) + tf.matmul(state, U_r) + b_r)
             new_state_wave = tf.nn.tanh(tf.matmul(z, W_h) + tf.matmul(r_gru * state, U_h) + b_h)
             new_state = z_gru * state + (1 - z_gru) * new_state_wave
             output = new_state
@@ -109,90 +109,88 @@ class MatchLSTMAnsPtr:
         ques_max_length = self.ques_max_length
         embed_size = self.embed_size
 
-        self.passage = tf.placeholder(tf.float32, shape = (None, pass_max_length, embed_size), name = "passage_placeholder")
-        self.passage_sequence_length = tf.placeholder(tf.int32, shape = (None), name = "passage_sequence_length_placeholder")
-        self.ques = tf.placeholder(tf.float32, shape = (None, ques_max_length, embed_size), name = "question_placeholder")
-        self.ques_sequence_length = tf.placeholder(tf.int32, shape = (None), name = "question_sequence_length_placeholder")
+        self.passage = tf.placeholder(tf.int32, shape = (None, pass_max_length), name = "passage_placeholder")
+        self.passage_sequence_length = tf.placeholder(tf.int32, shape = (None,), name = "passage_sequence_length_placeholder")
+        self.ques = tf.placeholder(tf.int32, shape = (None, ques_max_length), name = "question_placeholder")
+        self.ques_sequence_length = tf.placeholder(tf.int32, shape = (None,), name = "question_sequence_length_placeholder")
         self.ans = tf.placeholder(tf.int32, shape = (None, 2), name = "answer_span_placeholder")
         self.keep_prob = tf.placeholder(tf.float32, shape = (), name = "keep_prob_placeholder")
-    def add_variables(self):
-        embed_size = self.embed_size
-        num_units = self.num_units
 
-        init = tf.contrib.layers.xavier_initializer()
+    def get_embed(self):
+        passage_embed = tf.nn.embedding_lookup(self.embed_matrix, self.passage)
+        ques_embed = tf.nn.embedding_lookup(self.embed_matrix, self.ques)
 
-
-        with tf.variable_scope("encode_preprocess"):
-            self.lstm_pre_fw = tf.contrib.rnn.BasicLSTMCell(num_units)
-            self.lstm_pre_bw = tf.contrib.rnn.BasicLSTMCell(num_units)
-
-        with tf.variable_scope("encode_match"):
-            self.lstm_gru_fw = MatchGRUCell(2 * num_units, num_units, H_q, ques_sequence_length)
-            self.lstm_gru_bw = MatchGRUCell(2 * num_units, num_units, H_q, ques_sequence_length)
-
-        with tf.variable_scope("decode_ans_ptr"):
-            self.V = tf.get_variable("V", shape = (2 * num_units, num_units), dtype = tf.float32, initializer = init)
-            self.W_a = tf.get_variable("W_a", shape = (2 * num_units, num_units), dtype = tf.float32, initializer = init)
-            self.b_a = tf.get_variable("b_a", shape = (num_units, ), dtype = tf.float32, initializer = init)
-            self.v = tf.get_variable("v", shape = (num_units, ), dtype = tf.float32, initializer = init)
-            self.c = tf.get_variable("c", shape = (), dtype = tf.float32, initializer = init)
-
-    def get_embed(self, passage, ques, embed_matrix, keep_prob):
-        passage_embed = tf.nn.embedding_lookup(embed_matrix, passage)
-        ques_embed = tf.nn.embedding_lookup(embed_matrix, ques)
-
-        passage_embed = tf.nn.dropout(passage_embed, keep_prob=keep_prob)
-        ques_embed = tf.nn.dropout(ques_embed, keep_prob=keep_prob)
+        passage_embed = tf.nn.dropout(passage_embed, keep_prob=self.keep_prob)
+        ques_embed = tf.nn.dropout(ques_embed, keep_prob=self.keep_prob)
 
         return passage_embed, ques_embed
 
-    def encode_preprocess(self, passage_embed, passage_sequence_length, ques_embed, ques_sequence_length, lstm_pre_fw, lstm_pre_bw, keep_prob ):
+    def encode_preprocess(self, passage_embed, ques_embed):
         '''
         return:
-            H_p: (batch_size, pass_max_length, 2 *num_units)
+            H_p: (batch_size, pass_max_length, 2 * num_units)
             H_q: (batch_size, ques_max_length, 2 * num_units)
         '''
 
-        with tf.variable_scope("preprocessing_layer"):
-            H_p, _ = tf.nn.bidirectional_dynamic_rnn(lstm_pre_fw, lstm_pre_bw, passage_embed,
-                                       sequence_length = passage_sequence_length,
+        with tf.variable_scope("encode_preprocess"):
+            lstm_pre_fw = tf.contrib.rnn.BasicLSTMCell(self.num_units)
+            lstm_pre_bw = tf.contrib.rnn.BasicLSTMCell(self.num_units)
+
+        with tf.variable_scope("encode_preprocess"):
+            H_p_pair, _ = tf.nn.bidirectional_dynamic_rnn(lstm_pre_fw, lstm_pre_bw, passage_embed,
+                                       sequence_length = self.passage_sequence_length,
                                        dtype=tf.float32)
-            H_q, _ = tf.nn.dynamic_rnn(lstm_pre_fw, lstm_pre_bw, ques_embed,
-                                       sequence_length = ques_sequence_length,
+            H_q_pair, _ = tf.nn.bidirectional_dynamic_rnn(lstm_pre_fw, lstm_pre_bw, ques_embed,
+                                       sequence_length = self.ques_sequence_length,
                                        dtype=tf.float32)
-            H_p = tf.nn.dropout(H_p, keep_prob=keep_prob)
-            H_q = tf.nn.dropout(H_q, keep_prob=keep_prob)
+            H_p = tf.concat(H_p_pair, 2)
+            H_q = tf.concat(H_q_pair, 2)
+
+            H_p = tf.nn.dropout(H_p, keep_prob=self.keep_prob)
+            H_q = tf.nn.dropout(H_q, keep_prob=self.keep_prob)
         return H_p, H_q
 
-    def encode_match(self, H_p, passage_sequence_length, lstm_gru_fw, lstm_gru_bw, keep_prob):
+    def encode_match(self, H_p, H_q):
         '''
         paras
             H_p:        (batch_size, pass_max_length, 2 * num_units)
         return
             H_r:        (batch_size, pass_max_length, 2 * num_units)
         '''
+
+        with tf.variable_scope("encode_match"):
+            lstm_gru_fw = MatchGRUCell(2 * self.num_units, self.num_units, H_q, self.ques_sequence_length)
+            lstm_gru_bw = MatchGRUCell(2 * self.num_units, self.num_units, H_q, self.ques_sequence_length)
+
         with tf.variable_scope("encode_match"):
             H_r_pair, _ = tf.nn.bidirectional_dynamic_rnn(lstm_gru_fw,
                                                      lstm_gru_bw,
                                                      H_p,
-                                                     sequence_length=passage_sequence_length,
+                                                     sequence_length=self.passage_sequence_length,
                                                      dtype=tf.float32)
             H_r = tf.concat(H_r_pair, 2)
-            H_r = tf.nn.dropout(H_r, keep_prob=keep_prob)
+            H_r = tf.nn.dropout(H_r, keep_prob=self.keep_prob)
         return H_r
 
-    def decode_ans_ptr(self, H_r, passage_sequence_length, V, W_a, b_a, v, c, keep_prob):
+    def decode_ans_ptr(self, H_r):
         '''
         paras
             H_r:        (batch_size, pass_max_length, 2 * num_units)
         return
             dist:       (batch_size, 2, pass_max_length)
         '''
+        init = tf.contrib.layers.xavier_initializer()
+        with tf.variable_scope("decode_ans_ptr"):
+            V = tf.get_variable("V", shape = (2 * self.num_units, self.num_units), dtype = tf.float32, initializer = init)
+            W_a = tf.get_variable("W_a", shape = (2 * self.num_units, self.num_units), dtype = tf.float32, initializer = init)
+            b_a = tf.get_variable("b_a", shape = (self.num_units, ), dtype = tf.float32, initializer = init)
+            v = tf.get_variable("v", shape = (self.num_units, ), dtype = tf.float32, initializer = init)
+            c = tf.get_variable("c", shape = (), dtype = tf.float32, initializer = init)
 
 
         batch_size = tf.shape(H_r)[0]
-        pass_max_length = tf.shape(H_r)[1]
-        pass_sequence_mask = tf.sequence_mask(passage_sequence_length,pass_max_length, dtype=tf.float32)#(batch_size, pass_max_length)
+        pass_max_length = self.pass_max_length
+        pass_sequence_mask = tf.sequence_mask(self.passage_sequence_length,pass_max_length, dtype=tf.float32)#(batch_size, pass_max_length)
 
         #TODO: add dropout?
 
@@ -219,10 +217,10 @@ class MatchLSTMAnsPtr:
 
 
     def add_predicted_dist(self):
-        passage_embed, ques_embed = self.get_embed(self.passage, self.ques, self.embed_matrix, self.keep_prob)
-        H_p, H_q = self.encode_preprocess(passage_embed, self.passage_sequence_length, ques_embed, self.ques_sequence_length, self.lstm_pre_fw, self.lstm_pre_bw, self.keep_prob )
-        H_r = self.encode_match(H_p, self.passage_sequence_length, self.lstm_gru_fw, self.lstm_gru_bw, self.keep_prob)
-        dist = self.decode_ans_ptr(H_r, self.passage_sequence_length, self.V, self.W_a, self.b_a, self.v, self.c, self.keep_prob)
+        passage_embed, ques_embed = self.get_embed()
+        H_p, H_q = self.encode_preprocess(passage_embed,  ques_embed)
+        H_r = self.encode_match(H_p, H_q)
+        dist = self.decode_ans_ptr(H_r)
 
         self.dist = tf.identity(dist, name = "dist")#dist is used in validation and test
 
@@ -230,9 +228,9 @@ class MatchLSTMAnsPtr:
         self.loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
                 logits=self.dist, labels=self.ans))
 
-    def add_train_op(self, do_clip, clip_norm, optimizer, lr):
-        decay_lr = tf.train.exponential_decay(lr, tf.Variable(0, trainable=False),
-                                                       1000, 0.96, staircase=True)
+    def add_train_op(self, clip_norm, optimizer, lr):
+        decay_lr = tf.train.exponential_decay(lr, tf.Variable(0, trainable=False), 1000, 0.96, staircase=True)
+
         if optimizer == "adam":
             optimizer_func = tf.train.AdamOptimizer(decay_lr)
         elif optimizer == "sgd":
@@ -244,7 +242,7 @@ class MatchLSTMAnsPtr:
         gradients, _ = tf.clip_by_global_norm(gradients, clip_norm)
         train_op = optimizer_func.apply_gradients(zip(gradients, variables))#second part of minimize()
 
-        self.train_op = tf.identity(train_op, name = "train_op")
+        self.train_op = train_op
 
     def __init__(self, embed_matrix, pass_max_length, ques_max_length, embed_size, num_units, clip_norm, optimizer, lr, n_epoch):
         #Train, valid and test data must be consistent on these parameters.
@@ -260,10 +258,9 @@ class MatchLSTMAnsPtr:
         self.n_epoch = n_epoch
         #build the graph
         self.add_placeholder()
-        self.add_variables()
         self.add_predicted_dist()
         self.add_loss_function()
-        self.add_train_op()
+        self.add_train_op(clip_norm, optimizer, lr)
 
     def run_batch(self, sess, batch, dir_output):
         passage, passage_sequence_length, ques ,ques_sequence_length, ans, keep_prob = batch
@@ -288,6 +285,7 @@ class MatchLSTMAnsPtr:
 
         return batch_stat
     def run_epoch(self, sess, batches, dir_output):
+        epoch_stat = []
         for i in tqdm(xrange(len(batches)), desc = "Under training") :
             batch_stat = self.run_batch(sess, batches[i], dir_output)
             epoch_stat.append(batch_stat)
