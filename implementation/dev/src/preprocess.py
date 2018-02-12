@@ -360,9 +360,9 @@ if __name__ == "__main__":
 
     # '''Download raw data'''
     #
-    # '''Get statistics'''
-    # my_preprocessor.analyze("../data/data_raw/train-v1.1.json")
-    # my_preprocessor.analyze("../data/data_raw/dev-v1.1.json")
+    '''Get statistics'''
+    my_preprocessor.analyze("../data/data_raw/train-v1.1.json")
+    my_preprocessor.analyze("../data/data_raw/dev-v1.1.json")
 
     '''Split raw data to train.json, valid.json, test.json '''
     my_preprocessor.get_all_json("../data/data_raw/train-v1.1.json",

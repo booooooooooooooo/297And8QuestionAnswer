@@ -15,13 +15,13 @@ from model_match_lstm_ans_ptr import MatchLSTMAnsPtr
 from util_data import DataUtil
 
 
-def train(embed_matrix_path, pass_max_len, ques_max_len, embed_size, num_units, clip_norm, optimizer, lr, n_epoch, dir_data, batch_size, keep_prob, dir_output):
+def train(dir_data, dir_output, embed_matrix_file, pass_max_len, ques_max_len, embed_size, num_units, clip_norm, optimizer, lr, n_epoch, batch_size, keep_prob):
     # print type(keep_prob)
 
 
     #read embed_matrix
-    print "Start reading embed_matrix from {}".format(embed_matrix_path)
-    embed_matrix = np.load(embed_matrix_path)
+    print "Start reading embed_matrix from {}".format(embed_matrix_file)
+    embed_matrix = np.load(os.path.join(dir_data, embed_matrix_file))
     embed_matrix = embed_matrix.astype(np.float32)
     # print type(embed_matrix[0][0])
     print "Finish reading embed_matrix"
@@ -55,21 +55,3 @@ def train(embed_matrix_path, pass_max_len, ques_max_len, embed_size, num_units, 
     # with open(os.path.join(dir_output, "train_stats.json"), 'w') as f:
     #     f.write(json.dumps(stats))
     return stats
-if __name__ == "__main__":
-    # '''
-    # Unit testing
-    # '''
-    embed_matrix_path = "../data/data_clean/embed_matrix.npy"
-    pass_max_len = 213
-    ques_max_len= 77
-    embed_size = 50
-    num_units = 50
-    clip_norm = 5.0
-    optimizer = "adam"
-    lr = 1.0
-    n_epoch = 1
-    dir_data = "../data/data_clean"
-    batch_size = 77
-    keep_prob = 0.5
-    dir_output = "../output"
-    train(embed_matrix_path, pass_max_len, ques_max_len, embed_size, num_units, clip_norm, optimizer, lr, n_epoch, dir_data, batch_size, keep_prob, dir_output)
