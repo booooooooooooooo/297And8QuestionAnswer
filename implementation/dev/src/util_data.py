@@ -72,36 +72,89 @@ class DataUtil:
                 sequence_length[i] = min(len(tokens), max_len)
 
         return trim, sequence_length
-    def prepare_train(self, pass_token_id_file, pass_max_len, ans_span_file, ques_token_id_file, ques_max_len):
-        pass_trim, passage_sequence_length, ans_span_trim = self.pad_or_truncate_pass_and_ans(pass_token_id_file, pass_max_len, ans_span_file)
-        ques_trim, ques_sequence_length = self.pad_or_truncate_itself(ques_token_id_file, ques_max_len)
-        return pass_trim, passage_sequence_length, ans_span_trim, ques_trim, ques_sequence_length
-    def prepare_test(self, pass_token_id_file, pass_max_len, ques_token_id_file, ques_max_len):
-        pass_trim, passage_sequence_length = self.pad_or_truncate_itself(pass_token_id_file, pass_max_len)
-        ques_trim, ques_sequence_length = self.pad_or_truncate_itself(ques_token_id_file, ques_max_len)
-        return pass_trim, passage_sequence_length , ques_trim, ques_sequence_length
 
+    def getTrain(self, dir_data, pass_max_len, ques_max_len):
+        pass_token_id_file= os.path.join(dir_data, "train.passage.token_id")
+        ans_span_file=os.path.join(dir_data, "train.answer_span")
+        ques_token_id_file=os.path.join(dir_data, "train.question.token_id")
+
+        passage, passage_sequence_length, ans_span_trim = self.pad_or_truncate_pass_and_ans(pass_token_id_file, pass_max_len, ans_span_file)
+        ques, ques_sequence_length = self.pad_or_truncate_itself(ques_token_id_file, ques_max_len)
+        return passage, passage_sequence_length, ques, ques_sequence_length, ans_span_trim
+
+    def getTrainBatches(self, dir_data, pass_max_len, ques_max_len, batch_size, keep_prob):
+        print "Start reading train batches from {}".format(dir_data)
+        pass_token_id_file = os.path.join(dir_data, "train.passage.token_id")
+        ans_span_file = os.path.join(dir_data, "train.answer_span")
+        ques_token_id_file = os.path.join(dir_data, "train.question.token_id")
+        passage, passage_sequence_length, ques, ques_sequence_length, ans_span = self.getTrain(dir_data, pass_max_len, ques_max_len)
+        batches = []
+        for i in xrange(len(passage) / batch_size):
+            batch_passage = passage[i * batch_size : (i + 1) * batch_size]
+            batch_passage_sequence_length = passage_sequence_length[i * batch_size : (i + 1) * batch_size]
+            batch_ques = ques[i * batch_size : (i + 1) * batch_size]
+            batch_ques_sequence_length = ques_sequence_length[i * batch_size : (i + 1) * batch_size]
+            batch_ans_span = ans_span[i * batch_size : (i + 1) * batch_size]
+            batches.append([batch_passage, batch_passage_sequence_length, batch_ques, batch_ques_sequence_length, batch_ans_span, keep_prob])
+        #ignore the remain data
+        print "Finish reading train batches"
+        return batches
+    def getTexts(self, text_file):
+        with open(text_file) as f:
+            lines = f.readlines()
+            result = [line.strip("\n") for line in lines]
+        return result
+    def getVoc(self, voc_file):
+        with open(voc_file) as f:
+            lines = f.readlines()
+            voc = [line.strip('\n') for line in lines]
+        rev_voc = {}
+        for i in xrange(len(voc)):
+            rev_voc[voc[i]] = i
+        return voc, rev_voc
+    def getValid(self, dir_data, pass_max_len, ques_max_len):
+        print "Start reading validation data from {}".format(dir_data)
+        pass_token_id_file=os.path.join(dir_data, "valid.passage.token_id")
+        ans_span_file=os.path.join(dir_data, "valid.answer_span")
+        ques_token_id_file=os.path.join(dir_data, "valid.question.token_id")
+        pass_text_file=os.path.join(dir_data, "valid.passage")
+        ques_text_file=os.path.join(dir_data, "valid.question")
+        ans_text_file=os.path.join(dir_data, "valid.answer_text")
+        voc_file=os.path.join(dir_data, "vocabulary")
+        passage, passage_sequence_length, ans = self.pad_or_truncate_pass_and_ans(pass_token_id_file, pass_max_len, ans_span_file)
+        ques, ques_sequence_length = self.pad_or_truncate_itself(ques_token_id_file, ques_max_len)
+        passage_text=self.getTexts(pass_text_file)
+        ques_text=self.getTexts(ques_text_file)
+        ans_texts=self.getTexts(ans_text_file)
+        voc, rev_voc = self.getVoc(voc_file)
+        print "Finish reading validation data"
+
+
+        return passage, passage_sequence_length, ques, ques_sequence_length, ans, passage_text, ques_text, ans_texts, voc
 
 if __name__ == "__main__":
     # '''
     # Unit testing
     # '''
     #
-    data_util = DataUtil()
+    datautil = DataUtil()
 
-    pass_token_id_file = "../data/data_clean/train.passage.token_id"
-    pass_max_len = 199
-    ans_span_file = "../data/data_clean/train.answer_span"
-    pass_trim, passage_sequence_length, ans_span_trim = data_util.pad_or_truncate_pass_and_ans(pass_token_id_file, pass_max_len, ans_span_file)
+    dir_data = "../data/data_clean"
+    pass_max_len = 400
+    ques_max_len = 60
+    batch_size = 3
+    keep_prob = 0.9
 
+    passage, passage_sequence_length, ques, ques_sequence_length, ans, passage_text, ques_text, ans_texts, voc = datautil.getValid(dir_data, pass_max_len, ques_max_len)
+    print passage_text[0]
+    print ques_text[0]
+    print ans_texts[0]
+    print voc[4]
 
-    ques_token_id_file = "../data/data_clean/train.question.token_id"
-    ques_max_len = 139
-    ques_trim, ques_sequence_length = data_util.pad_or_truncate_itself(ques_token_id_file, ques_max_len)
-
-
-    print pass_trim[0]
-    print passage_sequence_length[0]
-    print ans_span_trim[0]
-    print ques_trim[0]
-    print ques_sequence_length[0]
+    batches = datautil.getTrainBatches(dir_data, pass_max_len, ques_max_len, batch_size, keep_prob)
+    passage, passage_sequence_length, ques, ques_sequence_length,ans_span, _ = batches[1]
+    print passage
+    print passage_sequence_length
+    print ques
+    print ques_sequence_length
+    print ans_span

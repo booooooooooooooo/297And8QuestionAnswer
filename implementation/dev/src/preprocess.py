@@ -156,9 +156,9 @@ class Preprocessor:
 
         return c_id_to_token_id_map
 
-    def get_tokens_for_train(self, json_file, dir_to_save, prefix):
+    def get_tokens(self, json_file, dir_to_save, prefix):
         #TODO: shuffle
-        if os.path.isfile(os.path.join(dir_to_save, prefix + ".passage" )):
+        if os.path.isfile(os.path.join(dir_to_save, prefix + ".answer_span" )):
             print "All {} tokens are ready!".format(prefix)
             return
         passage_list = []
@@ -209,47 +209,47 @@ class Preprocessor:
 
         print "{} tokens are saved in folder {}".format(prefix, dir_to_save)
 
-    def get_token_for_valid_and_test(self, json_file, dir_to_save, prefix):
-        #TODO: shuffle
-        if os.path.isfile(os.path.join(dir_to_save, prefix + ".passage" )):
-            print "All {} tokens are ready!".format(prefix)
-            return
-
-        passage_list = []
-        question_list = []
-        question_id_list = []
-        with open(json_file) as fh:
-            data_json = json.load(fh)
-        for article_id in tqdm(xrange(len(data_json['data'])), desc="Preprocessing {}".format(json_file)):
-            paragraphs = data_json['data'][article_id]['paragraphs']
-            for paragraph_id in xrange(len(paragraphs)):
-                context = paragraphs[paragraph_id]['context']
-                context_token = self.tokenize(context)
-                qas = paragraphs[paragraph_id]['qas']
-                for qas_id in range(len(qas)):
-                    question_id = qas[qas_id]['id']
-                    question = qas[qas_id]['question']
-                    question_token = self.tokenize(question)
-
-                    question_id_list.append(question_id)
-                    passage_list.append(context_token)
-                    question_list.append(question_token)
-        #TODO: shuffle passage_list, question_list and question_id_list accordingly
-        indices = range(len(passage_list))
-        np.random.shuffle(indices)
-
-        if not os.path.isdir(dir_to_save):
-            os.makedirs(dir_to_save)
-
-        with open(os.path.join(dir_to_save, prefix + '.passage'), 'w') as passage_tokens_file, \
-             open(os.path.join(dir_to_save, prefix + '.question'), 'w') as question_tokens_file, \
-             open(os.path.join(dir_to_save, prefix + '.question_id'), 'w') as question_id_file:
-             for i in tqdm(indices, desc="Writing my {} tokens to {} folder".format(prefix, dir_to_save)):
-                 passage_tokens_file.write(' '.join([token.encode('utf8') for token in passage_list[i]]) + '\n')
-                 question_tokens_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
-                 question_id_file.write(question_id_list[i].encode('utf8') + '\n')
-
-        print "{} tokens are saved in folder {}".format(prefix, dir_to_save)
+    # def get_token_for_valid_and_test(self, json_file, dir_to_save, prefix):
+    #     #TODO: shuffle
+    #     if os.path.isfile(os.path.join(dir_to_save, prefix + ".passage" )):
+    #         print "All {} tokens are ready!".format(prefix)
+    #         return
+    #
+    #     passage_list = []
+    #     question_list = []
+    #     question_id_list = []
+    #     with open(json_file) as fh:
+    #         data_json = json.load(fh)
+    #     for article_id in tqdm(xrange(len(data_json['data'])), desc="Preprocessing {}".format(json_file)):
+    #         paragraphs = data_json['data'][article_id]['paragraphs']
+    #         for paragraph_id in xrange(len(paragraphs)):
+    #             context = paragraphs[paragraph_id]['context']
+    #             context_token = self.tokenize(context)
+    #             qas = paragraphs[paragraph_id]['qas']
+    #             for qas_id in range(len(qas)):
+    #                 question_id = qas[qas_id]['id']
+    #                 question = qas[qas_id]['question']
+    #                 question_token = self.tokenize(question)
+    #
+    #                 question_id_list.append(question_id)
+    #                 passage_list.append(context_token)
+    #                 question_list.append(question_token)
+    #     #TODO: shuffle passage_list, question_list and question_id_list accordingly
+    #     indices = range(len(passage_list))
+    #     np.random.shuffle(indices)
+    #
+    #     if not os.path.isdir(dir_to_save):
+    #         os.makedirs(dir_to_save)
+    #
+    #     with open(os.path.join(dir_to_save, prefix + '.passage'), 'w') as passage_tokens_file, \
+    #          open(os.path.join(dir_to_save, prefix + '.question'), 'w') as question_tokens_file, \
+    #          open(os.path.join(dir_to_save, prefix + '.question_id'), 'w') as question_id_file:
+    #          for i in tqdm(indices, desc="Writing my {} tokens to {} folder".format(prefix, dir_to_save)):
+    #              passage_tokens_file.write(' '.join([token.encode('utf8') for token in passage_list[i]]) + '\n')
+    #              question_tokens_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
+    #              question_id_file.write(question_id_list[i].encode('utf8') + '\n')
+    #
+    #     print "{} tokens are saved in folder {}".format(prefix, dir_to_save)
     '''
     Make voc, rev_voc using train and valid tokens  (!!DO NOT use test tokens)
     '''
@@ -360,9 +360,9 @@ if __name__ == "__main__":
 
     # '''Download raw data'''
     #
-    '''Get statistics'''
-    my_preprocessor.analyze("../data/data_raw/train-v1.1.json")
-    my_preprocessor.analyze("../data/data_raw/dev-v1.1.json")
+    # '''Get statistics'''
+    # my_preprocessor.analyze("../data/data_raw/train-v1.1.json")
+    # my_preprocessor.analyze("../data/data_raw/dev-v1.1.json")
 
     '''Split raw data to train.json, valid.json, test.json '''
     my_preprocessor.get_all_json("../data/data_raw/train-v1.1.json",
@@ -370,11 +370,11 @@ if __name__ == "__main__":
                                  "../data/data_clean/")
 
     '''Tokenize train.json, valid.json and test.json'''
-    my_preprocessor.get_tokens_for_train("../data/data_clean/train.json" ,
+    my_preprocessor.get_tokens("../data/data_clean/train.json" ,
                                            "../data/data_clean/", "train")
-    my_preprocessor.get_token_for_valid_and_test("../data/data_clean/valid.json" ,
+    my_preprocessor.get_tokens("../data/data_clean/valid.json" ,
                                               "../data/data_clean/", "valid")
-    my_preprocessor.get_token_for_valid_and_test("../data/data_clean/test.json" ,
+    my_preprocessor.get_tokens("../data/data_clean/test.json" ,
                                               "../data/data_clean/", "test")
 
     '''Make voc, rev_voc using train and valid tokens  (!!DO NOT use test tokens)'''

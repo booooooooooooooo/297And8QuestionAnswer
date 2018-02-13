@@ -8,10 +8,10 @@ embed_size=50
 num_units=50
 clip_norm=5.0
 optimizer="adam"
-lr=1.0
+lr=0.1
 n_epoch=1
 batch_size=77
-keep_prob=0.5
+keep_prob=0.9
 
 
 

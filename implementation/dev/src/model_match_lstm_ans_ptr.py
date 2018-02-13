@@ -1,8 +1,10 @@
 import tensorflow as tf
 import os
 from tqdm import tqdm
-from datetime import datetime
-
+import datetime
+import random
+from evaluate_v_1_1 import *
+import numpy as np
 
 
 '''
@@ -273,10 +275,9 @@ class MatchLSTMAnsPtr:
 
 
 
-        graph_file = os.path.join(dir_output, "graphes/", str(datetime.now()))
+        graph_file = os.path.join(dir_output, "graphes/", datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S"))
         tf.train.Saver().save(sess, graph_file )
 
-        #TODO: do validation per batch?
 
         batch_stat = {"batch_train_loss": batch_loss, "graph_file": graph_file}
 
@@ -284,14 +285,53 @@ class MatchLSTMAnsPtr:
         print "batch_train_loss: {}".format(batch_loss)
 
         return batch_stat
-    def run_epoch(self, sess, batches, dir_output):
+    def validate_on_hot(self, sess, small_validation_dataset):
+        #TODO
+        passage, passage_sequence_length, ques, ques_sequence_length, ans, passage_text, ques_text, ans_texts, voc = small_validation_dataset
+        dist, loss = sess.run([self.dist, self.loss], {self.passage : passage,
+                                                      self.passage_sequence_length : passage_sequence_length,
+                                                      self.ques : ques,
+                                                      self.ques_sequence_length : ques_sequence_length,
+                                                      self.ans : ans,
+                                                      self.keep_prob : 1.0})
+        predict_ans = np.argmax(dist, axis = 2)#(batch_size, 2)
+        predict_ans_texts = []
+        f1 = 0.0
+        em = 0.0
+        for i in xrange(predict_ans.shape[0]):
+            predict_ans_tokens = []
+            for j in range(predict_ans[i][0], predict_ans[i][1]):
+                predict_ans_tokens.append(voc[j])
+            predict_ans_text = " ".join(predict_ans_tokens)
+            f1 += f1_score(predict_ans_text, ans_texts[i])
+            em += exact_match_score(predict_ans_text, ans_texts[i])
+            predict_ans_texts.append(predict_ans_text)
+        f1 = f1 / predict_ans.shape[0]
+        em = em / predict_ans.shape[0]
+
+        qas = []
+        for i in xrange(predict_ans.shape[0]):
+            qas.append((passage_text[i], ques_text[i], ans_texts[i], predict_ans_texts[i]))
+        validation_result = {"loss": loss, "f1":f1, "em":em, "qas":qas}
+        return validation_result
+
+    def run_epoch(self, sess, batches, small_validation_dataset, dir_output):
         epoch_stat = []
         for i in tqdm(xrange(len(batches)), desc = "Under training") :
             batch_stat = self.run_batch(sess, batches[i], dir_output)
             epoch_stat.append(batch_stat)
+            if i % 10 == 0:
+                validation_result = self.validate_on_hot(sess, small_validation_dataset)
+                print "valid loss: {}".format(validation_result["loss"])
+                print "f1 : {}".format(validation_result["f1"])
+                print "em : {}".format(validation_result["em"])
+                print validation_result["qas"][0][0]
+                print validation_result["qas"][0][1]
+                print validation_result["qas"][0][2]
+                print validation_result["qas"][0][3]
         #TODO: print reader-friendly epoch result
         return epoch_stat
-    def fit(self, sess, batches, dir_output):
+    def fit(self, sess, batches, small_validation_dataset, dir_output):
         if not os.path.isdir(dir_output):
             os.makedirs(dir_output)
         if not os.path.isdir(os.path.join(dir_output, "graphes/")):
@@ -305,7 +345,7 @@ class MatchLSTMAnsPtr:
         stats = []
         for epoch in xrange(self.n_epoch) :
             print "Epoch {}".format(epoch)
-            epoch_stat = self.run_epoch(sess, batches, dir_output)
+            epoch_stat = self.run_epoch(sess, batches, small_validation_dataset, dir_output)
             stats.append(epoch_stat)
         #TODO: print reader-friendly final result
         return stats
