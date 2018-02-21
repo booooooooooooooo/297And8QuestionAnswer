@@ -26,9 +26,123 @@ manage scope
 
 use more abstract ood design instead of using a lot of functions?
 '''
+regularizer = tf.contrib.layers.l2_regularizer(0.001)
+dtype = tf.float32
+
+
+class matchLSTMcell(tf.nn.rnn_cell.RNNCell):
+    def __init__(self, input_size, state_size, h_question, question_m):
+        self.input_size = input_size
+        self._state_size = state_size
+        self.h_question = h_question
+        # self.question_m = tf.expand_dims(tf.cast(question_m, tf.int32), axis=[2])
+        self.question_m = tf.cast(question_m, tf.float32)
+
+    @property
+    def state_size(self):
+        return self._state_size
+
+    @property
+    def output_size(self):
+        return self._state_size
+
+    def __call__(self, inputs, state, scope=None):
+        scope = scope or type(self).__name__
+
+        # It's always a good idea to scope variables in functions lest they
+        # be defined elsewhere!
+        with tf.variable_scope(scope):
+            # i.e. the batch size
+            num_example = tf.shape(self.h_question)[0]
+
+            # TODO: figure out the right way to initialize rnn weights.
+            # initializer = tf.contrib.layers.xavier_initializer()
+            initializer = tf.uniform_unit_scaling_initializer(1.0)
+
+            W_q = tf.get_variable('W_q', [self.input_size, self.input_size], dtype,
+                                  initializer, regularizer=regularizer
+                                  )
+            W_c = tf.get_variable('W_c', [self.input_size, self.input_size], dtype,
+                                  initializer, regularizer=regularizer
+                                  )
+            W_r = tf.get_variable('W_r', [self._state_size, self.input_size], dtype,
+                                  # initializer
+                                  initializer, regularizer=regularizer
+                                  )
+            W_a = tf.get_variable('W_a', [self.input_size, 1], dtype,
+                                  initializer, regularizer=regularizer
+                                  )
+            b_g = tf.get_variable('b_g', [self.input_size], dtype,
+                                  tf.zeros_initializer(), regularizer=None)
+            b_a = tf.get_variable('b_a', [1], dtype,
+                                  tf.zeros_initializer(), regularizer=None)
+
+            wq_e = tf.tile(tf.expand_dims(W_q, axis=[0]), [num_example, 1, 1])
+            g = tf.tanh(tf.matmul(self.h_question, wq_e)  # b x q x 2n
+                        + tf.expand_dims(tf.matmul(inputs, W_c)
+                                         + tf.matmul(state, W_r) + b_g, axis=[1]))
+            # TODO:add drop out
+            # g = tf.nn.dropout(g, keep_prob=keep_prob)
+
+            wa_e = tf.tile(tf.expand_dims(W_a, axis=0), [num_example, 1, 1])
+            # shape: b x q x 1
+            a = tf.nn.softmax(tf.squeeze(tf.matmul(g, wa_e) + b_a, axis=[2]))
+            # mask out the attention over the padding.
+            a = tf.multiply(a, self.question_m)
+            question_attend = tf.reduce_sum(tf.multiply(self.h_question, tf.expand_dims(a, axis=[2])), axis=1)
+
+            z = tf.concat([inputs, question_attend], axis=1)
+
+            # NOTE: replace the lstm with GRU.
+            # we choose to initialize weight matrix related to hidden to hidden collection with
+            # identity initializer.
+            W_f = tf.get_variable('W_f', (self._state_size, self._state_size), dtype,
+                                  # initializer
+                                 initializer, regularizer=regularizer
+                                  )
+            U_f = tf.get_variable('U_f', (2 * self.input_size, self._state_size), dtype,
+                                  initializer, regularizer=regularizer
+                                  )
+            # initialize b_f with constant 1.0
+            b_f = tf.get_variable('b_f', (self._state_size,), dtype,
+                                  tf.constant_initializer(1.0),
+                                  regularizer=None)
+            W_z = tf.get_variable('W_z', (self.state_size, self._state_size), dtype,
+                                  # initializer
+                                  initializer, regularizer=regularizer
+                                  )
+            U_z = tf.get_variable('U_z', (2 * self.input_size, self._state_size), dtype,
+                                  initializer, regularizer=regularizer
+                                  )
+            # initialize b_z with constant 1.0
+            b_z = tf.get_variable('b_z', (self.state_size,), dtype,
+                                  tf.constant_initializer(1.0),
+                                  regularizer=None)  # tf.zeros_initializer())
+            W_o = tf.get_variable('W_o', (self.state_size, self._state_size), dtype,
+                                  # initializer
+                                  initializer, regularizer=regularizer
+                                  )
+            U_o = tf.get_variable('U_o', (2 * self.input_size, self._state_size), dtype,
+                                  initializer, regularizer=regularizer
+                                  )
+            b_o = tf.get_variable('b_o', (self._state_size,), dtype,
+                                  tf.constant_initializer(0.0), regularizer=None)
+
+            z_t = tf.nn.sigmoid(tf.matmul(z, U_z)
+                                + tf.matmul(state, W_z) + b_z)
+            f_t = tf.nn.sigmoid(tf.matmul(z, U_f)
+                                + tf.matmul(state, W_f) + b_f)
+            o_t = tf.nn.tanh(tf.matmul(z, U_o)
+                             + tf.matmul(f_t * state, W_o) + b_o)
+
+            output = z_t * state + (1 - z_t) * o_t
+            new_state = output
+
+        return output, new_state
+
 
 class MatchGRUCell(tf.nn.rnn_cell.RNNCell):
-    def __init__(self, input_size, state_size, H_q, ques_sequence_length):
+    def __init__(self, input_size, state_size, H_q, ques_sequence_mask):
         '''
         input_size = num_units
         state_size = 2 * num_units
@@ -36,7 +150,7 @@ class MatchGRUCell(tf.nn.rnn_cell.RNNCell):
         self._input_size = input_size
         self._state_size = state_size
         self.H_q = H_q
-        self.ques_sequence_length = ques_sequence_length
+        self.ques_sequence_mask = ques_sequence_mask
 
     @property
     def state_size(self):
@@ -75,7 +189,7 @@ class MatchGRUCell(tf.nn.rnn_cell.RNNCell):
             alpha = tf.reshape(tf.matmul(G, tf.tile(tf.reshape(w, [1, _input_size, 1]), [batch_size, 1, 1])), [batch_size, -1])#(batch_size, ques_max_length)
             #TODO:use 10e-1 to mask alpha before appling softmax ??
             alpha = tf.nn.softmax(alpha)#(batch_size, ques_max_length)
-            ques_sequence_mask = tf.sequence_mask(ques_sequence_length,ques_max_length, dtype=tf.float32)#(batch_size, ques_max_length)
+            # ques_sequence_mask = tf.sequence_mask(ques_sequence_length,ques_max_length, dtype=tf.float32)#(batch_size, ques_max_length)
             alpha = alpha * ques_sequence_mask#(batch_size, ques_max_length)
             att_v = tf.reshape(tf.matmul(tf.expand_dims(alpha, [1]), H_q), [batch_size, _input_size])#(batch_size, _input_size)
             z = tf.concat([inputs, att_v], 1)#(batch_size, 2 * _input_size)
@@ -122,8 +236,6 @@ class MatchLSTMAnsPtr:
         passage_embed = tf.nn.embedding_lookup(self.embed_matrix, self.passage)
         ques_embed = tf.nn.embedding_lookup(self.embed_matrix, self.ques)
 
-        passage_embed = tf.nn.dropout(passage_embed, keep_prob=self.keep_prob)
-        ques_embed = tf.nn.dropout(ques_embed, keep_prob=self.keep_prob)
 
         return passage_embed, ques_embed
 
@@ -148,8 +260,6 @@ class MatchLSTMAnsPtr:
             H_p = tf.concat(H_p_pair, 2)
             H_q = tf.concat(H_q_pair, 2)
 
-            H_p = tf.nn.dropout(H_p, keep_prob=self.keep_prob)
-            H_q = tf.nn.dropout(H_q, keep_prob=self.keep_prob)
         return H_p, H_q
 
     def encode_match(self, H_p, H_q):
@@ -159,10 +269,13 @@ class MatchLSTMAnsPtr:
         return
             H_r:        (batch_size, pass_max_length, 2 * num_units)
         '''
+        ques_sequence_mask = tf.sequence_mask(self.ques_sequence_length,self.ques_max_length, dtype=tf.float32)
 
         with tf.variable_scope("encode_match"):
-            lstm_gru_fw = MatchGRUCell(2 * self.num_units, self.num_units, H_q, self.ques_sequence_length)
-            lstm_gru_bw = MatchGRUCell(2 * self.num_units, self.num_units, H_q, self.ques_sequence_length)
+            # lstm_gru_fw = MatchGRUCell(2 * self.num_units, self.num_units, H_q, ques_sequence_mask)
+            # lstm_gru_bw = MatchGRUCell(2 * self.num_units, self.num_units, H_q, ques_sequence_mask)
+            lstm_gru_fw = matchLSTMcell(2 * self.num_units, self.num_units, H_q, ques_sequence_mask)
+            lstm_gru_bw = matchLSTMcell(2 * self.num_units, self.num_units, H_q, ques_sequence_mask)
 
         with tf.variable_scope("encode_match"):
             H_r_pair, _ = tf.nn.bidirectional_dynamic_rnn(lstm_gru_fw,
@@ -171,8 +284,81 @@ class MatchLSTMAnsPtr:
                                                      sequence_length=self.passage_sequence_length,
                                                      dtype=tf.float32)
             H_r = tf.concat(H_r_pair, 2)
-            H_r = tf.nn.dropout(H_r, keep_prob=self.keep_prob)
+
         return H_r
+    def decode(self, H_r, context_m, keep_prob):
+        """
+        takes in a knowledge representation
+        and output a probability estimation over
+        all paragraph tokens on which token should be
+        the start of the answer span, and which should be
+        the end of the answer span.
+
+        :param knowledge_rep: it is a representation of the paragraph and question,
+                              decided by how you choose to implement the encoder
+        :return:
+        """
+        context_m = tf.cast(context_m, tf.float32)
+        initializer = tf.contrib.layers.xavier_initializer()
+        # initializer = tf.uniform_unit_scaling_initializer(1.0)
+
+        shape_Hr = tf.shape(H_r)
+        Wr = tf.get_variable('Wr', [2 * self.num_units, 1 * self.num_units], dtype,
+                             initializer, regularizer=regularizer
+                             )
+        Wh = tf.get_variable('Wh', [2* self.num_units, 1 * self.num_units], dtype,
+                             initializer, regularizer=regularizer
+                             )
+        Wf = tf.get_variable('Wf', [1 * self.num_units, 1], dtype,
+                             initializer, regularizer=regularizer
+                             )
+        br = tf.get_variable('br', [1 * self.num_units], dtype,
+                             tf.zeros_initializer())
+        bf = tf.get_variable('bf', [1, ], dtype,
+                             tf.zeros_initializer())
+
+        wr_e = tf.tile(tf.expand_dims(Wr, axis=[0]), [shape_Hr[0], 1, 1])
+        f = tf.tanh(tf.matmul(H_r, wr_e) + br)
+
+        # TODO: add dropout
+        f = tf.nn.dropout(f, keep_prob=keep_prob)
+
+        wf_e = tf.tile(tf.expand_dims(Wf, axis=[0]), [shape_Hr[0], 1, 1])
+        # scores of start token.
+        with tf.name_scope('starter_score'):
+            s_score = tf.squeeze(tf.matmul(f, wf_e) + bf, axis=[2])
+            # s_score = softmax_mask_prepro(s_score, context_m)
+            # variable_summaries(s_score)
+        # for checking out the probabilities of starter index
+        with tf.name_scope('starter_prob'):
+            s_prob = tf.nn.softmax(s_score)
+            s_prob = tf.multiply(s_prob, context_m)
+            # variable_summaries(s_prob)
+
+        # logging.info('shape of s_score is {}'.format(s_score.shape))
+        Hr_attend = tf.reduce_sum(tf.multiply(H_r, tf.expand_dims(s_prob, axis=[2])), axis=1)
+        e_f = tf.tanh(tf.matmul(H_r, wr_e) +
+                      tf.expand_dims(tf.matmul(Hr_attend, Wh), axis=[1])
+                      + br)
+
+        with tf.name_scope('end_score'):
+            e_score = tf.squeeze(tf.matmul(e_f, wf_e) + bf, axis=[2])
+            # e_score = softmax_mask_prepro(e_score, context_m)
+            # variable_summaries(e_score)
+        # for checking out the probabilities of end index
+        with tf.name_scope('end_prob'):
+            e_prob = tf.nn.softmax(e_score)
+            e_prob = tf.multiply(e_prob, context_m)
+            # variable_summaries(e_prob)
+        # logging.info('shape of e_score is {}'.format(e_score.shape))
+
+        # return s_score, e_score
+
+        dist = tf.concat([tf.expand_dims(s_prob, [1]), tf.expand_dims(e_prob, [1])], axis = 1)
+        print s_score
+        print e_score
+        print dist
+        return dist
 
     def decode_ans_ptr(self, H_r):
         '''
@@ -194,7 +380,7 @@ class MatchLSTMAnsPtr:
         pass_max_length = self.pass_max_length
         pass_sequence_mask = tf.sequence_mask(self.passage_sequence_length,pass_max_length, dtype=tf.float32)#(batch_size, pass_max_length)
 
-        #TODO: add dropout?
+
 
         F_s = tf.tanh( tf.matmul(H_r, tf.tile(tf.expand_dims(V, [0]), [batch_size, 1, 1]))
                        + b_a)#(batch_size, pass_max_length, num_units)
@@ -222,7 +408,9 @@ class MatchLSTMAnsPtr:
         passage_embed, ques_embed = self.get_embed()
         H_p, H_q = self.encode_preprocess(passage_embed,  ques_embed)
         H_r = self.encode_match(H_p, H_q)
-        dist = self.decode_ans_ptr(H_r)
+        # dist = self.decode_ans_ptr(H_r)
+        context_m = tf.sequence_mask(self.passage_sequence_length, self.pass_max_length, dtype=tf.float32)
+        dist = self.decode(H_r, context_m, self.keep_prob)
 
         self.dist = tf.identity(dist, name = "dist")#dist is used in validation and test
 
@@ -231,12 +419,11 @@ class MatchLSTMAnsPtr:
                 logits=self.dist, labels=self.ans))
 
     def add_train_op(self, clip_norm, optimizer, lr):
-        decay_lr = tf.train.exponential_decay(lr, tf.Variable(0, trainable=False), 1000, 0.96, staircase=True)
 
         if optimizer == "adam":
-            optimizer_func = tf.train.AdamOptimizer(decay_lr)
+            optimizer_func = tf.train.AdamOptimizer(lr)
         elif optimizer == "sgd":
-            optimizer_func = tf.train.GradientDescentOptimizer(decay_lr)
+            optimizer_func = tf.train.GradientDescentOptimizer(lr)
         else:
             raise ValueError('Parameters are wrong')
 
@@ -281,8 +468,6 @@ class MatchLSTMAnsPtr:
 
         batch_stat = {"batch_train_loss": batch_loss, "graph_file": graph_file}
 
-        #TODO:print reader-friendly batch result
-        print "batch_train_loss: {}".format(batch_loss)
 
         return batch_stat
     def validate_on_hot(self, sess, small_validation_dataset):
@@ -320,9 +505,11 @@ class MatchLSTMAnsPtr:
         for i in tqdm(xrange(len(batches)), desc = "Under training") :
             batch_stat = self.run_batch(sess, batches[i], dir_output)
             epoch_stat.append(batch_stat)
-            if i % 10 == 0:
+
+            print "{}/{}th batch_train_loss: {}".format(i, len(batches), batch_stat["batch_train_loss"])
+            if i % 20 == 0:
                 validation_result = self.validate_on_hot(sess, small_validation_dataset)
-                print "valid loss: {}".format(validation_result["loss"])
+                print "{}/{}th valid loss: {}".format(i, len(batches), validation_result["loss"])
                 print "f1 : {}".format(validation_result["f1"])
                 print "em : {}".format(validation_result["em"])
                 print validation_result["qas"][0][0]
