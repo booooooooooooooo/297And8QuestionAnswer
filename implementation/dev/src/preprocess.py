@@ -12,8 +12,10 @@ import zipfile
 
 '''
 nltk.word_tokenize has some weird behaviours.
-First, it tokenizes ''word'' to "word". This case is not corrected in this code.
-Second, it tokenizes "word" to ``word''. This case is corrected in this code.
+
+Solved:  "word" to ["``", "word", "''"]
+Ignored: "''word''" to ["''word", "''"], "'word'" to ["'word","'"]. Since there is word like haven't
+Error: "``" to '"' due to the solved case
 '''
 
 
@@ -74,8 +76,11 @@ class Preprocessor:
         return
             s_token: list of unicode
         '''
+
         s_token = nltk.word_tokenize(s)
+
         s_token = [token.replace("``", '"').replace("''", '"') for token in s_token]#nltk makes "aaa "word" bbb" to 'aaa', '``', 'word', '''', 'bbb'
+
         return s_token
 
     def c_id_to_token_id(self, context, context_token):
@@ -84,35 +89,37 @@ class Preprocessor:
             context: unicode
             context_token: list of unicode
         '''
-        c_id_to_token_id_map = {}
+        map_to_token = {}
         token_id = 0
-        id_in_cur_token = 0
+        id_in_token = 0
         for c_id, c in enumerate(context):
             if nltk.word_tokenize(c) != []:
                 try:
-                    if id_in_cur_token == len(context_token[token_id]):
+                    if id_in_token == len(context_token[token_id]):
                         token_id += 1
-                        id_in_cur_token = 0
-                    c_id_to_token_id_map[c_id] = token_id
+                        id_in_token = 0
+                    map_to_token[c_id] = token_id
                 except IndexError as e:
-                    c_id_to_token_id_map[c_id] = token_id - 1#make c_id_to_token_id_map a wrong but working map
-                    print context.encode('utf8')
-                    print len(context)
-                    print c_id
-                    print c.encode('utf8')
-                    print len(context_token)
-                    print token_id
-                    print id_in_cur_token
+                    map_to_token[c_id] = len(context_token) - 1#make map_to_token a wrong but working map
                     print "======================="
-                id_in_cur_token += 1
+                    print "Fail to get answer span from context below"
+                    print "======================="
+                    print context.encode('utf8')
+                    print "======================="
+                    print "length of context: {}".format(len(context))
+                    print "Fail at char id: {}, char : {}".format(c_id, c.encode('utf8'))
+                    print "======================="
+                    print "context tokens list is below"
+                    print [token.encode('utf8') for token in context_token]
+                    # print len(context_token)
+                    # print token_id
+                    # print id_in_token
+                    print "======================="
+                id_in_token += 1
 
-        return c_id_to_token_id_map
+        return map_to_token
 
     def get_tokens(self, json_file):
-        #TODO: shuffle
-        if os.path.isfile(os.path.join(dir_to_save, prefix + ".answer_span" )):
-            print "All {} tokens are ready!".format(prefix)
-            return
         passage_list = []
         question_list = []
         answer_text_list = []
@@ -124,7 +131,7 @@ class Preprocessor:
             for paragraph_id in xrange(len(paragraphs)):
                 context = paragraphs[paragraph_id]['context']
                 context_token = self.tokenize(context)
-                c_id_to_token_id_map = self.c_id_to_token_id(context, context_token)
+                map_to_token = self.c_id_to_token_id(context, context_token)
                 qas = paragraphs[paragraph_id]['qas']
                 for qas_id in range(len(qas)):
                     question = qas[qas_id]['question']
@@ -134,27 +141,20 @@ class Preprocessor:
                         text = answers[answer_id]['text']
                         answer_start = answers[answer_id]['answer_start']
                         answer_end = answer_start + len(text) - 1
-                        a_s = c_id_to_token_id_map[answer_start]
-                        a_e = c_id_to_token_id_map[answer_end]
-
+                        a_s = map_to_token[answer_start]
+                        a_e = map_to_token[answer_end]
 
                         passage_list.append(context_token)
                         question_list.append(question_token)
                         answer_text_list.append(text)#untokenized
                         answer_span_list.append([str(a_s), str(a_e)])
-        #TODO: shuffle passage_list, question_list, answer_text_list and answer_span_list accordingly
-        indices = range(len(passage_list))
-        np.random.shuffle(indices)
 
-    def get_tokens_unique_ques(self, json_file, dir_to_save, prefix):
-        #TODO: shuffle
-        if os.path.isfile(os.path.join(dir_to_save, prefix + ".answer_span" )):
-            print "All {} tokens are ready!".format(prefix)
-            return
+        return passage_list, question_list, answer_text_list, answer_span_list
+
+    def get_tokens_unique_ques(self, json_file):
         passage_list = []
         question_list = []
-        answer_text_list = []
-        answer_span_list = []
+        question_id_list = []
         with open(json_file) as fh:
             data_json = json.load(fh)
         for article_id in tqdm(xrange(len(data_json['data'])), desc="Preprocessing {}".format(json_file)):
@@ -162,59 +162,74 @@ class Preprocessor:
             for paragraph_id in xrange(len(paragraphs)):
                 context = paragraphs[paragraph_id]['context']
                 context_token = self.tokenize(context)
-                c_id_to_token_id_map = self.c_id_to_token_id(context, context_token)
                 qas = paragraphs[paragraph_id]['qas']
                 for qas_id in range(len(qas)):
-                    question_id = qas[qas_id]['id']
                     question = qas[qas_id]['question']
                     question_token = self.tokenize(question)
+                    question_id = qas[qas_id]['id']
 
-                    question_id_list.append(question_id)
                     passage_list.append(context_token)
                     question_list.append(question_token)
-        #TODO: shuffle passage_list, question_list, answer_text_list and answer_span_list accordingly
-        indices = range(len(passage_list))
-        np.random.shuffle(indices)
+                    question_id_list.append(question_id)
+
+        return passage_list, question_list, question_id_list
 
     def tokenize_train(self, json_file, dir_to_save):
-        #TODO
+        if os.path.isfile(os.path.join(dir_to_save, "train.answer_span" )):
+            print "All train and valid tokens are ready!"
+            return
+
+        passage_list, question_list, answer_text_list, answer_span_list = self.get_tokens(json_file)
+        indices = range(len(passage_list))
+        np.random.shuffle(indices)
+        train_per  = 0.9
+
+
         if not os.path.isdir(dir_to_save):
             os.makedirs(dir_to_save)
-
-        with open(os.path.join(dir_to_save, prefix + '.passage'), 'w') as passage_tokens_file, \
-             open(os.path.join(dir_to_save, prefix + '.question'), 'w') as question_tokens_file, \
-             open(os.path.join(dir_to_save, prefix + '.answer_text'), 'w') as ans_text_file, \
-             open(os.path.join(dir_to_save, prefix + '.answer_span'), 'w') as ans_span_file:
-             for i in tqdm(indices, desc="Writing {} tokens to {}".format(prefix, dir_to_save)):
-                 passage_tokens_file.write(' '.join([token.encode('utf8') for token in passage_list[i]]) + '\n')
-                 question_tokens_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
+        with open(os.path.join(dir_to_save, 'train.passage'), 'w') as passage_file, \
+             open(os.path.join(dir_to_save, 'train.question'), 'w') as question_file, \
+             open(os.path.join(dir_to_save, 'train.answer_text'), 'w') as ans_text_file, \
+             open(os.path.join(dir_to_save, 'train.answer_span'), 'w') as ans_span_file:
+             for k in tqdm(xrange(int(len(indices) * train_per)), desc="Writing train tokens to {}".format(dir_to_save)):
+                 i = indices[k]
+                 passage_file.write(' '.join([token.encode('utf8') for token in passage_list[i]]) + '\n')
+                 question_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
+                 ans_text_file.write(answer_text_list[i].encode('utf8') + '\n')
+                 ans_span_file.write(' '.join(answer_span_list[i]) + '\n')
+        with open(os.path.join(dir_to_save, 'valid.passage'), 'w') as passage_file, \
+             open(os.path.join(dir_to_save, 'valid.question'), 'w') as question_file, \
+             open(os.path.join(dir_to_save, 'valid.answer_text'), 'w') as ans_text_file, \
+             open(os.path.join(dir_to_save, 'valid.answer_span'), 'w') as ans_span_file:
+             for k in tqdm(range(int(len(indices) * train_per), len(indices)), desc="Writing valid tokens to {}".format(dir_to_save)):
+                 i = indices[k]
+                 passage_file.write(' '.join([token.encode('utf8') for token in passage_list[i]]) + '\n')
+                 question_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
                  ans_text_file.write(answer_text_list[i].encode('utf8') + '\n')
                  ans_span_file.write(' '.join(answer_span_list[i]) + '\n')
 
-        print "{} tokens are saved in folder {}".format(prefix, dir_to_save)
+        print "Congs! All traina and valid tokens are created!"
 
     def tokenize_test(self, json_file, dir_to_save):
-        #TODO: shuffle
-        if os.path.isfile(os.path.join(dir_to_save, prefix + ".passage" )):
-            print "All {} tokens are ready!".format(prefix)
+        if os.path.isfile(os.path.join(dir_to_save, "test.passage" )):
+            print "All test tokens are ready!"
             return
 
-        #TODO: shuffle passage_list, question_list and question_id_list accordingly
+        passage_list, question_list, question_id_list = self.get_tokens_unique_ques(json_file)
         indices = range(len(passage_list))
         np.random.shuffle(indices)
 
         if not os.path.isdir(dir_to_save):
             os.makedirs(dir_to_save)
-
-        with open(os.path.join(dir_to_save, prefix + '.passage'), 'w') as passage_tokens_file, \
-             open(os.path.join(dir_to_save, prefix + '.question'), 'w') as question_tokens_file, \
-             open(os.path.join(dir_to_save, prefix + '.question_id'), 'w') as question_id_file:
-             for i in tqdm(indices, desc="Writing my {} tokens to {} folder".format(prefix, dir_to_save)):
-                 passage_tokens_file.write(' '.join([token.encode('utf8') for token in passage_list[i]]) + '\n')
-                 question_tokens_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
+        with open(os.path.join(dir_to_save, 'test.passage'), 'w') as passage_file, \
+             open(os.path.join(dir_to_save, 'test.question'), 'w') as question_file, \
+             open(os.path.join(dir_to_save, 'test.question_id'), 'w') as question_id_file:
+             for i in tqdm(indices, desc="Writing test tokens to {}".format(dir_to_save)):
+                 passage_file.write(' '.join([token.encode('utf8') for token in passage_list[i]]) + '\n')
+                 question_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
                  question_id_file.write(question_id_list[i].encode('utf8') + '\n')
 
-        print "{} tokens are saved in folder {}".format(prefix, dir_to_save)
+        print "Congs! All test tokens are created"
 
     '''
     Make voc, rev_voc using train and valid tokens  (!!DO NOT use test tokens)
@@ -381,22 +396,14 @@ if __name__ == "__main__":
 
     '''Download raw data'''
     my_preprocessor.download("../data/data_raw")
-    # '''Get statistics'''
-    # my_preprocessor.analyze("../data/data_raw/train-v1.1.json")
-    # my_preprocessor.analyze("../data/data_raw/dev-v1.1.json")
-    #
-    # '''Split raw data to train.json, valid.json, test.json '''
-    # my_preprocessor.get_all_json("../data/data_raw/train-v1.1.json",
-    #                              "../data/data_raw/dev-v1.1.json", 0.9,
-    #                              "../data/data_clean/")
-    #
-    # '''Tokenize train.json, valid.json and test.json'''
-    # my_preprocessor.get_tokens("../data/data_clean/train.json" ,
-    #                                        "../data/data_clean/", "train")
-    # my_preprocessor.get_tokens("../data/data_clean/valid.json" ,
-    #                                           "../data/data_clean/", "valid")
-    # my_preprocessor.get_tokens("../data/data_clean/test.json" ,
-    #                                           "../data/data_clean/", "test")
+
+
+
+    '''get tokens'''
+    my_preprocessor.tokenize_train("../data/data_raw/train-v1.1.json" ,
+                                           "../data/data_clean/")
+    my_preprocessor.tokenize_test("../data/data_raw/dev-v1.1.json" ,
+                                              "../data/data_clean/")
     #
     # '''Make voc, rev_voc using train and valid tokens  (!!DO NOT use test tokens)'''
     # my_preprocessor.make_voc("../data/data_clean/vocabulary" ,
@@ -413,3 +420,7 @@ if __name__ == "__main__":
     # my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/valid.question", "../data/data_clean/valid.question.token_id")
     # my_preprocessor.tokens_to_token_ids_for_test("../data/data_clean/vocabulary", "../data/data_clean/test.passage", "../data/data_clean/test.passage.token_id")
     # my_preprocessor.tokens_to_token_ids_for_test("../data/data_clean/vocabulary", "../data/data_clean/test.question", "../data/data_clean/test.question.token_id")
+
+    # '''Get statistics'''
+    # my_preprocessor.analyze("../data/data_raw/train-v1.1.json")
+    # my_preprocessor.analyze("../data/data_raw/dev-v1.1.json")
