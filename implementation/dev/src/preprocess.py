@@ -7,12 +7,15 @@ import sys
 import argparse
 import pickle
 import random
+from urllib import urlretrieve
+import zipfile
 
 '''
 nltk.word_tokenize has some weird behaviours.
 First, it tokenizes ''word'' to "word". This case is not corrected in this code.
-Second, it tokenizes "word" to ``word''. This caseis corrected in this code.
+Second, it tokenizes "word" to ``word''. This case is corrected in this code.
 '''
+
 
 '''
 json.load(json_file) decodes everyting to unicode automatically
@@ -31,84 +34,33 @@ class Preprocessor:
     '''
     Download raw data
     '''
-    def download(self):
-        #TODO
+    def download_(self, base_url, local_dir, filename, unzip = False):
+        if not os.path.exists(local_dir):
+            os.makedirs(local_dir)
+
+        if not os.path.exists(os.path.join(local_dir, filename)):
+            _ , _ = urlretrieve(base_url + filename, os.path.join(local_dir, filename))
+            print "{} created!".format(os.path.join(local_dir, filename))
+            if unzip:
+                zip_handler = zipfile.ZipFile(os.path.join(local_dir, filename), 'r')
+                zip_handler.extractall(local_dir)
+                zip_handler.close()
+                print "{} unziped".format(os.path.join(local_dir, filename))
+        else:
+            print "{} already exists!".format(os.path.join(local_dir, filename))
+
+
         return
-    '''
-    Get statistics
-    '''
-    def analyze(self, json_file):
-        count = 0
-        pass_max_length = 0
-        pass_ave_length = 0
-        ques_max_length = 0
-        ques_ave_length = 0
+    def download(self, local_dir):
+        squad_base_url = "https://rajpurkar.github.io/SQuAD-explorer/dataset/"
+        train = "train-v1.1.json"
+        dev = "dev-v1.1.json"
+        glove_base_url = "http://nlp.stanford.edu/data/"
+        glove_zip = "glove.6B.zip"
 
-        pass_lengths = []
-        ques_lengths = []
-
-        with open(json_file) as fh:
-            data_json = json.load(fh)
-        for article_id in tqdm(xrange(len(data_json['data'])), desc="Analyzing {}".format(json_file)):
-            paragraphs = data_json['data'][article_id]['paragraphs']
-            for paragraph_id in xrange(len(paragraphs)):
-                context = paragraphs[paragraph_id]['context']
-                context_token = self.tokenize(context)
-                qas = paragraphs[paragraph_id]['qas']
-                for qas_id in range(len(qas)):
-                    question = qas[qas_id]['question']
-                    question_token = self.tokenize(question)
-                    answers = qas[qas_id]['answers']
-                    for answer_id in xrange(len(answers)):
-                        text = answers[answer_id]['text']
-                        pass_lengths.append(len(context_token))
-                        ques_lengths.append(len(question_token))
-                        count += 1
-                        pass_max_length = max(pass_max_length, len(context_token))
-                        pass_ave_length += len(context_token)
-                        ques_max_length = max(ques_max_length, len(question_token))
-                        ques_ave_length += len(question_token)
-        pass_ave_length /= count
-        ques_ave_length /= count
-        print "Statistics of {}".format(json_file)
-        print "How many (passage, question, answer) tuples : {} \npass_max_length: {} \npass_ave_length: {}\nques_max_length: {} \nques_ave_length :{} \n".format(count, pass_max_length, pass_ave_length, ques_max_length, ques_ave_length)
-
-        # plt.figure("Passage lengths")
-        # plt.plot(pass_lengths)
-        # plt.figure("Question lengths")
-        # plt.plot(ques_lengths)
-
-        return pass_lengths, ques_lengths
-
-
-
-    '''
-    Split raw data to train, valid and test
-    '''
-    def get_all_json(self, squad_train_json_file, squad_dev_json_file, train_percent, dir_to_save):
-        if os.path.isfile(os.path.join(dir_to_save,"train.json" )):
-            print "All json files are ready!"
-            return
-
-        train_percent = float(train_percent)
-        with open(squad_train_json_file) as fh:
-            data_json = json.load(fh)
-        data = data_json['data']
-        train_json = {}
-        train_json['version'] = data_json['version']
-        train_json['data'] = data[0: int(len(data) * train_percent)]
-        with open(os.path.join(dir_to_save,"train.json" ), 'w') as f:
-            f.write(json.dumps(train_json))
-        valid_json = {}
-        valid_json['version'] = data_json['version']
-        valid_json['data'] = data[int(len(data) * train_percent) : len(data)]
-        with open(os.path.join(dir_to_save,"valid.json" ), 'w') as f:
-            f.write(json.dumps(valid_json))
-
-        with open(squad_dev_json_file) as fh:
-            data_json = json.load(fh)
-        with open(os.path.join(dir_to_save,"test.json" ), 'w') as f:
-            f.write(json.dumps(data_json))
+        self.download_(squad_base_url, local_dir, train)
+        self.download_(squad_base_url, local_dir, dev)
+        self.download_(glove_base_url, local_dir, glove_zip, True)
 
 
 
@@ -156,7 +108,7 @@ class Preprocessor:
 
         return c_id_to_token_id_map
 
-    def get_tokens(self, json_file, dir_to_save, prefix):
+    def get_tokens(self, json_file):
         #TODO: shuffle
         if os.path.isfile(os.path.join(dir_to_save, prefix + ".answer_span" )):
             print "All {} tokens are ready!".format(prefix)
@@ -194,6 +146,38 @@ class Preprocessor:
         indices = range(len(passage_list))
         np.random.shuffle(indices)
 
+    def get_tokens_unique_ques(self, json_file, dir_to_save, prefix):
+        #TODO: shuffle
+        if os.path.isfile(os.path.join(dir_to_save, prefix + ".answer_span" )):
+            print "All {} tokens are ready!".format(prefix)
+            return
+        passage_list = []
+        question_list = []
+        answer_text_list = []
+        answer_span_list = []
+        with open(json_file) as fh:
+            data_json = json.load(fh)
+        for article_id in tqdm(xrange(len(data_json['data'])), desc="Preprocessing {}".format(json_file)):
+            paragraphs = data_json['data'][article_id]['paragraphs']
+            for paragraph_id in xrange(len(paragraphs)):
+                context = paragraphs[paragraph_id]['context']
+                context_token = self.tokenize(context)
+                c_id_to_token_id_map = self.c_id_to_token_id(context, context_token)
+                qas = paragraphs[paragraph_id]['qas']
+                for qas_id in range(len(qas)):
+                    question_id = qas[qas_id]['id']
+                    question = qas[qas_id]['question']
+                    question_token = self.tokenize(question)
+
+                    question_id_list.append(question_id)
+                    passage_list.append(context_token)
+                    question_list.append(question_token)
+        #TODO: shuffle passage_list, question_list, answer_text_list and answer_span_list accordingly
+        indices = range(len(passage_list))
+        np.random.shuffle(indices)
+
+    def tokenize_train(self, json_file, dir_to_save):
+        #TODO
         if not os.path.isdir(dir_to_save):
             os.makedirs(dir_to_save)
 
@@ -209,47 +193,29 @@ class Preprocessor:
 
         print "{} tokens are saved in folder {}".format(prefix, dir_to_save)
 
-    # def get_token_for_valid_and_test(self, json_file, dir_to_save, prefix):
-    #     #TODO: shuffle
-    #     if os.path.isfile(os.path.join(dir_to_save, prefix + ".passage" )):
-    #         print "All {} tokens are ready!".format(prefix)
-    #         return
-    #
-    #     passage_list = []
-    #     question_list = []
-    #     question_id_list = []
-    #     with open(json_file) as fh:
-    #         data_json = json.load(fh)
-    #     for article_id in tqdm(xrange(len(data_json['data'])), desc="Preprocessing {}".format(json_file)):
-    #         paragraphs = data_json['data'][article_id]['paragraphs']
-    #         for paragraph_id in xrange(len(paragraphs)):
-    #             context = paragraphs[paragraph_id]['context']
-    #             context_token = self.tokenize(context)
-    #             qas = paragraphs[paragraph_id]['qas']
-    #             for qas_id in range(len(qas)):
-    #                 question_id = qas[qas_id]['id']
-    #                 question = qas[qas_id]['question']
-    #                 question_token = self.tokenize(question)
-    #
-    #                 question_id_list.append(question_id)
-    #                 passage_list.append(context_token)
-    #                 question_list.append(question_token)
-    #     #TODO: shuffle passage_list, question_list and question_id_list accordingly
-    #     indices = range(len(passage_list))
-    #     np.random.shuffle(indices)
-    #
-    #     if not os.path.isdir(dir_to_save):
-    #         os.makedirs(dir_to_save)
-    #
-    #     with open(os.path.join(dir_to_save, prefix + '.passage'), 'w') as passage_tokens_file, \
-    #          open(os.path.join(dir_to_save, prefix + '.question'), 'w') as question_tokens_file, \
-    #          open(os.path.join(dir_to_save, prefix + '.question_id'), 'w') as question_id_file:
-    #          for i in tqdm(indices, desc="Writing my {} tokens to {} folder".format(prefix, dir_to_save)):
-    #              passage_tokens_file.write(' '.join([token.encode('utf8') for token in passage_list[i]]) + '\n')
-    #              question_tokens_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
-    #              question_id_file.write(question_id_list[i].encode('utf8') + '\n')
-    #
-    #     print "{} tokens are saved in folder {}".format(prefix, dir_to_save)
+    def tokenize_test(self, json_file, dir_to_save):
+        #TODO: shuffle
+        if os.path.isfile(os.path.join(dir_to_save, prefix + ".passage" )):
+            print "All {} tokens are ready!".format(prefix)
+            return
+
+        #TODO: shuffle passage_list, question_list and question_id_list accordingly
+        indices = range(len(passage_list))
+        np.random.shuffle(indices)
+
+        if not os.path.isdir(dir_to_save):
+            os.makedirs(dir_to_save)
+
+        with open(os.path.join(dir_to_save, prefix + '.passage'), 'w') as passage_tokens_file, \
+             open(os.path.join(dir_to_save, prefix + '.question'), 'w') as question_tokens_file, \
+             open(os.path.join(dir_to_save, prefix + '.question_id'), 'w') as question_id_file:
+             for i in tqdm(indices, desc="Writing my {} tokens to {} folder".format(prefix, dir_to_save)):
+                 passage_tokens_file.write(' '.join([token.encode('utf8') for token in passage_list[i]]) + '\n')
+                 question_tokens_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
+                 question_id_file.write(question_id_list[i].encode('utf8') + '\n')
+
+        print "{} tokens are saved in folder {}".format(prefix, dir_to_save)
+
     '''
     Make voc, rev_voc using train and valid tokens  (!!DO NOT use test tokens)
     '''
@@ -367,41 +333,83 @@ class Preprocessor:
                 idf.write(' '.join(token_id_list) + '\n')
 
 
+    '''
+    Get statistics of json file
+    '''
+    def analyze(self, json_file):
+        count = 0
+        pass_max_length = 0
+        pass_ave_length = 0
+        ques_max_length = 0
+        ques_ave_length = 0
+
+        pass_lengths = []
+        ques_lengths = []
+
+        with open(json_file) as fh:
+            data_json = json.load(fh)
+        for article_id in tqdm(xrange(len(data_json['data'])), desc="Analyzing {}".format(json_file)):
+            paragraphs = data_json['data'][article_id]['paragraphs']
+            for paragraph_id in xrange(len(paragraphs)):
+                context = paragraphs[paragraph_id]['context']
+                context_token = self.tokenize(context)
+                qas = paragraphs[paragraph_id]['qas']
+                for qas_id in range(len(qas)):
+                    question = qas[qas_id]['question']
+                    question_token = self.tokenize(question)
+                    answers = qas[qas_id]['answers']
+                    for answer_id in xrange(len(answers)):
+                        text = answers[answer_id]['text']
+                        pass_lengths.append(len(context_token))
+                        ques_lengths.append(len(question_token))
+                        count += 1
+                        pass_max_length = max(pass_max_length, len(context_token))
+                        pass_ave_length += len(context_token)
+                        ques_max_length = max(ques_max_length, len(question_token))
+                        ques_ave_length += len(question_token)
+        pass_ave_length /= count
+        ques_ave_length /= count
+        print "Statistics of {}".format(json_file)
+        print "How many (passage, question, answer) tuples : {} \npass_max_length: {} \npass_ave_length: {}\nques_max_length: {} \nques_ave_length :{} \n".format(count, pass_max_length, pass_ave_length, ques_max_length, ques_ave_length)
+
+
+        return pass_lengths, ques_lengths
+
 
 if __name__ == "__main__":
     my_preprocessor = Preprocessor()
 
-    # '''Download raw data'''
-    #
+    '''Download raw data'''
+    my_preprocessor.download("../data/data_raw")
     # '''Get statistics'''
     # my_preprocessor.analyze("../data/data_raw/train-v1.1.json")
     # my_preprocessor.analyze("../data/data_raw/dev-v1.1.json")
-
-    '''Split raw data to train.json, valid.json, test.json '''
-    my_preprocessor.get_all_json("../data/data_raw/train-v1.1.json",
-                                 "../data/data_raw/dev-v1.1.json", 0.9,
-                                 "../data/data_clean/")
-
-    '''Tokenize train.json, valid.json and test.json'''
-    my_preprocessor.get_tokens("../data/data_clean/train.json" ,
-                                           "../data/data_clean/", "train")
-    my_preprocessor.get_tokens("../data/data_clean/valid.json" ,
-                                              "../data/data_clean/", "valid")
-    my_preprocessor.get_tokens("../data/data_clean/test.json" ,
-                                              "../data/data_clean/", "test")
-
-    '''Make voc, rev_voc using train and valid tokens  (!!DO NOT use test tokens)'''
-    my_preprocessor.make_voc("../data/data_clean/vocabulary" ,
-                            ["../data/data_clean/train.passage", "../data/data_clean/train.question",
-                            "../data/data_clean/valid.passage", "../data/data_clean/valid.question"])
-
-    '''Make embedding matrix using vocabulary and glove'''
-    my_preprocessor.make_embed("../data/data_clean/vocabulary", "../data/data_raw/glove.6B/glove.6B.50d.txt", 50, "../data/data_clean/embed_matrix")
-
-    '''Make train ids, valid ids and test ids'''
-    my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/train.passage", "../data/data_clean/train.passage.token_id")
-    my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/train.question", "../data/data_clean/train.question.token_id")
-    my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/valid.passage", "../data/data_clean/valid.passage.token_id")
-    my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/valid.question", "../data/data_clean/valid.question.token_id")
-    my_preprocessor.tokens_to_token_ids_for_test("../data/data_clean/vocabulary", "../data/data_clean/test.passage", "../data/data_clean/test.passage.token_id")
-    my_preprocessor.tokens_to_token_ids_for_test("../data/data_clean/vocabulary", "../data/data_clean/test.question", "../data/data_clean/test.question.token_id")
+    #
+    # '''Split raw data to train.json, valid.json, test.json '''
+    # my_preprocessor.get_all_json("../data/data_raw/train-v1.1.json",
+    #                              "../data/data_raw/dev-v1.1.json", 0.9,
+    #                              "../data/data_clean/")
+    #
+    # '''Tokenize train.json, valid.json and test.json'''
+    # my_preprocessor.get_tokens("../data/data_clean/train.json" ,
+    #                                        "../data/data_clean/", "train")
+    # my_preprocessor.get_tokens("../data/data_clean/valid.json" ,
+    #                                           "../data/data_clean/", "valid")
+    # my_preprocessor.get_tokens("../data/data_clean/test.json" ,
+    #                                           "../data/data_clean/", "test")
+    #
+    # '''Make voc, rev_voc using train and valid tokens  (!!DO NOT use test tokens)'''
+    # my_preprocessor.make_voc("../data/data_clean/vocabulary" ,
+    #                         ["../data/data_clean/train.passage", "../data/data_clean/train.question",
+    #                         "../data/data_clean/valid.passage", "../data/data_clean/valid.question"])
+    #
+    # '''Make embedding matrix using vocabulary and glove'''
+    # my_preprocessor.make_embed("../data/data_clean/vocabulary", "../data/data_raw/glove.6B/glove.6B.50d.txt", 50, "../data/data_clean/embed_matrix")
+    #
+    # '''Make train ids, valid ids and test ids'''
+    # my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/train.passage", "../data/data_clean/train.passage.token_id")
+    # my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/train.question", "../data/data_clean/train.question.token_id")
+    # my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/valid.passage", "../data/data_clean/valid.passage.token_id")
+    # my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/valid.question", "../data/data_clean/valid.question.token_id")
+    # my_preprocessor.tokens_to_token_ids_for_test("../data/data_clean/vocabulary", "../data/data_clean/test.passage", "../data/data_clean/test.passage.token_id")
+    # my_preprocessor.tokens_to_token_ids_for_test("../data/data_clean/vocabulary", "../data/data_clean/test.question", "../data/data_clean/test.question.token_id")
