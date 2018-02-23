@@ -1,0 +1,1 @@
+floyd run --env tensorflow-1.4:py2 --data bo.nov29/datasets/codefrominternet/1:/data "python train.py"
