@@ -268,7 +268,11 @@ class Preprocessor:
                 line = lines[i]
                 tokens = line.decode('utf8').split()
                 voc.append(tokens[0])
-        return voc
+        #make rev_voc
+        rev_voc = {}
+        for i in xrange(len(voc)):
+            rev_voc[voc[i]] = i
+        return voc, rev_voc
     def make_embed(self, voc_file, glove_file, embed_size, embed_path):
         if os.path.isfile(embed_path + ".npy"):
             print "{} is ready!".format(embed_path)
@@ -281,13 +285,14 @@ class Preprocessor:
             if len(line_list) - 1 != embed_size:
                 raise ValueError("No gloVe word vector has size {}".formate(embed_size))
         #load voc
-        voc = self.load_vocabulary(voc_file)
+        voc, _ = self.load_vocabulary(voc_file)
         voc_set = set(voc)
         #load glove_file
         glove_dic = {}
         with open(glove_file) as fh:
             lines = fh.readlines()
             for i in tqdm(xrange(len(lines)), desc = "Reading gloVe from disk"):
+                line = lines[i]
                 arr = line.lstrip().rstrip().split(" ")
                 word = arr[0]
                 vec =  [float(i) for i in arr[1:]]
@@ -329,7 +334,7 @@ class Preprocessor:
         np.save(embed_path, embed_matrix)
         print "Embed matrix is save in {}".format(embed_path)
         print "{}/{} tokens in vocabulary has correspondong word vectors".format(found_count, len(voc))
-        #73379/102429 tokens in vocabulary has correspondong word vectors
+        #73%
 
     '''
     Make token_ids using tokens and vocabulary
@@ -338,34 +343,15 @@ class Preprocessor:
         if os.path.isfile(token_id_file):
             print "{} is ready!".format(token_id_file)
             return
-        #load voc
-        voc = self.load_vocabulary(voc_file)
-        #make rev_voc
-        rev_voc = {}
-        for i in xrange(len(voc)):
-            rev_voc[voc[i]] = i
+        #load voc, rev_voc
+        voc, rev_voc = self.load_vocabulary(voc_file)
+
         with open(token_file) as tf, open(token_id_file, 'w') as idf:
             lines = tf.readlines()
             for i in tqdm(xrange(len(lines)), desc = "Convert tokens in {} to token_ids".format(token_file)):
-                token_list = lines[i].decode('utf8').split()
-                token_id_list = [str(rev_voc[token.lower()]) for token in token_list]
-                idf.write(' '.join(token_id_list) + '\n')
-    def tokens_to_token_ids_for_test(self, voc_file, token_file, token_id_file):
-        if os.path.isfile(token_id_file):
-            print "{} is ready!".format(token_id_file)
-            return
-        #load voc
-        voc = self.load_vocabulary(voc_file)
-        #make rev_voc
-        rev_voc = {}
-        for i in xrange(len(voc)):
-            rev_voc[voc[i]] = i
-        with open(token_file) as tf, open(token_id_file, 'w') as idf:
-            lines = tf.readlines()
-            for i in tqdm(xrange(len(lines)), desc = "Convert tokens in {} to token_ids".format(token_file)):
-                token_list = lines[i].decode('utf8').split()
+                token_list = lines[i].lstrip().rstrip().split()
                 #if vocabulary does not include the token, treat is as self._UNK
-                token_id_list = [str(rev_voc[token.lower()]) if token.lower() in rev_voc else str(self.UNK_ID) for token in token_list]
+                token_id_list = [str(rev_voc[token]) if token in rev_voc else str(self.UNK_ID) for token in token_list]
                 idf.write(' '.join(token_id_list) + '\n')
 
 
@@ -432,15 +418,15 @@ if __name__ == "__main__":
                             "../data/data_clean/valid.passage", "../data/data_clean/valid.question"])
 
     '''Make embedding matrix using vocabulary and glove'''
-    my_preprocessor.make_embed("../data/data_clean/vocabulary", "../data/data_raw/glove.6B.100d.txt", 100, "../data/data_clean/vector100")
+    my_preprocessor.make_embed("../data/data_clean/vocabulary", "../data/data_raw/glove.6B.100d.txt", 100, "../data/data_clean/word.vector.100")
 
-    # '''Make train ids, valid ids and test ids'''
-    # my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/train.passage", "../data/data_clean/train.passage.token_id")
-    # my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/train.question", "../data/data_clean/train.question.token_id")
-    # my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/valid.passage", "../data/data_clean/valid.passage.token_id")
-    # my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/valid.question", "../data/data_clean/valid.question.token_id")
-    # my_preprocessor.tokens_to_token_ids_for_test("../data/data_clean/vocabulary", "../data/data_clean/test.passage", "../data/data_clean/test.passage.token_id")
-    # my_preprocessor.tokens_to_token_ids_for_test("../data/data_clean/vocabulary", "../data/data_clean/test.question", "../data/data_clean/test.question.token_id")
+    '''Make train ids, valid ids and test ids'''
+    my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/train.passage", "../data/data_clean/train.passage.token_id")
+    my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/train.question", "../data/data_clean/train.question.token_id")
+    my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/valid.passage", "../data/data_clean/valid.passage.token_id")
+    my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/valid.question", "../data/data_clean/valid.question.token_id")
+    my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/test.passage", "../data/data_clean/test.passage.token_id")
+    my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/test.question", "../data/data_clean/test.question.token_id")
 
     # '''Get statistics'''
     # my_preprocessor.analyze("../data/data_raw/train-v1.1.json")

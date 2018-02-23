@@ -56,3 +56,22 @@ def train(dir_data, dir_output, embed_matrix_file, pass_max_len, ques_max_len, e
     # with open(os.path.join(dir_output, "train_stats.json"), 'w') as f:
     #     f.write(json.dumps(stats))
     return stats
+
+
+def getTrainBatches(self, dir_data, pass_max_len, ques_max_len, batch_size, keep_prob):
+    print "Start reading train batches from {}".format(dir_data)
+    pass_token_id_file = os.path.join(dir_data, "train.passage.token_id")
+    ans_span_file = os.path.join(dir_data, "train.answer_span")
+    ques_token_id_file = os.path.join(dir_data, "train.question.token_id")
+    passage, passage_sequence_length, ques, ques_sequence_length, ans_span = self.getTrain(dir_data, pass_max_len, ques_max_len)
+    batches = []
+    for i in xrange(len(passage) / batch_size):
+        batch_passage = passage[i * batch_size : (i + 1) * batch_size]
+        batch_passage_sequence_length = passage_sequence_length[i * batch_size : (i + 1) * batch_size]
+        batch_ques = ques[i * batch_size : (i + 1) * batch_size]
+        batch_ques_sequence_length = ques_sequence_length[i * batch_size : (i + 1) * batch_size]
+        batch_ans_span = ans_span[i * batch_size : (i + 1) * batch_size]
+        batches.append([batch_passage, batch_passage_sequence_length, batch_ques, batch_ques_sequence_length, batch_ans_span, keep_prob])
+    #ignore the remain data
+    print "Finish reading train batches"
+    return batches
