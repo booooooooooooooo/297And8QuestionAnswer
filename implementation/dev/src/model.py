@@ -5,8 +5,8 @@ import datetime
 import random
 import numpy as np
 
-from evaluate_v_1.1 import f1_score, exact_match_score
-
+from evaluate_v_1_1 import f1_score, exact_match_score
+from util_data import *
 
 
 class MatchGRUCell(tf.nn.rnn_cell.RNNCell):
@@ -228,21 +228,21 @@ class Model:
         dist_s, dist_e = sess.run([self.beta_s, self.beta_e], {self.passage: passage,
                                                                self.passage_mask: passage_mask,
                                                                self.ques: ques,
-                                                               self.ques_mask: ques_mask)
+                                                               self.ques_mask: ques_mask})
         idx_s = np.argmax(dist_s, axis=1)
         idx_e = np.argmax(dist_e, axis=1)
 
         return idx_s, idx_e
     def validate(self, sess, data_tuple, sample_size):
-        passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text, rev_voc = data_tuple
+        passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text, voc = data_tuple
         bound = min(sample_size, len(passage))
-        passage, passage_mask, ques, ques_mask,answer_s, answer_e, answer_text = passage[0: bound],
-                                                                                 passage_mask[0: bound],
-                                                                                 ques[0: bound],
-                                                                                 ques_mask[0: bound],
-                                                                                 answer_s[0: bound],
-                                                                                 answer_e[0: bound]
-                                                                                 answer_text[0: bound]
+        passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text = passage[0: bound],\
+                                                                                  passage_mask[0: bound],\
+                                                                                  ques[0: bound],\
+                                                                                  ques_mask[0: bound],\
+                                                                                  answer_s[0: bound],\
+                                                                                  answer_e[0: bound],\
+                                                                                  answer_text[0: bound]
 
         loss = sess.run(self.loss, {self.passage: passage,
                                     self.passage_mask: passage_mask,
@@ -251,12 +251,12 @@ class Model:
                                     self.answer_s: answer_s,
                                     self.answer_e: answer_e})
         idx_s, idx_e = self.predict(sess, passage, passage_mask, ques ,ques_mask)
-        predict_text = predict_ans_text(idx_s, idx_e, passage, rev_voc)
+        predict_text = predict_ans_text(idx_s, idx_e, passage, voc)
         f1 = 0.0
         em = 0.0
         for i in xrange(len(answer_text)):
-            f1 += f1_score(predict_text[i], answer_text[i])
-            em += exact_match_score(predict_text[i], answer_text[i])
+            f1 += f1_score(predict_text[i].decode('utf8'), answer_text[i].decode('utf8'))
+            em += exact_match_score(predict_text[i].decode('utf8'), answer_text[i].decode('utf8'))
         f1 /= len(answer_text)
         em /= len(answer_text)
 
@@ -275,7 +275,7 @@ class Model:
 
         for epoch in xrange(self.n_epoch):
             train_stat = []
-            passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text, rev_voc = train_data
+            passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text, voc = train_data
             batches = get_batches(passage, passage_mask, ques, ques_mask, answer_s, answer_e, batch_size)
             for num in xrange(len(batches)):
                 b_passage, b_passage_mask, b_ques, b_ques_mask, b_answer_s, b_answer_e = batches[num]
@@ -289,13 +289,14 @@ class Model:
                 valid_loss, valid_f1, valid_em = self.validate(sess, valid_data, sample_size)
                 graph_file = os.path.join(dir_output, "graphes/", datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S"))
                 tf.train.Saver().save(sess, graph_file)
-                batch_stat = {"epoch": n_epoch, "batch": num, "batch_loss" : batch_loss, "sample_size": sample_size, "train_loss":train_loss, "train_f1" : train_f1, "train_em": train_em, "valid_loss": valid_loss, "valid_f1": valid_f1, "valid_em":valid_em , "graph_file" : graph_file}
+                batch_stat = {"epoch": epoch, "batch": num, "batch_loss" : batch_loss, "sample_size": sample_size, "train_loss":train_loss, "train_f1" : train_f1, "train_em": train_em, "valid_loss": valid_loss, "valid_f1": valid_f1, "valid_em":valid_em , "graph_file" : graph_file}
                 train_stat.append(batch_stat)
-
+                print "================"
                 print "epoch: {}, batch: {}, batch_loss: {}".format(epoch, num, batch_loss)
                 print "validation_sample_size: {}".format(sample_size)
                 print "Sample train_loss: {}, train_f1 : {}, train_em : {}".format( train_loss, train_f1, train_em)
                 print "Sample valid_loss: {}, valid_f1: {}, valid_em: {}".format(valid_loss, valid_f1, valid_em)
+
             with open(os.path.join(output_dir, "epoch-" + epoch + "train-stat-" + datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S")), 'w') as f:
                 f.write(json.dumps(train_stat))
 

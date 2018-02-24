@@ -1,8 +1,4 @@
-'''
-pad/truncate
-'''
 import numpy as np
-
 from tqdm import tqdm
 import random
 import os
@@ -88,9 +84,9 @@ def get_data_tuple(usage, dir_data, pass_max_len, ques_max_length):
     ques, ques_mask = pad_token_ids(ques_max_length, ques_token_id_file)
     answer_s, answer_e = pad_ans_spans(pass_max_len, ans_span_file)
     answer_text = load_text(ans_text_file)
-    _, rev_voc = load_vocabulary(voc_file)
+    voc, _ = load_vocabulary(voc_file)
 
-    return passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text, rev_voc
+    return passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text, voc
 
 
 def get_batches(passage, passage_mask, ques, ques_mask, answer_s, answer_e, batch_size):
@@ -109,12 +105,12 @@ def get_batches(passage, passage_mask, ques, ques_mask, answer_s, answer_e, batc
                          [answer_e[i] for i in indices[num * batch_size : (num + 1) * batch_size]] ])
 
     return batches
-def predict_ans_text(idx_s, idx_e, passage, rev_voc):
+def predict_ans_text(idx_s, idx_e, passage, voc):
     predict_text = []
-    for i in xrange(len):
+    for i in xrange(len(idx_s)):
         s = idx_s[i]
         e = idx_e[i]
         token_ids = passage[i][s : e + 1]
-        tokens = [rev_voc[token_id] for token_id in token_ids]
+        tokens = [voc[token_id] for token_id in token_ids]
         predict_text.append(" ".join(tokens))
     return predict_text
