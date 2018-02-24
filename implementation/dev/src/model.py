@@ -5,6 +5,8 @@ import datetime
 import random
 import numpy as np
 
+from evaluate_v_1.1 import f1_score, exact_match_score
+
 
 
 class MatchGRUCell(tf.nn.rnn_cell.RNNCell):
@@ -220,3 +222,80 @@ class Model:
         train_op = optimizer_func.apply_gradients(zip(gradients, variables))#second part of minimize()
 
         self.train_op = train_op
+
+    '''Functions below are used for train and validation'''
+    def predict(self, sess, passage, passage_mask, ques ,ques_mask):
+        dist_s, dist_e = sess.run([self.beta_s, self.beta_e], {self.passage: passage,
+                                                               self.passage_mask: passage_mask,
+                                                               self.ques: ques,
+                                                               self.ques_mask: ques_mask)
+        idx_s = np.argmax(dist_s, axis=1)
+        idx_e = np.argmax(dist_e, axis=1)
+
+        return idx_s, idx_e
+    def validate(self, sess, data_tuple, sample_size):
+        passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text, rev_voc = data_tuple
+        bound = min(sample_size, len(passage))
+        passage, passage_mask, ques, ques_mask,answer_s, answer_e, answer_text = passage[0: bound],
+                                                                                 passage_mask[0: bound],
+                                                                                 ques[0: bound],
+                                                                                 ques_mask[0: bound],
+                                                                                 answer_s[0: bound],
+                                                                                 answer_e[0: bound]
+                                                                                 answer_text[0: bound]
+
+        loss = sess.run(self.loss, {self.passage: passage,
+                                    self.passage_mask: passage_mask,
+                                    self.ques: ques,
+                                    self.ques_mask: ques_mask,
+                                    self.answer_s: answer_s,
+                                    self.answer_e: answer_e})
+        idx_s, idx_e = self.predict(sess, passage, passage_mask, ques ,ques_mask)
+        predict_text = predict_ans_text(idx_s, idx_e, passage, rev_voc)
+        f1 = 0.0
+        em = 0.0
+        for i in xrange(len(answer_text)):
+            f1 += f1_score(predict_text[i], answer_text[i])
+            em += exact_match_score(predict_text[i], answer_text[i])
+        f1 /= len(answer_text)
+        em /= len(answer_text)
+
+        return loss, f1, em
+
+    def fit(self, sess, train_data, valid_data, batch_size, sample_size, dir_output):
+        if not os.path.isdir(dir_output):
+            os.makedirs(dir_output)
+        if not os.path.isdir(os.path.join(dir_output, "graphes/")):
+            os.makedirs(os.path.join(dir_output, "graphes/"))
+
+        #Just in case. sess para should be already initialized
+        print "Start intializing graph"
+        sess.run(tf.global_variables_initializer())#Initilizing after making train_op
+        print "Finish intializing graph"
+
+        train_stat = []
+
+        for epoch in xrange(self.n_epoch):
+            passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text, rev_voc = train_data
+            batches = get_batches(passage, passage_mask, ques, ques_mask, answer_s, answer_e, batch_size)
+            for num in xrange(len(batches)):
+                b_passage, b_passage_mask, b_ques, b_ques_mask, b_answer_s, b_answer_e = batches[num]
+                _ , batch_loss = sess.run([self.train_op, self.loss], {self.passage: b_passage,
+                                                                       self.passage_mask: b_passage_mask,
+                                                                       self.ques: b_ques,
+                                                                       self.ques_mask: b_ques_mask,
+                                                                       self.answer_s: b_answer_s,
+                                                                       self.answer_e: b_answer_e})
+                train_loss, train_f1, train_em = self.validate(sess, train_data, sample_size)
+                valid_loss, valid_f1, valid_em = self.validate(sess, valid_data, sample_size)
+                graph_file = os.path.join(dir_output, "graphes/", datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S"))
+                tf.train.Saver().save(sess, graph_file)
+                batch_stat = {"epoch": n_epoch, "batch": num, "batch_loss" : batch_loss, "sample_size": sample_size, "train_loss":train_loss, "train_f1" : train_f1, "train_em": train_em, "valid_loss": valid_loss, "valid_f1": valid_f1, "valid_em":valid_em , "graph_file" : graph_file}
+                train_stat.append(batch_stat)
+
+                print "epoch: {}, batch: {}, batch_loss: {}".format(epoch, num, batch_loss)
+                print "validation_sample_size: {}".format(sample_size)
+                print "Sample train_loss: {}, train_f1 : {}, train_em : {}".format( train_loss, train_f1, train_em)
+                print "Sample valid_loss: {}, valid_f1: {}, valid_em: {}".format(valid_loss, valid_f1, valid_em)
+        with open(os.path.join(output_dir, "train-stat-" + datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S")), 'w') as f:
+            f.write(json.dumps(train_stat))

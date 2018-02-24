@@ -375,16 +375,16 @@ class QASystem(object):
 
         return outputs
 
-    def precict(self, session, context, question):
-        """
-        in here you should compute a cost for your validation set
-        and tune your hyperparameters according to the validation set performance
-        :return:
-        """
-        # not used
-        outputs = None
-
-        return outputs
+    # def precict(self, session, context, question):
+    #     """
+    #     in here you should compute a cost for your validation set
+    #     and tune your hyperparameters according to the validation set performance
+    #     :return:
+    #     """
+    #     # not used
+    #     outputs = None
+    #
+    #     return outputs
 
     def decode(self, session, context, question):
         """
@@ -420,25 +420,25 @@ class QASystem(object):
 
         return a_s, a_e
 
-    def validate(self, sess, valid_dataset):
-        """
-        Iterate through the validation dataset and determine what
-        the validation cost is.
-
-        This method calls self.test() which explicitly calculates validation cost.
-
-        How you implement this function is dependent on how you design
-        your data iteration function
-
-        :return:
-        """
-        # not used for now
-        valid_cost = 0
-
-        for valid_x, valid_y in valid_dataset:
-            valid_cost = self.test(sess, valid_x, valid_y)
-
-        return valid_cost
+    # def validate(self, sess, valid_dataset):
+    #     """
+    #     Iterate through the validation dataset and determine what
+    #     the validation cost is.
+    #
+    #     This method calls self.test() which explicitly calculates validation cost.
+    #
+    #     How you implement this function is dependent on how you design
+    #     your data iteration function
+    #
+    #     :return:
+    #     """
+    #     # not used for now
+    #     valid_cost = 0
+    #
+    #     for valid_x, valid_y in valid_dataset:
+    #         valid_cost = self.test(sess, valid_x, valid_y)
+    #
+    #     return valid_cost
 
     def evaluate_answer(self, session, dataset, answers, rev_vocab,
                         set_name='val', training=False, log=False,

@@ -13,7 +13,7 @@ import random
 
 
 from model_match_lstm_ans_ptr import MatchLSTMAnsPtr
-from util_data import DataUtil  
+from util_data import DataUtil
 
 
 def train(dir_data, dir_output, embed_matrix_file, pass_max_len, ques_max_len, embed_size, num_units, clip_norm, optimizer, lr, n_epoch, batch_size, keep_prob):
