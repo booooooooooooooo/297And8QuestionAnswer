@@ -273,9 +273,8 @@ class Model:
         sess.run(tf.global_variables_initializer())#Initilizing after making train_op
         print "Finish intializing graph"
 
-        train_stat = []
-
         for epoch in xrange(self.n_epoch):
+            train_stat = []
             passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text, rev_voc = train_data
             batches = get_batches(passage, passage_mask, ques, ques_mask, answer_s, answer_e, batch_size)
             for num in xrange(len(batches)):
@@ -297,5 +296,7 @@ class Model:
                 print "validation_sample_size: {}".format(sample_size)
                 print "Sample train_loss: {}, train_f1 : {}, train_em : {}".format( train_loss, train_f1, train_em)
                 print "Sample valid_loss: {}, valid_f1: {}, valid_em: {}".format(valid_loss, valid_f1, valid_em)
-        with open(os.path.join(output_dir, "train-stat-" + datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S")), 'w') as f:
-            f.write(json.dumps(train_stat))
+            with open(os.path.join(output_dir, "epoch-" + epoch + "train-stat-" + datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S")), 'w') as f:
+                f.write(json.dumps(train_stat))
+
+        print "Finish trainning! Congs!"

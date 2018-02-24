@@ -9,12 +9,14 @@ import os
 
 
 
-def pad_token_ids(max_len, token_id_file, PAD_ID):
+def pad_token_ids(max_len, token_id_file):
     '''
     return
         padded_token_ids: int
         mask: int
     '''
+    PAD_ID = 0
+
     with open(token_id_file) as f:
         lines = f.readlines()
 
@@ -36,16 +38,60 @@ def pad_ans_spans(pass_max_len, ans_span_file):
     '''
     with open(ans_span_file) as f:
         lines = f.readlines()
-        adjusted_ans_span = np.empty((len(lines), 2), dtype = np.int32)
+        adjusted_answer_s = np.empty((len(lines),), dtype = np.int32)
+        adjusted_answer_e = np.empty((len(lines), ), dtype = np.int32)
         for i in tqdm(xrange(len(lines)), desc = "Adjust ans_span from {}".format(ans_span_file)):
             line = lines[i]
             ans_span = [int(idx) for idx in line.split()]
-            adjusted_ans_span[i] = ans_span
-            if adjusted_ans_span[i][1] >= pass_max_len:
-                adjusted_ans_span[i][1] = pass_max_len - 1
-                if adjusted_ans_span[i][0] >= pass_max_len:
-                    adjusted_ans_span[i][0] = pass_max_len - 1
-    return adjusted_ans_span
+            adjusted_answer_s[i] = ans_span[0]
+            adjusted_answer_e[i] = ans_span[1]
+            if adjusted_answer_e[i] >= pass_max_len:
+                adjusted_answer_e[i] = pass_max_len - 1
+                if adjusted_answer_s[i]>= pass_max_len:
+                    adjusted_answer_s[i] = pass_max_len - 1
+    return adjusted_answer_s, adjusted_answer_e
+
+
+def load_text(text_file):
+    texts = []
+    with open(text_file) as f:
+        lines = f.readlines()
+        for i in tqdm(xrange(len(lines)), desc = "Loading texts form {}".format(text_file)):
+            line = lines[i]
+            texts.append(line.rstrip())
+    return texts
+
+def load_vocabulary(voc_file):
+    voc = []
+    with open(voc_file) as f:
+        lines = f.readlines()
+        for i in tqdm(xrange(len(lines)), desc = "Loading vocabulary form {}".format(voc_file)):
+            line = lines[i]
+            tokens = line.decode('utf8').split()
+            voc.append(tokens[0])
+    #make rev_voc
+    rev_voc = {}
+    for i in xrange(len(voc)):
+        rev_voc[voc[i]] = i
+    return voc, rev_voc
+
+def get_data_tuple(usage, dir_data, pass_max_len, ques_max_length):
+    #TODO: shuffle?
+
+    passage_token_id_file = os.path.join(dir_data, usage + ".passage.token_id")
+    ques_token_id_file = os.path.join(dir_data, usage + ".question.token_id")
+    ans_span_file = os.path.join(dir_data, usage + ".answer_span")
+    ans_text_file = os.path.join(dir_data, usage + ".answer_text")
+    voc_file = os.path.join(dir_data, "vocabulary")
+
+    passage, passage_mask = pad_token_ids(pass_max_len, passage_token_id_file)
+    ques, ques_mask = pad_token_ids(ques_max_length, ques_token_id_file)
+    answer_s, answer_e = pad_ans_spans(pass_max_len, ans_span_file)
+    answer_text = load_text(ans_text_file)
+    _, rev_voc = load_vocabulary(voc_file)
+
+    return passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text, rev_voc
+
 
 def get_batches(passage, passage_mask, ques, ques_mask, answer_s, answer_e, batch_size):
     batches = []
@@ -72,6 +118,3 @@ def predict_ans_text(idx_s, idx_e, passage, rev_voc):
         tokens = [rev_voc[token_id] for token_id in token_ids]
         predict_text.append(" ".join(tokens))
     return predict_text
-def get_data_tuple():
-    #TODO
-    #shuffle
