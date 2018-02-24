@@ -1,17 +1,43 @@
-'''
-Used for testing.
 
-'''
-
-import argparse
-import pickle
 import tensorflow as tf
 import os
+import pickle
+import json
+import numpy as np
 
-from helper import *
+from preprocess import Preprocessor
+from util_data import *
 from evaluate_v_1_1 import evaluate
 
-def test(test_json_sub_path, test_passage_tokens_sub_path, test_question_ids_sub_path, test_batches_sub_path, valid_result, dir_data, dir_output):
+def test():
+    #process data
+    processor = Preprocessor()
+    processor.tokenize_test(json_file, dir_to_save)
+    passage, passage_mask = pad_token_ids(pass_max_length, token_id_file)
+    os.path.join(dir_to_save, 'test.passage')
+    os.path.join(dir_to_save, 'test.question')
+    os.path.join(dir_to_save, 'test.question_id')
+
+
+    #revover graph
+
+    #make predictions
+
+    #calculate scores
+
+    #print/save predictions and score
+
+
+
+
+
+
+
+
+
+
+
+
     print "Start testing best graph...."
     if not os.path.isdir(dir_output):
         os.makedirs(dir_output)
@@ -34,13 +60,7 @@ def test(test_json_sub_path, test_passage_tokens_sub_path, test_question_ids_sub
     print "Finish testing best graph...."
     return test_result
 
-import tensorflow as tf
-import pickle
-import json
-import numpy as np
-import os
 
-from util import *
 '''
 batches_file is equal or longer than token_file due to fake datum
 '''

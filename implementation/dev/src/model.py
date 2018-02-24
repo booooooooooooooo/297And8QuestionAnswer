@@ -4,6 +4,7 @@ from tqdm import tqdm
 import datetime
 import random
 import numpy as np
+import json
 
 from evaluate_v_1_1 import f1_score, exact_match_score
 from util_data import *
@@ -285,19 +286,28 @@ class Model:
                                                                        self.ques_mask: b_ques_mask,
                                                                        self.answer_s: b_answer_s,
                                                                        self.answer_e: b_answer_e})
-                train_loss, train_f1, train_em = self.validate(sess, train_data, sample_size)
-                valid_loss, valid_f1, valid_em = self.validate(sess, valid_data, sample_size)
-                graph_file = os.path.join(dir_output, "graphes/", datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S"))
-                tf.train.Saver().save(sess, graph_file)
-                batch_stat = {"epoch": epoch, "batch": num, "batch_loss" : batch_loss, "sample_size": sample_size, "train_loss":train_loss, "train_f1" : train_f1, "train_em": train_em, "valid_loss": valid_loss, "valid_f1": valid_f1, "valid_em":valid_em , "graph_file" : graph_file}
-                train_stat.append(batch_stat)
-                print "================"
-                print "epoch: {}, batch: {}, batch_loss: {}".format(epoch, num, batch_loss)
-                print "validation_sample_size: {}".format(sample_size)
-                print "Sample train_loss: {}, train_f1 : {}, train_em : {}".format( train_loss, train_f1, train_em)
-                print "Sample valid_loss: {}, valid_f1: {}, valid_em: {}".format(valid_loss, valid_f1, valid_em)
 
-            with open(os.path.join(output_dir, "epoch-" + epoch + "train-stat-" + datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S")), 'w') as f:
+
+                print "epoch: {}, batch: {} / {}, batch_loss: {}".format(epoch, num, len(batches), batch_loss)
+                if num % 25 == 0:
+                    graph_file = os.path.join(dir_output, "graphes/", datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S"))
+                    tf.train.Saver().save(sess, graph_file)
+                    train_loss, train_f1, train_em = self.validate(sess, train_data, sample_size)
+                    valid_loss, valid_f1, valid_em = self.validate(sess, valid_data, sample_size)
+                    batch_stat = {"epoch": str(epoch), "batch": str(num), "batch_loss" : str(batch_loss), \
+                                  "sample_size": str(sample_size), "train_loss": str(train_loss),\
+                                  "train_f1" : str(train_f1), "train_em": str(train_em), \
+                                  "valid_loss": str(valid_loss), "valid_f1": str(valid_f1), \
+                                  "valid_em": str(valid_em) , "graph_file" : graph_file}
+                    train_stat.append(batch_stat)
+                    print "================"
+                    print "validation_sample_size: {}".format(sample_size)
+                    print "Sample train_loss: {}, train_f1 : {}, train_em : {}".format( train_loss, train_f1, train_em)
+                    print "Sample valid_loss: {}, valid_f1: {}, valid_em: {}".format(valid_loss, valid_f1, valid_em)
+                    print "================"
+                
+
+            with open(os.path.join(dir_output, "epoch-{}-train-stat-{}".format(epoch, datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S"))), 'w') as f:
                 f.write(json.dumps(train_stat))
 
         print "Finish trainning! Congs!"
