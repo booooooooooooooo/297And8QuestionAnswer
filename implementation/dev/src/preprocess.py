@@ -150,28 +150,7 @@ class Preprocessor:
 
         return passage_list, question_list, answer_text_list, answer_span_list
 
-    def get_tokens_unique_ques(self, json_file):
-        passage_list = []
-        question_list = []
-        question_id_list = []
-        with open(json_file) as fh:
-            data_json = json.load(fh)
-        for article_id in tqdm(xrange(len(data_json['data'])), desc="Preprocessing {}".format(json_file)):
-            paragraphs = data_json['data'][article_id]['paragraphs']
-            for paragraph_id in xrange(len(paragraphs)):
-                context = paragraphs[paragraph_id]['context']
-                context_token = self.tokenize(context)
-                qas = paragraphs[paragraph_id]['qas']
-                for qas_id in range(len(qas)):
-                    question = qas[qas_id]['question']
-                    question_token = self.tokenize(question)
-                    question_id = qas[qas_id]['id']
 
-                    passage_list.append(context_token)
-                    question_list.append(question_token)
-                    question_id_list.append(question_id)
-
-        return passage_list, question_list, question_id_list
 
     def tokenize_train(self, json_file, dir_to_save):
         if os.path.isfile(os.path.join(dir_to_save, "train.answer_span" )):
@@ -208,13 +187,12 @@ class Preprocessor:
                  ans_span_file.write(' '.join(answer_span_list[i]) + '\n')
 
         print "Congs! All traina and valid tokens are created!"
-
     def tokenize_test(self, json_file, dir_to_save):
         if os.path.isfile(os.path.join(dir_to_save, "test.passage" )):
             print "All test tokens are ready!"
             return
 
-        passage_list, question_list, question_id_list = self.get_tokens_unique_ques(json_file)
+        passage_list, question_list, answer_text_list, answer_span_list = self.get_tokens(json_file)
         indices = range(len(passage_list))
         np.random.shuffle(indices)
 
@@ -222,13 +200,56 @@ class Preprocessor:
             os.makedirs(dir_to_save)
         with open(os.path.join(dir_to_save, 'test.passage'), 'w') as passage_file, \
              open(os.path.join(dir_to_save, 'test.question'), 'w') as question_file, \
-             open(os.path.join(dir_to_save, 'test.question_id'), 'w') as question_id_file:
+             open(os.path.join(dir_to_save, 'test.answer_text'), 'w') as answer_text_file,\
+             open(os.path.join(dir_to_save, 'test.answer_span'), 'w') as ans_span_file:
              for i in tqdm(indices, desc="Writing test tokens to {}".format(dir_to_save)):
                  passage_file.write(' '.join([token.encode('utf8') for token in passage_list[i]]) + '\n')
                  question_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
-                 question_id_file.write(question_id_list[i].encode('utf8') + '\n')
-
+                 answer_text_file.write(answer_text_list[i].encode('utf8') + '\n')
+                 ans_span_file.write(' '.join(answer_span_list[i]) + '\n')
         print "Congs! All test tokens are created"
+    # def get_tokens_unique_ques(self, json_file):
+    #     passage_list = []
+    #     question_list = []
+    #     question_id_list = []
+    #     with open(json_file) as fh:
+    #         data_json = json.load(fh)
+    #     for article_id in tqdm(xrange(len(data_json['data'])), desc="Preprocessing {}".format(json_file)):
+    #         paragraphs = data_json['data'][article_id]['paragraphs']
+    #         for paragraph_id in xrange(len(paragraphs)):
+    #             context = paragraphs[paragraph_id]['context']
+    #             context_token = self.tokenize(context)
+    #             qas = paragraphs[paragraph_id]['qas']
+    #             for qas_id in range(len(qas)):
+    #                 question = qas[qas_id]['question']
+    #                 question_token = self.tokenize(question)
+    #                 question_id = qas[qas_id]['id']
+    #
+    #                 passage_list.append(context_token)
+    #                 question_list.append(question_token)
+    #                 question_id_list.append(question_id)
+    #
+    #     return passage_list, question_list, question_id_list
+    # def tokenize_deploy(self, json_file, dir_to_save):
+    #     if os.path.isfile(os.path.join(dir_to_save, "test.passage" )):
+    #         print "All test tokens are ready!"
+    #         return
+    #
+    #     passage_list, question_list, question_id_list = self.get_tokens_unique_ques(json_file)
+    #     indices = range(len(passage_list))
+    #     np.random.shuffle(indices)
+    #
+    #     if not os.path.isdir(dir_to_save):
+    #         os.makedirs(dir_to_save)
+    #     with open(os.path.join(dir_to_save, 'test.passage'), 'w') as passage_file, \
+    #          open(os.path.join(dir_to_save, 'test.question'), 'w') as question_file, \
+    #          open(os.path.join(dir_to_save, 'test.question_id'), 'w') as question_id_file:
+    #          for i in tqdm(indices, desc="Writing test tokens to {}".format(dir_to_save)):
+    #              passage_file.write(' '.join([token.encode('utf8') for token in passage_list[i]]) + '\n')
+    #              question_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
+    #              question_id_file.write(question_id_list[i].encode('utf8') + '\n')
+    #
+    #     print "Congs! All test tokens are created"
 
     '''
     Make voc using train and valid tokens  (!!DO NOT use test tokens)
@@ -427,6 +448,7 @@ if __name__ == "__main__":
     my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/valid.question", "../data/data_clean/valid.question.token_id")
     my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/test.passage", "../data/data_clean/test.passage.token_id")
     my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/test.question", "../data/data_clean/test.question.token_id")
+
 
     # '''Get statistics'''
     # my_preprocessor.analyze("../data/data_raw/train-v1.1.json")

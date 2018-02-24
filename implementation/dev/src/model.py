@@ -234,7 +234,7 @@ class Model:
         idx_e = np.argmax(dist_e, axis=1)
 
         return idx_s, idx_e
-    def validate(self, sess, data_tuple, sample_size):
+    def evaluate(self, sess, data_tuple, sample_size):
         passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text, voc = data_tuple
         bound = min(sample_size, len(passage))
         passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text = passage[0: bound],\
@@ -261,9 +261,9 @@ class Model:
         f1 /= len(answer_text)
         em /= len(answer_text)
 
-        return loss, f1, em
+        return loss, f1, em, predict_text
 
-    def fit(self, sess, train_data, valid_data, batch_size, sample_size, dir_output):
+    def fit(self, sess, train_data, valid_data, test_data, batch_size, sample_size, dir_output):
         if not os.path.isdir(dir_output):
             os.makedirs(dir_output)
         if not os.path.isdir(os.path.join(dir_output, "graphes/")):
@@ -292,8 +292,8 @@ class Model:
                 if num % 25 == 0:
                     graph_file = os.path.join(dir_output, "graphes/", datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S"))
                     tf.train.Saver().save(sess, graph_file)
-                    train_loss, train_f1, train_em = self.validate(sess, train_data, sample_size)
-                    valid_loss, valid_f1, valid_em = self.validate(sess, valid_data, sample_size)
+                    train_loss, train_f1, train_em, _ = self.evaluate(sess, train_data, sample_size)
+                    valid_loss, valid_f1, valid_em, _ = self.evaluate(sess, valid_data, sample_size)
                     batch_stat = {"epoch": str(epoch), "batch": str(num), "batch_loss" : str(batch_loss), \
                                   "sample_size": str(sample_size), "train_loss": str(train_loss),\
                                   "train_f1" : str(train_f1), "train_em": str(train_em), \
@@ -305,9 +305,36 @@ class Model:
                     print "Sample train_loss: {}, train_f1 : {}, train_em : {}".format( train_loss, train_f1, train_em)
                     print "Sample valid_loss: {}, valid_f1: {}, valid_em: {}".format(valid_loss, valid_f1, valid_em)
                     print "================"
-                
+
 
             with open(os.path.join(dir_output, "epoch-{}-train-stat-{}".format(epoch, datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S"))), 'w') as f:
                 f.write(json.dumps(train_stat))
-
         print "Finish trainning! Congs!"
+
+        print "=================="
+        print "Start testing!"
+        #find best graph
+        best_graph = ""
+        best_score = -1.0
+        for batch_stat in train_stat:
+            cur_score = (batch_stat["valid_f1"] + batch_stat["valid_em"])/ 2.0
+            if cur_score >= best_score:
+                best_graph = batch_stat["graph_file"]
+                best_score = cur_score
+        #recover best graph
+        saver = tf.train.import_meta_graph(best_graph + '.meta')
+        saver.restore(sess, trained_graph)
+        #get predictions and scores
+        loss, f1, em, predict_test_answers = self.evaluate(sess, test_data, len(test_data[0]))
+
+        predict_test_answers_file = os.path.join(dir_output, "predict_test_answers-{}".format(datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S")))
+        #write to disk and IO
+        with open(predict_test_answers_file, 'w') as f:
+            for ans in predict_test_answers:
+                f.write(ans + "\n")
+        print "Test loss : {}".format(loss)
+        print "Test f1: {}".format(f1)
+        print "Test em: {}".format(em)
+        print "Test predicted answer saved at {}".format(predict_test_answers_file)
+        print "Finish tesing! Congs!"
+        print "=================="

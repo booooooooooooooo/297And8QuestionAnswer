@@ -73,7 +73,7 @@ def load_vocabulary(voc_file):
 
 def get_data_tuple(usage, dir_data, pass_max_len, ques_max_length):
     #TODO: shuffle?
-
+    
     passage_token_id_file = os.path.join(dir_data, usage + ".passage.token_id")
     ques_token_id_file = os.path.join(dir_data, usage + ".question.token_id")
     ans_span_file = os.path.join(dir_data, usage + ".answer_span")
