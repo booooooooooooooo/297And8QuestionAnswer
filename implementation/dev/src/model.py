@@ -234,7 +234,7 @@ class Model:
         idx_e = np.argmax(dist_e, axis=1)
 
         return idx_s, idx_e
-    def evaluate(self, sess, data_tuple, sample_size):
+    def evaluate(self, sess, data_tuple, batch_size, sample_size):
         passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text, voc = data_tuple
         bound = min(sample_size, len(passage))
         passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text = passage[0: bound],\
@@ -245,21 +245,33 @@ class Model:
                                                                                   answer_e[0: bound],\
                                                                                   answer_text[0: bound]
 
-        loss = sess.run(self.loss, {self.passage: passage,
-                                    self.passage_mask: passage_mask,
-                                    self.ques: ques,
-                                    self.ques_mask: ques_mask,
-                                    self.answer_s: answer_s,
-                                    self.answer_e: answer_e})
-        idx_s, idx_e = self.predict(sess, passage, passage_mask, ques ,ques_mask)
-        predict_text = predict_ans_text(idx_s, idx_e, passage, voc)
+
+
+        predict_text = []
         f1 = 0.0
         em = 0.0
-        for i in xrange(len(answer_text)):
-            f1 += f1_score(predict_text[i].decode('utf8'), answer_text[i].decode('utf8'))
-            em += exact_match_score(predict_text[i].decode('utf8'), answer_text[i].decode('utf8'))
-        f1 /= len(answer_text)
-        em /= len(answer_text)
+        loss = 0.0
+        iters = sample_size / batch_size if sample_size % batch_size == 0 else sample_size / batch_size + 1
+        for i in tqdm(xrange(iters), desc = "Evaluating......." ):
+            l, r = i * batch_size, min((i + 1) * batch_size, len(passage))
+
+            idx_s, idx_e = self.predict(sess, passage[l : r], passage_mask[l : r], ques[l : r] ,ques_mask[l : r])
+            b_predict_text = predict_ans_text(idx_s, idx_e, passage[l : r], voc)
+            predict_text = predict_text + b_predict_text
+            for j in xrange(len(answer_text[l : r])):
+                f1 += f1_score(predict_text[j].decode('utf8'), answer_text[j].decode('utf8'))
+                em += exact_match_score(predict_text[j].decode('utf8'), answer_text[j].decode('utf8'))
+            b_loss = sess.run(self.loss, {self.passage: passage[l : r],
+                                        self.passage_mask: passage_mask[l : r],
+                                        self.ques: ques[l : r],
+                                        self.ques_mask: ques_mask[l : r],
+                                        self.answer_s: answer_s[l : r],
+                                        self.answer_e: answer_e[l : r]})
+            loss += b_loss
+
+        f1 /= len(passage)
+        em /= len(passage)
+        loss /= iters
 
         return loss, f1, em, predict_text
 
@@ -289,11 +301,11 @@ class Model:
 
 
                 print "epoch: {}, batch: {} / {}, batch_loss: {}".format(epoch, num, len(batches), batch_loss)
-                if num % 25 == 0:
+                if num % 100 == 0:
                     graph_file = os.path.join(dir_output, "graphes/", datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S"))
                     tf.train.Saver().save(sess, graph_file)
-                    train_loss, train_f1, train_em, _ = self.evaluate(sess, train_data, sample_size)
-                    valid_loss, valid_f1, valid_em, _ = self.evaluate(sess, valid_data, sample_size)
+                    train_loss, train_f1, train_em, _ = self.evaluate(sess, train_data, batch_size, sample_size)
+                    valid_loss, valid_f1, valid_em, _ = self.evaluate(sess, valid_data, batch_size, sample_size)
                     batch_stat = {"epoch": str(epoch), "batch": str(num), "batch_loss" : str(batch_loss), \
                                   "sample_size": str(sample_size), "train_loss": str(train_loss),\
                                   "train_f1" : str(train_f1), "train_em": str(train_em), \
@@ -305,6 +317,7 @@ class Model:
                     print "Sample train_loss: {}, train_f1 : {}, train_em : {}".format( train_loss, train_f1, train_em)
                     print "Sample valid_loss: {}, valid_f1: {}, valid_em: {}".format(valid_loss, valid_f1, valid_em)
                     print "================"
+                    break
 
 
             with open(os.path.join(dir_output, "epoch-{}-train-stat-{}".format(epoch, datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S"))), 'w') as f:
@@ -314,24 +327,32 @@ class Model:
         print "=================="
         print "Start testing!"
         #find best graph
+        print "Searching for best graph"
         best_graph = ""
         best_score = -1.0
         for batch_stat in train_stat:
-            cur_score = (batch_stat["valid_f1"] + batch_stat["valid_em"])/ 2.0
+            cur_score = (float(batch_stat["valid_f1"]) + float(batch_stat["valid_em"]) )/ 2.0
             if cur_score >= best_score:
                 best_graph = batch_stat["graph_file"]
                 best_score = cur_score
+        print "Have found best graph"
         #recover best graph
+        print "Recovering best graph"
         saver = tf.train.import_meta_graph(best_graph + '.meta')
-        saver.restore(sess, trained_graph)
+        saver.restore(sess, best_graph)
+        print "Have Recovered best graph"
         #get predictions and scores
-        loss, f1, em, predict_test_answers = self.evaluate(sess, test_data, len(test_data[0]))
+        print "Start evaluating!"
+        loss, f1, em, predict_test_answers = self.evaluate(sess, test_data, batch_size, len(test_data[0]))
 
         predict_test_answers_file = os.path.join(dir_output, "predict_test_answers-{}".format(datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S")))
+        print "Finish evaluating!"
         #write to disk and IO
+        print "Writing predict test answers to disk"
         with open(predict_test_answers_file, 'w') as f:
             for ans in predict_test_answers:
                 f.write(ans + "\n")
+        print "Finish writing!"
         print "Test loss : {}".format(loss)
         print "Test f1: {}".format(f1)
         print "Test em: {}".format(em)

@@ -72,8 +72,8 @@ def load_vocabulary(voc_file):
     return voc, rev_voc
 
 def get_data_tuple(usage, dir_data, pass_max_len, ques_max_length):
-    #TODO: shuffle?
-    
+    #NOTE: DO NOT shuffle so that predictions can be compared with clean data. Data in dir_data is already shuffled
+
     passage_token_id_file = os.path.join(dir_data, usage + ".passage.token_id")
     ques_token_id_file = os.path.join(dir_data, usage + ".question.token_id")
     ans_span_file = os.path.join(dir_data, usage + ".answer_span")

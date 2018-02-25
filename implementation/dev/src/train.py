@@ -41,7 +41,7 @@ if __name__ == "__main__":
     parser.add_argument("machine")
     args = parser.parse_args()
 
-    if args.machine == "mac":
+    if args.machine == "local":
 
         dir_data = "../data/data_clean"
         dir_output = "../output"

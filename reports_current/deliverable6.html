@@ -1,0 +1,37 @@
+<h1>Question Answering System </h1>
+
+<h3><a href="files/deliverable_6_QA_System.zip">QA System - zip</a></h3>
+
+<p>This deliverable is about a Python implementation of the Question Answering (QA) system designed in CS297 deliverable 4. </p>
+
+<h2>Dependency</h2>
+<ul>
+  <li>Python2.7</li>
+  <li>tensorflow1.2</li>
+  <li>nltk</li>
+  <li>tqdm</li>
+</ul>
+
+<h2>Description</h2>
+<ul>
+  <li><code><b>preprocess.py</b></code>: Downloading raw data from the website, tokenizing raw data, making vocabulary, converting tokens to token ids, and making small size embedding matrix. </li>
+  <li><code><b>util_data.py</b></code>: Padding passage token ids, question token ids, and adjusting answer span given max_pass_length and max_question_length; preparing feed ready data for trainning.</li>
+  <li><code><b>model.py</b></code>: Building Tensorflow graph, trainning Tensorflow graph, validating Tensorflow graph and testing Tensorflow graph.</li>
+  <li><code><b>train.py</b></code>: Calling functions in <code>util_data.py</code> to prepare feed ready data, then using <code>model.py</code> to train, valid and test Tensorflow graph.</li>
+  <li><code><b>evaluate_v_1_1.py</b></code>: Provided by SQUAD official website to calculate f1 score and exact match score.</li>
+</ul>
+
+<h2>How to Run the Code</h2>
+<p>If you use a local machine, then running the code is very straightforward. Just enter the code folder, then run</p>
+<ol>
+  <li><b>python preprocess.py</b></code></li>
+  <li><b>python train.py local</b></code></li>
+</ol>
+
+
+<h2>Result</h2>
+<p>
+The result after 1 epoch looks promising. The validation f1 score is around 20%, and the validation exact match score is also around 20%.
+The validation scores still keep increasing by the end of the first epoch. This means no overfitting happens in epoch 1.
+In deliverable 2 and 3, we will do various experiments, including trainning on more epochs, to persue better results.
+</p>
