@@ -6,8 +6,8 @@ from Encoder import Encoder
 class EncoderMatch(Encoder):
     def __init__(self, attentor, attentor_mask, target, target_mask, input_size, state_size, style):
 
-        if style != "general" and style != "simplyfied" and style != "gated":
-            raise ValueError('MatchGRUCell style should be general, simplyfied or gated')
+        if style != "general" and style != "simple" and style != "gated":
+            raise ValueError('MatchGRUCell style should be general, simple or gated')
         self.attentor = attentor
         self.attentor_mask = attentor_mask
         self.target = target
@@ -17,9 +17,13 @@ class EncoderMatch(Encoder):
         self.style = style
 
     def encode(self):
+        '''
+        return
+            H_r: (batch_size, pass_max_length, 2 * state_size)
+        '''
         with tf.variable_scope("encode_match"):
-            lstm_gru_fw = MatchGRUCell(self.input_size, self.state_size, self.attentor, self.attentor_mask, self.style)
-            lstm_gru_bw = MatchGRUCell(self.input_size, self.state_size, self.attentor, self.attentor_mask. self.style)
+            lstm_gru_fw = MatchGRUCell(self.attentor, self.attentor_mask, self.input_size, self.state_size, self.style)
+            lstm_gru_bw = MatchGRUCell(self.attentor, self.attentor_mask, self.input_size, self.state_size, self.style)
 
 
             H_r_pair, _ = tf.nn.bidirectional_dynamic_rnn(lstm_gru_fw,

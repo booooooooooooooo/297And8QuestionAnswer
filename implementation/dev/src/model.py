@@ -8,13 +8,16 @@ import json
 
 from evaluate_v_1_1 import f1_score, exact_match_score
 from util_data import *
+from Encoder.EncoderPreprocess import EncoderPreprocess
+from Encoder.EncoderMatch import EncoderMatch
+from Decoder.DecoderAnsPtr import DecoderAnsPtr
 
 
 
 
 
 class Model:
-    def __init__(self, embed_matrix, pass_max_length, ques_max_length, embed_size, num_units, clip_norm, lr, n_epoch, reg_scale):
+    def __init__(self, embed_matrix, pass_max_length, ques_max_length, embed_size, num_units, clip_norm, lr, n_epoch, reg_scale, arch):
         #Train, valid and test data must be consistent on these parameters.
         self.embed_matrix = embed_matrix
         self.pass_max_length = pass_max_length
@@ -26,6 +29,7 @@ class Model:
         self.lr = lr
         self.regularizer = tf.contrib.layers.l2_regularizer(reg_scale)
         self.n_epoch = n_epoch
+        self.arch = arch
         #build the graph
         self.add_placeholder()
         self.add_predicted_dist()
@@ -46,9 +50,34 @@ class Model:
 
 
     def add_predicted_dist(self):
-        #input_size, state_size = 2 * num_units, 2 * num_units
-        H_r = self.encode(self.embed_matrix, self.passage, self.passage_mask, self.ques, self.ques_mask, self.num_units, self.regularizer)
-        self.beta_s, self.beta_e = self.decode(H_r, self.pass_max_length, self.passage_mask, self.num_units, self.regularizer)
+        if self.arch == "match_simple":
+            H_p, H_q = EncoderPreprocess(self.embed_matrix, self.passage, self.passage_mask, self.ques, self.ques_mask, self.num_units).encode()
+            H_r = EncoderMatch(H_q, self.ques_mask, H_p, self.passage_mask, 2 * self.num_units, self.num_units, "simple").encode()
+            beta_s, beta_e = DecoderAnsPtr(H_r, self.passage_mask, 2 * self.num_units).decode()
+        elif self.arch == "match":
+            H_p, H_q = EncoderPreprocess(self.embed_matrix, self.passage, self.passage_mask, self.ques, self.ques_mask, self.num_units).encode()
+            H_r = EncoderMatch(H_q, self.ques_mask, H_p, self.passage_mask, 2 * self.num_units, self.num_units, "general").encode()
+            beta_s, beta_e = DecoderAnsPtr(H_r, self.passage_mask, 2 * self.num_units).decode()
+        elif self.arch == "r_net":
+            H_p, H_q = EncoderPreprocess(self.embed_matrix, self.passage, self.passage_mask, self.ques, self.ques_mask, self.num_units).encode()
+            with tf.variable_scope("match_p_q"):
+                H_r = EncoderMatch(H_q, self.ques_mask, H_p, self.passage_mask, 2 * self.num_units, self.num_units, "gated").encode()
+            with tf.variable_scope("match_p_p"):
+                H_t = EncoderMatch(H_r, self.passage_mask, H_r, self.passage_mask, 2 * self.num_units, self.num_units, "general").encode()
+            beta_s, beta_e = DecoderAnsPtr(H_t, self.passage_mask, 2 * self.num_units).decode()
+        elif self.arch == "r_net_iter":
+            H_p, H_q = EncoderPreprocess(self.embed_matrix, self.passage, self.passage_mask, self.ques, self.ques_mask, self.num_units).encode()
+            with tf.variable_scope("match_p_q"):
+                H_r = EncoderMatch(H_q, self.ques_mask, H_p, self.passage_mask, 2 * self.num_units, self.num_units, "gated").encode()
+            with tf.variable_scope("match_p_p_0"):
+                H_t = EncoderMatch(H_r, self.passage_mask, H_r, self.passage_mask, 2 * self.num_units, self.num_units, "general").encode()
+            with tf.variable_scope("match_p_p_1"):
+                H_u = EncoderMatch(H_t, self.passage_mask, H_t, self.passage_mask, 2 * self.num_units, self.num_units, "general").encode()
+            beta_s, beta_e = DecoderAnsPtr(H_u, self.passage_mask, 2 * self.num_units).decode()
+        else:
+            raise ValueError('Architecture should be match_simple, match, r_net or r_net_iter')
+
+        self.beta_s, self.beta_e = beta_s, beta_e
 
     def add_loss_function(self):
         loss_s = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(

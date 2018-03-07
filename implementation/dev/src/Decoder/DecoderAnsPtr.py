@@ -3,27 +3,28 @@ import tensorflow as tf
 from Decoder import Decoder
 
 class DecoderAnsPtr(Decoder):
-    def __init__(self, H_r, passage_mask):
+    def __init__(self, H_r, passage_mask, input_size):
         self.H_r = H_r
         self.passage_mask = passage_mask
+        self.input_size = input_size
     def decode(self):
         '''
         paras
-            H_r:        (batch_size, pass_max_length, state_size)
+            H_r:        (batch_size, pass_max_length, input_size)
         return
 
         '''
         batch_size = tf.shape(self.H_r)[0]
         # passage_max_length = tf.shape(H_r)[1]
-        state_size = tf.shape(self.H_r)[2]
+        input_size = self.input_size
 
         init = tf.contrib.layers.xavier_initializer()
 
         with tf.variable_scope("decode_ans_ptr"):
-            V = tf.get_variable("V", shape = (state_size, state_size), dtype = tf.float32, initializer = init)
-            W_a = tf.get_variable("W_a", shape = (state_size, state_size), dtype = tf.float32, initializer = init)
-            b_a = tf.get_variable("b_a", shape = (state_size, ), dtype = tf.float32, initializer = init)
-            v = tf.get_variable("v", shape = (state_size, ), dtype = tf.float32, initializer = init)
+            V = tf.get_variable("V", shape = (input_size, input_size), dtype = tf.float32, initializer = init)
+            W_a = tf.get_variable("W_a", shape = (input_size, input_size), dtype = tf.float32, initializer = init)
+            b_a = tf.get_variable("b_a", shape = (input_size, ), dtype = tf.float32, initializer = init)
+            v = tf.get_variable("v", shape = (input_size, ), dtype = tf.float32, initializer = init)
             c = tf.get_variable("c", shape = (), dtype = tf.float32, initializer = init)
 
 

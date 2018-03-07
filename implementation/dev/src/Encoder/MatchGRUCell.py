@@ -1,17 +1,17 @@
 import tensorflow as tf
 class MatchGRUCell(tf.nn.rnn_cell.RNNCell):
-    def __init__(self, input_size, state_size, attentor, attentor_mask, style):
+    def __init__(self, attentor, attentor_mask, input_size, state_size, style):
         '''
         input_size: size of encoded passage vector
         state_size = size of this cell's hidden units
         '''
-        if style != "general" and style != "simplyfied" and style != "gated":
-            raise ValueError('MatchGRUCell style should be general, simplyfied or gated')
+        if style != "general" and style != "simple" and style != "gated":
+            raise ValueError('MatchGRUCell style should be general, simple or gated')
 
-        self._input_size = input_size
-        self._state_size = state_size
         self.attentor = attentor
         self.attentor_mask = attentor_mask
+        self.input_size = input_size
+        self._state_size = state_size
         self.style = style
 
     @property
@@ -30,7 +30,7 @@ class MatchGRUCell(tf.nn.rnn_cell.RNNCell):
         '''
         scope = scope or type(self).__name__
         with tf.variable_scope(scope):
-            _input_size = self._input_size
+            _input_size = self.input_size#assume attentor and inputs has save vector length
             _state_size = self._state_size
             attentor = self.attentor
             attentor_mask = self.attentor_mask
@@ -46,7 +46,7 @@ class MatchGRUCell(tf.nn.rnn_cell.RNNCell):
             w = tf.get_variable("w", initializer = init, shape = (_input_size, ), dtype = tf.float32)
             b = tf.get_variable("b", initializer = init, shape = (), dtype = tf.float32)
 
-            if self.style == "simplyfied":
+            if self.style == "simple":
                 G = tf.tanh(tf.matmul(attentor, tf.tile(tf.expand_dims(W_q, axis = [0]), [batch_size, 1, 1]))
                     + tf.expand_dims(tf.matmul(inputs, W_p) + tf.matmul(state, W_r_0) + b_p, [1]))#(batch_size, ques_max_length, _input_size)
             else:
