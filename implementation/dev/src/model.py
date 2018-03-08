@@ -79,8 +79,9 @@ class Model:
         else:
             raise ValueError('Architecture should be match_simple, match, r_net or r_net_iter')
 
-        self.beta_s, self.beta_e = tf.identity(beta_s, name="beta_s"), tf.identity(beta_e, name="beta_e")
 
+        self.beta_s, self.beta_e = tf.identity(beta_s, name="beta_s"), tf.identity(beta_e, name="beta_e")
+        # print self.beta_s
     def add_loss_function(self):
         loss_s = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
                                     logits=self.beta_s, labels=self.answer_s))
@@ -109,6 +110,7 @@ class Model:
                                                                self.passage_mask: passage_mask,
                                                                self.ques: ques,
                                                                self.ques_mask: ques_mask})
+        # print dist_s.shape
         idx_s = np.argmax(dist_s, axis=1)
         idx_e = np.argmax(dist_e, axis=1)
 

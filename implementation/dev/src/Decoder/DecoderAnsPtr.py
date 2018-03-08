@@ -30,19 +30,19 @@ class DecoderAnsPtr(Decoder):
 
             F_s = tf.tanh( tf.matmul(self.H_r, tf.tile(tf.expand_dims(V, [0]), [batch_size, 1, 1]))
                            + b_a)#(batch_size, pass_max_length, num_units)
-            beta_s = tf.squeeze(tf.matmul(F_s,
+            beta_s = tf.reshape(tf.matmul(F_s,
                                           tf.tile(tf.reshape(v, [1, -1, 1]),
-                                                  [batch_size, 1, 1])))#(batch_size, pass_max_length)
+                                                  [batch_size, 1, 1])), (batch_size, -1))#(batch_size, pass_max_length)
 
 
 
 
 
             prob_s = tf.nn.softmax(beta_s) * self.passage_mask#(batch_size, pass_max_length)
-            h_a = tf.squeeze(tf.matmul(tf.expand_dims(prob_s, [1]), self.H_r))#(batch_size, 2 * num_units)
+            h_a = tf.reshape(tf.matmul(tf.expand_dims(prob_s, [1]), self.H_r), (batch_size, -1))#(batch_size, 2 * num_units)
             F_e = tf.tanh( tf.matmul(self.H_r, tf.tile(tf.expand_dims(V, [0]), [batch_size, 1, 1]))
                         +  tf.expand_dims(tf.matmul(h_a, W_a) + b_a , [1]))#(batch_size, pass_max_length, num_units)
-            beta_e = tf.squeeze(tf.matmul(F_e, tf.tile(tf.reshape(v, [1, -1, 1]), [batch_size, 1, 1])))#(batch_size, pass_max_length)
+            beta_e = tf.reshape(tf.matmul(F_e, tf.tile(tf.reshape(v, [1, -1, 1]), [batch_size, 1, 1])), [batch_size, -1])#(batch_size, pass_max_length)
 
 
 
