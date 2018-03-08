@@ -11,7 +11,7 @@ from model import Model
 from util_data import *
 
 
-def train(dir_data, dir_output, arch, config):
+def train(dir_data, dir_output, config):
     #read embed_matrix
     embed_matrix_file = "word.vector.{}.npy".format(config["embed_size"])
     print "Start reading embed_matrix from {}".format(embed_matrix_file)
@@ -21,9 +21,7 @@ def train(dir_data, dir_output, arch, config):
     print "Finish reading embed_matrix"
 
     #create graph
-    my_model = Model(embed_matrix, config["pass_max_length"], config["ques_max_length"], \
-                     config["embed_size"], config["num_units"], config["clip_norm"], \
-                     config["lr"], config["n_epoch"], config["reg_scale"], arch)
+    my_model = Model(embed_matrix, config)
 
     #read data
     train_data = get_data_tuple("train", dir_data, config["pass_max_length"], config["ques_max_length"])
@@ -41,18 +39,18 @@ def train(dir_data, dir_output, arch, config):
 
 if __name__ == "__main__":
 
-    config_match_simple =     {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
-                        "num_units": 64, "clip_norm": 10, "lr": 2e-3, "n_epoch": 1,
-                        "reg_scale": 0.001, "batch_size": 32, "sample_size": 200}
-    config_match =      {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
-                        "num_units": 64, "clip_norm": 10, "lr": 2e-3, "n_epoch": 1,
-                        "reg_scale": 0.001, "batch_size": 32, "sample_size": 200}
-    config_r_net =      {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
-                        "num_units": 64, "clip_norm": 10, "lr": 2e-3, "n_epoch": 1,
-                        "reg_scale": 0.001, "batch_size": 32, "sample_size": 200}
+    config_match_simple = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
+                           "num_units": 64, "clip_norm": 10, "lr": 2e-3, "n_epoch": 1,
+                           "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "match_simple"}
+    config_match = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
+                    "num_units": 64, "clip_norm": 10, "lr": 2e-3, "n_epoch": 1,
+                    "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "match"}
+    config_r_net = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
+                    "num_units": 64, "clip_norm": 10, "lr": 2e-3, "n_epoch": 1,
+                    "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "r_net"}
     config_r_net_iter = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
                          "num_units": 64, "clip_norm": 10, "lr": 2e-3, "n_epoch": 1,
-                         "reg_scale": 0.001, "batch_size": 32, "sample_size": 200}
+                         "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "r_net_iter"}
 
     config = {"match_simple" : config_match_simple, "match": config_match,
               "r_net": config_r_net, "r_net_iter" : config_r_net_iter}
@@ -87,8 +85,9 @@ if __name__ == "__main__":
             config_sanity = {"embed_size": 100, "pass_max_length": 9,"ques_max_length": 5,
                              "num_units": 7, "clip_norm": 10, "lr": 2e-3, "n_epoch": 1,
                              "reg_scale": 0.001, "batch_size": 32, "sample_size": 200}
-            train(dir_data, dir_output, args.arch, config_sanity)
+            config_sanity["arch"] = args.arch
+            train(dir_data, dir_output, config_sanity)
         else:
-            train(dir_data, dir_output, args.arch, config[args.arch])
+            train(dir_data, dir_output, config[args.arch])
     else:
         raise ValueError('Architecture should be match_simple, match, r_net or r_net_iter')

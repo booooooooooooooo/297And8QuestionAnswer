@@ -17,19 +17,20 @@ from Decoder.DecoderAnsPtr import DecoderAnsPtr
 
 
 class Model:
-    def __init__(self, embed_matrix, pass_max_length, ques_max_length, embed_size, num_units, clip_norm, lr, n_epoch, reg_scale, arch):
-        #Train, valid and test data must be consistent on these parameters.
+    def __init__(self, embed_matrix, config):
         self.embed_matrix = embed_matrix
-        self.pass_max_length = pass_max_length
-        self.ques_max_length = ques_max_length
-        self.embed_size = embed_size
+        self.config = config
+        #Train, valid and test data must be consistent on these parameters.
+        self.pass_max_length = config["pass_max_length"]
+        self.ques_max_length = config["ques_max_length"]
+        self.embed_size = config["embed_size"]
         #not related to data.
-        self.num_units = num_units
-        self.clip_norm = clip_norm
-        self.lr = lr
-        self.regularizer = tf.contrib.layers.l2_regularizer(reg_scale)
-        self.n_epoch = n_epoch
-        self.arch = arch
+        self.num_units = config["num_units"]
+        self.clip_norm = config["clip_norm"]
+        self.lr = config["lr"]
+        self.regularizer = tf.contrib.layers.l2_regularizer(config["reg_scale"])
+        self.n_epoch = config["n_epoch"]
+        self.arch = config["arch"]
         #build the graph
         self.add_placeholder()
         self.add_predicted_dist()
@@ -42,14 +43,15 @@ class Model:
         embed_size = self.embed_size
 
         self.passage = tf.placeholder(tf.int32, shape = (None, pass_max_length), name = "passage_placeholder")
-        self.passage_mask = tf.placeholder(tf.float32, shape = (None, pass_max_length), name = "passage_sequence_length_placeholder")
+        self.passage_mask = tf.placeholder(tf.float32, shape = (None, pass_max_length), name = "passage_mask_placeholder")
         self.ques = tf.placeholder(tf.int32, shape = (None, ques_max_length), name = "question_placeholder")
-        self.ques_mask = tf.placeholder(tf.float32, shape = (None, ques_max_length), name = "question_sequence_length_placeholder")
+        self.ques_mask = tf.placeholder(tf.float32, shape = (None, ques_max_length), name = "question_mask_placeholder")
         self.answer_s = tf.placeholder(tf.int32, (None,), name = "answer_start")
         self.answer_e = tf.placeholder(tf.int32, (None,), name = "answer_end")
 
 
     def add_predicted_dist(self):
+        # print self.arch
         if self.arch == "match_simple":
             H_p, H_q = EncoderPreprocess(self.embed_matrix, self.passage, self.passage_mask, self.ques, self.ques_mask, self.num_units).encode()
             H_r = EncoderMatch(H_q, self.ques_mask, H_p, self.passage_mask, 2 * self.num_units, self.num_units, "simple").encode()
@@ -77,7 +79,7 @@ class Model:
         else:
             raise ValueError('Architecture should be match_simple, match, r_net or r_net_iter')
 
-        self.beta_s, self.beta_e = beta_s, beta_e
+        self.beta_s, self.beta_e = tf.identity(beta_s, name="beta_s"), tf.identity(beta_e, name="beta_e")
 
     def add_loss_function(self):
         loss_s = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
@@ -95,10 +97,11 @@ class Model:
         optimizer_func = tf.train.AdamOptimizer(self.lr)
 
         gradients, variables = zip(*optimizer_func.compute_gradients(self.loss))
-        gradients, _ = tf.clip_by_global_norm(gradients, self.clip_norm)
+        gradients, grad_norm  = tf.clip_by_global_norm(gradients, self.clip_norm)
         train_op = optimizer_func.apply_gradients(zip(gradients, variables))#second part of minimize()
 
         self.train_op = train_op
+        self.grad_norm = grad_norm
 
     '''Functions below are used for train and validation'''
     def predict(self, sess, passage, passage_mask, ques ,ques_mask):
@@ -162,13 +165,16 @@ class Model:
         sess.run(tf.global_variables_initializer())#Initilizing after making train_op
         print "Finish intializing graph"
 
+        stat = {}
+        stat["config"] = self.config
+        stat["train_stat"] = []
         for epoch in xrange(self.n_epoch):
             train_stat = []
             passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text, voc = train_data
             batches = get_batches(passage, passage_mask, ques, ques_mask, answer_s, answer_e, batch_size)
             for num in xrange(len(batches)):
                 b_passage, b_passage_mask, b_ques, b_ques_mask, b_answer_s, b_answer_e = batches[num]
-                _ , batch_loss = sess.run([self.train_op, self.loss], {self.passage: b_passage,
+                _ , batch_loss, batch_grad_norm = sess.run([self.train_op, self.loss, self.grad_norm], {self.passage: b_passage,
                                                                        self.passage_mask: b_passage_mask,
                                                                        self.ques: b_ques,
                                                                        self.ques_mask: b_ques_mask,
@@ -176,13 +182,14 @@ class Model:
                                                                        self.answer_e: b_answer_e})
 
 
-                print "epoch: {}, batch: {} / {}, batch_loss: {}".format(epoch, num, len(batches), batch_loss)
+                print "epoch: {}, batch: {} / {}, batch_loss: {}, batch_grad_norm: {}".format(epoch, num, len(batches), batch_loss, batch_grad_norm)
                 if num % 100 == 0:
                     graph_file = os.path.join(dir_output, "graphes/", datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S"))
                     tf.train.Saver().save(sess, graph_file)
                     train_loss, train_f1, train_em, _ = self.evaluate(sess, train_data, batch_size, sample_size)
                     valid_loss, valid_f1, valid_em, _ = self.evaluate(sess, valid_data, batch_size, sample_size)
                     batch_stat = {"epoch": str(epoch), "batch": str(num), "batch_loss" : str(batch_loss), \
+                                  "batch_grad_norm": str(batch_grad_norm),\
                                   "sample_size": str(sample_size), "train_loss": str(train_loss),\
                                   "train_f1" : str(train_f1), "train_em": str(train_em), \
                                   "valid_loss": str(valid_loss), "valid_f1": str(valid_f1), \
@@ -195,23 +202,26 @@ class Model:
                     print "================"
                     break
 
+            stat["train_stat"] += train_stat
 
-            with open(os.path.join(dir_output, "epoch-{}-train-stat-{}".format(epoch, datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S"))), 'w') as f:
-                f.write(json.dumps(train_stat))
         print "Finish trainning! Congs!"
 
         print "=================="
-        print "Start testing!"
         #find best graph
         print "Searching for best graph"
         best_graph = ""
         best_score = -1.0
-        for batch_stat in train_stat:
+        for batch_stat in stat["train_stat"]:
             cur_score = (float(batch_stat["valid_f1"]) + float(batch_stat["valid_em"]) )/ 2.0
             if cur_score >= best_score:
                 best_graph = batch_stat["graph_file"]
                 best_score = cur_score
-        print "Have found best graph"
+        print "Have found best graph {}".format(best_graph)
+        stat["best_graph"] = {"graph": best_graph, "score": str(best_score)}
+
+        print "=================="
+        print "Start testing!"
+
         #recover best graph
         print "Recovering best graph"
         saver = tf.train.import_meta_graph(best_graph + '.meta')
@@ -233,5 +243,10 @@ class Model:
         print "Test f1: {}".format(f1)
         print "Test em: {}".format(em)
         print "Test predicted answer saved at {}".format(predict_test_answers_file)
+        stat["test_stat"] = {"loss": str(loss), "f1": str(f1), "em": str(em), "predicted_ans_file": predict_test_answers_file}
         print "Finish tesing! Congs!"
         print "=================="
+
+
+        with open(os.path.join(dir_output, "Stat-{}".format(datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S"))), 'w') as f:
+            f.write(json.dumps(stat))
