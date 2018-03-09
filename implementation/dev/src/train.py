@@ -71,8 +71,8 @@ if __name__ == "__main__":
     elif args.machine == "floyd":
         '''
         data_mount="bo.nov29/datasets/squad/5"
-        floyd run --gpu --env tensorflow-1.4:py2 --data $data_mount:/data "python train.py floyd"
-        floyd run --env tensorflow-1.4:py2 --data $data_mount:/data "python train.py floyd"
+        floyd run --gpu --env tensorflow-1.4:py2 --data $data_mount:/data "python train.py floyd arch"
+        floyd run --env tensorflow-1.4:py2 --data $data_mount:/data "python train.py floyd arch"
         '''
         dir_data="/data"
         dir_output="/output"

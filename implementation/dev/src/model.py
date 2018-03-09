@@ -186,8 +186,8 @@ class Model:
 
                 print "epoch: {}, batch: {} / {}, batch_loss: {}, batch_grad_norm: {}".format(epoch, num, len(batches), batch_loss, batch_grad_norm)
                 if num % 100 == 0:
-                    graph_file = os.path.join(dir_output, "graphes/", datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S"))
-                    tf.train.Saver().save(sess, graph_file)
+                    graph_file = os.path.join("graphes/", datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S"))
+                    tf.train.Saver().save(sess, os.path.join("/output/", graph_file))
                     train_loss, train_f1, train_em, _ = self.evaluate(sess, train_data, batch_size, sample_size)
                     valid_loss, valid_f1, valid_em, _ = self.evaluate(sess, valid_data, batch_size, sample_size)
                     batch_stat = {"epoch": str(epoch), "batch": str(num), "batch_loss" : str(batch_loss), \

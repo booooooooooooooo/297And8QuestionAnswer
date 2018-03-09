@@ -1,6 +1,8 @@
 import os
+import glob
 import tensorflow as tf
 import numpy as np
+import json
 
 from preprocess import Preprocessor
 from util_data import pad_token_ids, predict_ans_text
@@ -8,6 +10,9 @@ from util_data import pad_token_ids, predict_ans_text
 def answer(dir_for_ans, pass_strs, ques_strs, pass_max_length, ques_max_length, best_graph_file, voc_file):
     if not os.path.exists(dir_for_ans):
         os.makedirs(dir_for_ans)
+    files = glob.glob(dir_for_ans)
+    for f in files:
+        os.remove(f)
 
     prep = Preprocessor()
     #load voc and rev_voc
@@ -38,16 +43,16 @@ def answer(dir_for_ans, pass_strs, ques_strs, pass_max_length, ques_max_length, 
         ques_mask_ph = tf.get_default_graph().get_tensor_by_name("question_mask_placeholder:0")
         beta_s_tensor = tf.get_default_graph().get_tensor_by_name("beta_s:0")
         beta_e_tensor = tf.get_default_graph().get_tensor_by_name("beta_e:0")
-        print passage_ph
-        print passage_mask_ph
-        print ques_ph
-        print ques_mask_ph
-        print beta_s_tensor.shape
-        print beta_e_tensor
-        print passage
-        print passage_mask
-        print ques
-        print ques_mask
+        # print passage_ph
+        # print passage_mask_ph
+        # print ques_ph
+        # print ques_mask_ph
+        # print beta_s_tensor.shape
+        # print beta_e_tensor
+        # print passage
+        # print passage_mask
+        # print ques
+        # print ques_mask
         #get beta_s and beta_e
         #TODO: batching feed
         beta_s, beta_e = sess.run([beta_s_tensor, beta_e_tensor], {passage_ph : passage,
@@ -59,15 +64,26 @@ def answer(dir_for_ans, pass_strs, ques_strs, pass_max_length, ques_max_length, 
         idx_e = np.argmax(beta_e, axis=1)
         predict_text = predict_ans_text(idx_s, idx_e, passage, voc)
     return predict_text
-
+def answer_static_floyd():
+    #TODO
+    return
+def answer_interactive_local(dir_for_ans, stat_file, voc_file):
+    with open(stat_file) as f:
+        stat = json.load(f)
+    pass_max_length = stat["config"]["pass_max_length"]
+    ques_max_length = stat["config"]["ques_max_length"]
+    best_graph_file = os.path.join(os.path.dirname(stat_file), stat["best_graph"]["graph"] )
+    # print os.path.dirname(stat_file)
+    # print stat["best_graph"]["graph"]
+    # print best_graph_file
+    while True:
+        passage = raw_input("Enter passage: ")
+        ques = raw_input("Enter question: ")
+        pass_strs = [passage]
+        ques_strs = [ques]
+        print answer(dir_for_ans, pass_strs, ques_strs, pass_max_length, ques_max_length, best_graph_file, voc_file)
 if __name__ == "__main__":
     dir_for_ans = "../data/data_ans"
-    pass_strs = ["Hunan cuisine, also known as Xiang cuisine, consists of the cuisines of the Xiang River region, Dongting Lake and western Hunan Province in China. It is one of the Eight Great Traditions of Chinese cuisine and is well known for its hot and spicy flavours,[1] fresh aroma and deep colours. Common cooking techniques include stewing, frying, pot-roasting, braising and smoking. Due to the high agricultural output of the region, ingredients for Hunan dishes are many and varied.",\
-                "Hunan cuisine, also known as Xiang cuisine, consists of the cuisines of the Xiang River region, Dongting Lake and western Hunan Province in China. It is one of the Eight Great Traditions of Chinese cuisine and is well known for its hot and spicy flavours,[1] fresh aroma and deep colours. Common cooking techniques include stewing, frying, pot-roasting, braising and smoking. Due to the high agricultural output of the region, ingredients for Hunan dishes are many and varied."]
-    ques_strs = ["Where does Hunan cuisine come from?", "Where does Hunan cuisine come from?"]
-    pass_max_length = 9
-    ques_max_length = 5
-    best_graph_file = "../output/graphes/March-08-2018-08-32-05"
+    stat_file = "../output/cWxPUnSpPLS2EmjkvdQHib/Stat-March-09-2018-01-21-20"
     voc_file = "../data/data_clean/vocabulary"
-
-    print answer(dir_for_ans, pass_strs, ques_strs, pass_max_length, ques_max_length, best_graph_file, voc_file)
+    answer_interactive_local(dir_for_ans, stat_file, voc_file)
