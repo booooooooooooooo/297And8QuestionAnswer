@@ -1,5 +1,4 @@
 import os
-import glob
 import tensorflow as tf
 import numpy as np
 import json
@@ -8,12 +7,18 @@ from preprocess import Preprocessor
 from util_data import pad_token_ids, predict_ans_text
 
 def answer(dir_for_ans, pass_strs, ques_strs, pass_max_length, ques_max_length, best_graph_file, voc_file):
+    #make dir dir_for_ans if it does not exist
     if not os.path.exists(dir_for_ans):
         os.makedirs(dir_for_ans)
-    files = glob.glob(dir_for_ans)
-    for f in files:
-        os.remove(f)
-
+    #delete all files in dir_for_ans
+    for the_file in os.listdir(dir_for_ans):
+        file_path = os.path.join(dir_for_ans, the_file)
+        try:
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+        except Exception as e:
+            print(e)
+    #get prep
     prep = Preprocessor()
     #load voc and rev_voc
     voc, rev_voc = prep.load_vocabulary(voc_file)
@@ -64,9 +69,7 @@ def answer(dir_for_ans, pass_strs, ques_strs, pass_max_length, ques_max_length, 
         idx_e = np.argmax(beta_e, axis=1)
         predict_text = predict_ans_text(idx_s, idx_e, passage, voc)
     return predict_text
-def answer_static_floyd():
-    #TODO
-    return
+
 def answer_interactive_local(dir_for_ans, stat_file, voc_file):
     with open(stat_file) as f:
         stat = json.load(f)
