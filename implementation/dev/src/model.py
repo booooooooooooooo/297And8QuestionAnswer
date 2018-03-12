@@ -67,15 +67,15 @@ class Model:
             with tf.variable_scope("match_p_p"):
                 H_t = EncoderMatch(H_r, self.passage_mask, H_r, self.passage_mask, 2 * self.num_units, self.num_units, "general").encode()
             beta_s, beta_e = DecoderAnsPtr(H_t, self.passage_mask, 2 * self.num_units).decode()
-        elif self.arch == "r_net_iter":
-            H_p, H_q = EncoderPreprocess(self.embed_matrix, self.passage, self.passage_mask, self.ques, self.ques_mask, self.num_units).encode()
-            with tf.variable_scope("match_p_q"):
-                H_r = EncoderMatch(H_q, self.ques_mask, H_p, self.passage_mask, 2 * self.num_units, self.num_units, "gated").encode()
-            with tf.variable_scope("match_p_p_0"):
-                H_t = EncoderMatch(H_r, self.passage_mask, H_r, self.passage_mask, 2 * self.num_units, self.num_units, "general").encode()
-            with tf.variable_scope("match_p_p_1"):
-                H_u = EncoderMatch(H_t, self.passage_mask, H_t, self.passage_mask, 2 * self.num_units, self.num_units, "general").encode()
-            beta_s, beta_e = DecoderAnsPtr(H_u, self.passage_mask, 2 * self.num_units).decode()
+        # elif self.arch == "r_net_iter":
+        #     H_p, H_q = EncoderPreprocess(self.embed_matrix, self.passage, self.passage_mask, self.ques, self.ques_mask, self.num_units).encode()
+        #     with tf.variable_scope("match_p_q"):
+        #         H_r = EncoderMatch(H_q, self.ques_mask, H_p, self.passage_mask, 2 * self.num_units, self.num_units, "gated").encode()
+        #     with tf.variable_scope("match_p_p_0"):
+        #         H_t = EncoderMatch(H_r, self.passage_mask, H_r, self.passage_mask, 2 * self.num_units, self.num_units, "general").encode()
+        #     with tf.variable_scope("match_p_p_1"):
+        #         H_u = EncoderMatch(H_t, self.passage_mask, H_t, self.passage_mask, 2 * self.num_units, self.num_units, "general").encode()
+        #     beta_s, beta_e = DecoderAnsPtr(H_u, self.passage_mask, 2 * self.num_units).decode()
         else:
             raise ValueError('Architecture should be match_simple, match, r_net or r_net_iter')
 
@@ -156,7 +156,7 @@ class Model:
 
         return loss, f1, em, predict_text
 
-    def fit(self, sess, train_data, valid_data, test_data, batch_size, sample_size, dir_output):
+    def fit(self, sess, train_data, valid_data, batch_size, sample_size, dir_output):
         if not os.path.isdir(dir_output):
             os.makedirs(dir_output)
         if not os.path.isdir(os.path.join(dir_output, "graphes/")):
@@ -167,6 +167,7 @@ class Model:
         sess.run(tf.global_variables_initializer())#Initilizing after making train_op
         print "Finish intializing graph"
 
+        print "Start trainning"
         stat = {}
         stat["config"] = self.config
         stat["train_stat"] = []
@@ -187,7 +188,7 @@ class Model:
                 print "epoch: {}, batch: {} / {}, batch_loss: {}, batch_grad_norm: {}".format(epoch, num, len(batches), batch_loss, batch_grad_norm)
                 if num % 100 == 0:
                     graph_file = os.path.join("graphes/", datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S"))
-                    tf.train.Saver().save(sess, os.path.join("/output/", graph_file))
+                    tf.train.Saver().save(sess, os.path.join(dir_output, graph_file))
                     train_loss, train_f1, train_em, _ = self.evaluate(sess, train_data, batch_size, sample_size)
                     valid_loss, valid_f1, valid_em, _ = self.evaluate(sess, valid_data, batch_size, sample_size)
                     batch_stat = {"epoch": str(epoch), "batch": str(num), "batch_loss" : str(batch_loss), \
@@ -202,53 +203,13 @@ class Model:
                     print "Sample train_loss: {}, train_f1 : {}, train_em : {}".format( train_loss, train_f1, train_em)
                     print "Sample valid_loss: {}, valid_f1: {}, valid_em: {}".format(valid_loss, valid_f1, valid_em)
                     print "================"
-                    break
+                    # break
 
             stat["train_stat"] += train_stat
 
         print "Finish trainning! Congs!"
 
-        print "=================="
-        #find best graph
-        print "Searching for best graph"
-        best_graph = ""
-        best_score = -1.0
-        for batch_stat in stat["train_stat"]:
-            cur_score = (float(batch_stat["valid_f1"]) + float(batch_stat["valid_em"]) )/ 2.0
-            if cur_score >= best_score:
-                best_graph = batch_stat["graph_file"]
-                best_score = cur_score
-        print "Have found best graph {}".format(best_graph)
-        stat["best_graph"] = {"graph": best_graph, "score": str(best_score)}
-
-        print "=================="
-        print "Start testing!"
-
-        #recover best graph
-        print "Recovering best graph"
-        saver = tf.train.import_meta_graph(best_graph + '.meta')
-        saver.restore(sess, best_graph)
-        print "Have Recovered best graph"
-        #get predictions and scores
-        print "Start evaluating!"
-        loss, f1, em, predict_test_answers = self.evaluate(sess, test_data, batch_size, len(test_data[0]))
-
-        predict_test_answers_file = os.path.join(dir_output, "predict_test_answers-{}".format(datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S")))
-        print "Finish evaluating!"
-        #write to disk and IO
-        print "Writing predict test answers to disk"
-        with open(predict_test_answers_file, 'w') as f:
-            for ans in predict_test_answers:
-                f.write(ans + "\n")
-        print "Finish writing!"
-        print "Test loss : {}".format(loss)
-        print "Test f1: {}".format(f1)
-        print "Test em: {}".format(em)
-        print "Test predicted answer saved at {}".format(predict_test_answers_file)
-        stat["test_stat"] = {"loss": str(loss), "f1": str(f1), "em": str(em), "predicted_ans_file": predict_test_answers_file}
-        print "Finish tesing! Congs!"
-        print "=================="
-
-
+        print "Saving train statistics!"
         with open(os.path.join(dir_output, "Stat-{}".format(datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S"))), 'w') as f:
             f.write(json.dumps(stat))
+        print "Saved!"

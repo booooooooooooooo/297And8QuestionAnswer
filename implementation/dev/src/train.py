@@ -26,14 +26,14 @@ def train(dir_data, dir_output, config):
     #read data
     train_data = get_data_tuple("train", dir_data, config["pass_max_length"], config["ques_max_length"])
     valid_data = get_data_tuple("valid", dir_data, config["pass_max_length"], config["ques_max_length"])
-    test_data = get_data_tuple("test", dir_data, config["pass_max_length"], config["ques_max_length"])
+
 
     #train, valid and test graph
     with tf.Session() as sess:
         print "Start intializing graph"
         sess.run(tf.global_variables_initializer())#Initilizing after making train_op
         print "Finish intializing graph"
-        my_model.fit(sess, train_data, valid_data, test_data, config["batch_size"],
+        my_model.fit(sess, train_data, valid_data, config["batch_size"],
                      config["sample_size"], dir_output)
 
 
@@ -43,17 +43,19 @@ if __name__ == "__main__":
                            "num_units": 64, "clip_norm": 10, "lr": 2e-3, "n_epoch": 1,
                            "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "match_simple"}
     config_match = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
-                    "num_units": 64, "clip_norm": 10, "lr": 2e-3, "n_epoch": 1,
+                    "num_units": 64, "clip_norm": 5, "lr": 2e-2, "n_epoch": 1,
                     "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "match"}
     config_r_net = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
                     "num_units": 64, "clip_norm": 10, "lr": 2e-3, "n_epoch": 1,
                     "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "r_net"}
-    config_r_net_iter = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
-                         "num_units": 64, "clip_norm": 10, "lr": 2e-3, "n_epoch": 1,
-                         "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "r_net_iter"}
+    # config_r_net_iter = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
+    #                      "num_units": 64, "clip_norm": 10, "lr": 2e-2, "n_epoch": 1,
+    #                      "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "r_net_iter"}
 
     config = {"match_simple" : config_match_simple, "match": config_match,
-              "r_net": config_r_net, "r_net_iter" : config_r_net_iter}
+              "r_net": config_r_net
+              #, "r_net_iter" : config_r_net_iter
+              }
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--sanity', dest='mode', action='store_const',
@@ -67,7 +69,7 @@ if __name__ == "__main__":
     #choose machine
     if args.machine == "local":
         dir_data = "../data/data_clean"
-        dir_output = "../output"
+        dir_output = "../output/local"
     elif args.machine == "floyd":
         '''
         data_mount="bo.nov29/datasets/squad/5"
