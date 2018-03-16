@@ -37,6 +37,8 @@ class Model:
         self.add_loss_function()
         self.add_train_op()
 
+        self.saver = tf.train.Saver()
+
     def add_placeholder(self):
         pass_max_length = self.pass_max_length
         ques_max_length = self.ques_max_length
@@ -162,10 +164,6 @@ class Model:
         if not os.path.isdir(os.path.join(dir_output, "graphes/")):
             os.makedirs(os.path.join(dir_output, "graphes/"))
 
-        #Just in case. sess para should be already initialized
-        print "Start intializing graph"
-        sess.run(tf.global_variables_initializer())#Initilizing after making train_op
-        print "Finish intializing graph"
 
         print "Start trainning"
         stat = {}
@@ -199,9 +197,10 @@ class Model:
                                   "valid_em": str(valid_em) , "graph_file" : graph_file}
                     train_stat.append(batch_stat)
                     print "================"
-                    print "validation_sample_size: {}".format(sample_size)
-                    print "Sample train_loss: {}, train_f1 : {}, train_em : {}".format( train_loss, train_f1, train_em)
-                    print "Sample valid_loss: {}, valid_f1: {}, valid_em: {}".format(valid_loss, valid_f1, valid_em)
+                    print batch_stat
+                    # print "validation_sample_size: {}".format(sample_size)
+                    # print "Sample train_loss: {}, train_f1 : {}, train_em : {}".format( train_loss, train_f1, train_em)
+                    # print "Sample valid_loss: {}, valid_f1: {}, valid_em: {}".format(valid_loss, valid_f1, valid_em)
                     print "================"
                     # break
 

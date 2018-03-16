@@ -3,9 +3,11 @@ import tensorflow as tf
 import numpy as np
 import json
 import sys
+from tqdm import tqdm
 
 from preprocess import Preprocessor
 from util_data import pad_token_ids, predict_ans_text, get_data_tuple
+from evaluate_v_1_1 import f1_score, exact_match_score
 
 def answer(passage, passage_mask, ques, ques_mask, best_graph_file, voc):
 
@@ -22,7 +24,7 @@ def answer(passage, passage_mask, ques, ques_mask, best_graph_file, voc):
         beta_s_tensor = tf.get_default_graph().get_tensor_by_name("beta_s:0")
         beta_e_tensor = tf.get_default_graph().get_tensor_by_name("beta_e:0")
         #batch_size = 1 due to limited local memory
-        for i in xrange(len(passage)):
+        for i in tqdm(xrange(len(passage)), desc = "Calcualte predictions"):
             beta_s, beta_e = sess.run([beta_s_tensor, beta_e_tensor], {passage_ph : passage[i: i + 1],
                                                                        passage_mask_ph : passage_mask[i: i + 1],
                                                                        ques_ph : ques[i: i + 1],
@@ -30,8 +32,13 @@ def answer(passage, passage_mask, ques, ques_mask, best_graph_file, voc):
             #get predicted answers
             idx_s = np.argmax(beta_s, axis=1)
             idx_e = np.argmax(beta_e, axis=1)
-            predict_text = predict_ans_text(idx_s, idx_e, passage, voc)
+            predict_text = predict_ans_text(idx_s, idx_e, passage[i:i+1], voc)
             predictions += predict_text
+            # for p in passage[i:i+1]:
+            #     print [voc[token_id] for token_id in p]
+            # for p in ques[i:i+1]:
+            #     print [voc[token_id] for token_id in p]
+            # print predict_text
     return predictions
 def get_best_graph(stat_file):
     with open(stat_file) as f:
@@ -116,14 +123,24 @@ def test(dir_data, dir_output, stat_file):
     best_graph_file = os.path.join(os.path.dirname(stat_file), get_best_graph(stat_file))
 
     #prepare passage, passage_mask, ques, ques_mask
-    passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text, voc = get_data_tuple("test", dir_data,pass_max_length, ques_max_length)
+    passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text, voc = get_data_tuple("test", dir_data, pass_max_length, ques_max_length)
+    # passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text = [data[0:20] for data in (passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text)]
 
     #get and save predictions
     predictions = answer(passage, passage_mask, ques, ques_mask, best_graph_file, voc)
-
+    with open(os.path.join(dir_output, "test_predictions"), 'w') as f:
+        for pred in predictions:
+            f.write(pred + "\n")
     #calculate, print and save test score
-
-
+    f1 = 0.0
+    em = 0.0
+    for j in xrange(len(predictions)):
+        f1 += f1_score(predictions[j].decode('utf8'), answer_text[j].decode('utf8'))
+        em += exact_match_score(predictions[j].decode('utf8'), answer_text[j].decode('utf8'))
+    f1 /= len(predictions)
+    em /= len(predictions)
+    with open(os.path.join(dir_output, "test_score"), 'w') as f:
+        f.write(json.dumps({"f1": str(f1), "em": str(em)}))
 
 
 
@@ -161,10 +178,10 @@ if __name__ == "__main__":
     stat_file = "../output/job57/Stat-March-09-2018-02-06-22"
     # print get_best_graph(stat_file)
 
-    # dir_for_ans = "../data/data_ans"
-    # voc_file = "../data/data_clean/vocabulary"
-    # answer_interactive_local(dir_for_ans, stat_file, voc_file)
+    dir_for_ans = "../data/data_ans"
+    voc_file = "../data/data_clean/vocabulary"
+    answer_interactive_local(dir_for_ans, stat_file, voc_file)
 
-    dir_data = "../data/data_clean"
-    dir_output = "../output/local"
-    print test(dir_data, dir_output, stat_file)
+    # dir_data = "../data/data_clean"
+    # dir_output = "../output/local"
+    # test(dir_data, dir_output, stat_file)

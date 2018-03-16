@@ -158,8 +158,6 @@ class Preprocessor:
             return
 
         passage_list, question_list, answer_text_list, answer_span_list = self.get_tokens(json_file)
-        indices = range(len(passage_list))
-        np.random.shuffle(indices)
         train_per  = 0.9
 
 
@@ -169,7 +167,9 @@ class Preprocessor:
              open(os.path.join(dir_to_save, 'train.question'), 'w') as question_file, \
              open(os.path.join(dir_to_save, 'train.answer_text'), 'w') as ans_text_file, \
              open(os.path.join(dir_to_save, 'train.answer_span'), 'w') as ans_span_file:
-             for k in tqdm(xrange(int(len(indices) * train_per)), desc="Writing train tokens to {}".format(dir_to_save)):
+             indices = range(int(len(passage_list) * train_per) )
+             np.random.shuffle(indices)
+             for k in tqdm(xrange(int(len(passage_list) * train_per)), desc="Writing train tokens to {}".format(dir_to_save)):
                  i = indices[k]
                  passage_file.write(' '.join([token.encode('utf8') for token in passage_list[i]]) + '\n')
                  question_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
@@ -179,7 +179,9 @@ class Preprocessor:
              open(os.path.join(dir_to_save, 'valid.question'), 'w') as question_file, \
              open(os.path.join(dir_to_save, 'valid.answer_text'), 'w') as ans_text_file, \
              open(os.path.join(dir_to_save, 'valid.answer_span'), 'w') as ans_span_file:
-             for k in tqdm(range(int(len(indices) * train_per), len(indices)), desc="Writing valid tokens to {}".format(dir_to_save)):
+             indices = range( int(len(passage_list) * train_per), len(passage_list) )
+             np.random.shuffle(indices)
+             for k in tqdm(range(len(passage_list) - int(len(passage_list) * train_per)), desc="Writing valid tokens to {}".format(dir_to_save)):
                  i = indices[k]
                  passage_file.write(' '.join([token.encode('utf8') for token in passage_list[i]]) + '\n')
                  question_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
@@ -422,6 +424,7 @@ class Preprocessor:
 if __name__ == "__main__":
     my_preprocessor = Preprocessor()
 
+
     '''Download raw data'''
     my_preprocessor.download("../data/data_raw")
 
@@ -448,8 +451,3 @@ if __name__ == "__main__":
     my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/valid.question", "../data/data_clean/valid.question.token_id")
     my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/test.passage", "../data/data_clean/test.passage.token_id")
     my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/test.question", "../data/data_clean/test.question.token_id")
-
-
-    # '''Get statistics'''
-    # my_preprocessor.analyze("../data/data_raw/train-v1.1.json")
-    # my_preprocessor.analyze("../data/data_raw/dev-v1.1.json")
