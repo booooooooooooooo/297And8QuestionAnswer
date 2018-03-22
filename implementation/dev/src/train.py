@@ -66,7 +66,7 @@ if __name__ == "__main__":
                     "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 1,
                     "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "match_simple"}
     config_match = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
-                    "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 1,
+                    "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 3,
                     "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "match"}
     config_r_net = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
                     "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 1,
@@ -81,13 +81,10 @@ if __name__ == "__main__":
               }
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--sanity', dest='mode', action='store_const',
-                        const= "sanity", default="train",
-                        help='Sanity the QA system(default: Train the QA system)')
     #TODO: make machine and arch optinal
-    parser.add_argument("machine")
-    parser.add_argument("arch")
-    parser.add_argument("dir_model")
+    parser.add_argument("machine", choices=['local', 'floyd'])
+    parser.add_argument("arch", choices=['sanity', 'match_simple', 'match', 'r_net'])
+    parser.add_argument("dir_model", help="dir_to_model or NA")
     args = parser.parse_args()
 
     #choose machine
@@ -96,10 +93,10 @@ if __name__ == "__main__":
         dir_output = "../output/local"
     elif args.machine == "floyd":
         '''
-        data_mount="bo.nov29/datasets/squad/6"
-        model_mount="bo.nov29/datasets/output_job63/1"
+        data_mount="bo.nov29/datasets/squad/5"
+        model_mount="bo.nov29/datasets/output_job67/1"
         floyd run --gpu --env tensorflow-1.4:py2 --data $data_mount:/data --data $model_mount:/model "python train.py floyd arch /model"
-        floyd run --gpu --env tensorflow-1.4:py2 --data $data_mount:/data --data $model_mount:/model "python train.py floyd arch NA"
+        floyd run --gpu --env tensorflow-1.4:py2 --data $data_mount:/data "python train.py floyd arch NA"
         '''
         dir_data="/data"
         dir_output="/output"
@@ -107,14 +104,15 @@ if __name__ == "__main__":
         raise ValueError('Machine should be local or floyd')
 
     #choose arch
-    if args.arch in config:
-        if args.mode == "sanity":
-            config_sanity = {"embed_size": 100, "pass_max_length": 9,"ques_max_length": 5,
-                             "num_units": 7, "clip_norm": 10, "lr": 2e-3, "n_epoch": 1,
-                             "reg_scale": 0.001, "batch_size": 32, "sample_size": 200}
-            config_sanity["arch"] = args.arch
+
+    if args.arch == "sanity":
+        config_sanity = {"embed_size": 100, "pass_max_length": 9,"ques_max_length": 5,
+                         "num_units": 7, "clip_norm": 10, "lr": 2e-3, "n_epoch": 1,
+                         "reg_scale": 0.001, "batch_size": 32, "sample_size": 200}
+        for real_arch in config:
+            config_sanity["arch"]=real_arch
             train(dir_data, dir_output, config_sanity, args.dir_model)
-        else:
-            train(dir_data, dir_output, config[args.arch], args.dir_model)
+    elif args.arch in config:
+        train(dir_data, dir_output, config[args.arch], args.dir_model)
     else:
         raise ValueError('Architecture should be match_simple, match, r_net or r_net_iter')
