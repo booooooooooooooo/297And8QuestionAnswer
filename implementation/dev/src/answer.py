@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 from preprocess import Preprocessor
 from util_data import pad_token_ids, predict_ans_text, get_data_tuple
-from evaluate_v_1_1 import f1_score, exact_match_score
+from evaluate_v_1_1 import f1_score, exact_match_score, evaluate
 
 def answer(passage, passage_mask, ques, ques_mask, best_graph_file, voc):
 
@@ -24,7 +24,9 @@ def answer(passage, passage_mask, ques, ques_mask, best_graph_file, voc):
         beta_s_tensor = tf.get_default_graph().get_tensor_by_name("beta_s:0")
         beta_e_tensor = tf.get_default_graph().get_tensor_by_name("beta_e:0")
         #batch_size = 1 due to limited local memory
-        for i in tqdm(xrange(len(passage)), desc = "Calcualte predictions"):
+        num = min(len(passage), 10)#NOTE: for quick unit test
+        #TODO: change to xrange(len(passage))
+        for i in tqdm( xrange(num), desc = "Calcualte predictions"):
             beta_s, beta_e = sess.run([beta_s_tensor, beta_e_tensor], {passage_ph : passage[i: i + 1],
                                                                        passage_mask_ph : passage_mask[i: i + 1],
                                                                        ques_ph : ques[i: i + 1],
@@ -104,18 +106,19 @@ def answer_interactive_local(dir_for_ans, stat_file, voc_file):
     # print os.path.dirname(stat_file)
     # print stat["best_graph"]["graph"]
     # print best_graph_file
-    while True:
-        passage = raw_input("Enter passage: ")
-        ques = raw_input("Enter question: ")
-        pass_strs = [passage]
-        ques_strs = [ques]
-        passage, passage_mask, ques, ques_mask, voc = prepare_interactive_local(dir_for_ans,
-                                                 pass_strs, ques_strs, pass_max_length,
-                                                 ques_max_length, voc_file)
 
-        print answer(passage, passage_mask, ques, ques_mask, best_graph_file, voc)
+    passage = raw_input("Enter passage: ")
+    ques = raw_input("Enter question: ")
+    pass_strs = [passage]
+    ques_strs = [ques]
+    passage, passage_mask, ques, ques_mask, voc = prepare_interactive_local(dir_for_ans,
+                                             pass_strs, ques_strs, pass_max_length,
+                                             ques_max_length, voc_file)
 
-def test(dir_data, dir_output, stat_file):
+    print answer(passage, passage_mask, ques, ques_mask, best_graph_file, voc)
+
+
+def test_unique_answer(dir_test_data, voc_file, dir_output, stat_file):
     with open(stat_file) as f:
         stat = json.load(f)
     pass_max_length = stat["config"]["pass_max_length"]
@@ -123,7 +126,7 @@ def test(dir_data, dir_output, stat_file):
     best_graph_file = os.path.join(os.path.dirname(stat_file), get_best_graph(stat_file))
 
     #prepare passage, passage_mask, ques, ques_mask
-    passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text, voc = get_data_tuple("test", dir_data, pass_max_length, ques_max_length)
+    passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text, voc = get_data_tuple("test", dir_test_data, voc_file, pass_max_length, ques_max_length)
     # passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text = [data[0:20] for data in (passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text)]
 
     #get and save predictions
@@ -143,35 +146,29 @@ def test(dir_data, dir_output, stat_file):
         f.write(json.dumps({"f1": str(f1), "em": str(em)}))
 
 
+def test_multiple_answer(dir_test_data, dir_raw_data, dir_output, stat_file):
+    with open(stat_file) as f:
+        stat = json.load(f)
+    pass_max_length = stat["config"]["pass_max_length"]
+    ques_max_length = stat["config"]["ques_max_length"]
+    best_graph_file = os.path.join(os.path.dirname(stat_file), get_best_graph(stat_file))
 
-    #
-    # print "=================="
-    # print "Start testing!"
-    #
-    # #recover best graph
-    # print "Recovering best graph"
-    # saver = tf.train.import_meta_graph(os.path.join(dir_output, best_graph+ '.meta'))
-    # saver.restore(sess, os.path.join(dir_output, best_graph))
-    # print "Have Recovered best graph"
-    # #get predictions and scores
-    # print "Start evaluating!"
-    # loss, f1, em, predict_test_answers = self.evaluate(sess, test_data, batch_size, len(test_data[0]))
-    #
-    # predict_test_answers_file = os.path.join(dir_output, "predict_test_answers-{}".format(datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S")))
-    # print "Finish evaluating!"
-    # #write to disk and IO
-    # print "Writing predict test answers to disk"
-    # with open(predict_test_answers_file, 'w') as f:
-    #     for ans in predict_test_answers:
-    #         f.write(ans + "\n")
-    # print "Finish writing!"
-    # print "Test loss : {}".format(loss)
-    # print "Test f1: {}".format(f1)
-    # print "Test em: {}".format(em)
-    # print "Test predicted answer saved at {}".format(predict_test_answers_file)
-    # stat["test_stat"] = {"loss": str(loss), "f1": str(f1), "em": str(em), "predicted_ans_file": predict_test_answers_file}
-    # print "Finish tesing! Congs!"
-    # print "=================="
+    #prepare passage, passage_mask, ques, ques_mask
+    passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text, voc = get_data_tuple("test", dir_test_data, pass_max_length, ques_max_length)
+    # passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text = [data[0:20] for data in (passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text)]
+
+    #get and save predictions
+    predictions = answer(passage, passage_mask, ques, ques_mask, best_graph_file, voc)
+    with open(os.path.join(dir_output, "test_predictions"), 'w') as f:
+        for pred in predictions:
+            f.write(pred + "\n")
+
+    #calculate, print and save test score
+    #TODO: make predictions = ques_id: prediction dics
+    with open(os.path.join(dir_raw_data, "dev-v1.1.json")) as dataset_file:
+        dataset_json = json.load(dataset_file)
+        dataset = dataset_json['data']
+    print evaluate(dataset, predictions)
 
 if __name__ == "__main__":
 
@@ -180,8 +177,8 @@ if __name__ == "__main__":
 
     dir_for_ans = "../data/data_ans"
     voc_file = "../data/data_clean/vocabulary"
-    answer_interactive_local(dir_for_ans, stat_file, voc_file)
+    # answer_interactive_local(dir_for_ans, stat_file, voc_file)
 
-    # dir_data = "../data/data_clean"
-    # dir_output = "../output/local"
-    # test(dir_data, dir_output, stat_file)
+    dir_test_data = "../data/data_test"
+    dir_output = "../output/local"
+    test_unique_answer(dir_test_data, voc_file, dir_output, stat_file)

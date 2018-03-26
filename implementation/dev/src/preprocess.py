@@ -121,6 +121,7 @@ class Preprocessor:
     def get_tokens(self, json_file):
         passage_list = []
         question_list = []
+        question_id_list = []
         answer_text_list = []
         answer_span_list = []
         with open(json_file) as fh:
@@ -135,6 +136,7 @@ class Preprocessor:
                 for qas_id in range(len(qas)):
                     question = qas[qas_id]['question']
                     question_token = self.tokenize(question)
+                    question_id = qas[qas_id]["id"]
                     answers = qas[qas_id]['answers']
                     num_answer = 1#NOTE: not all answers are used
                     for answer_id in xrange(num_answer):
@@ -146,21 +148,22 @@ class Preprocessor:
 
                         passage_list.append(context_token)
                         question_list.append(question_token)
+                        question_id_list.append(question_id)
                         answer_text_list.append(text)#untokenized
                         answer_span_list.append([str(a_s), str(a_e)])
 
-        return passage_list, question_list, answer_text_list, answer_span_list
+        return passage_list, question_list, question_id_list, answer_text_list, answer_span_list
 
 
 
     def tokenize_train(self, json_file, dir_to_save):
         #TODO: split before shuffle or shuffle before split?
-        
+
         if os.path.isfile(os.path.join(dir_to_save, "train.answer_span" )):
             print "All train and valid tokens are ready!"
             return
 
-        passage_list, question_list, answer_text_list, answer_span_list = self.get_tokens(json_file)
+        passage_list, question_list, _, answer_text_list, answer_span_list = self.get_tokens(json_file)
         train_per  = 0.9
 
 
@@ -197,7 +200,7 @@ class Preprocessor:
             print "All test tokens are ready!"
             return
 
-        passage_list, question_list, answer_text_list, answer_span_list = self.get_tokens(json_file)
+        passage_list, question_list, question_id_list, answer_text_list, answer_span_list = self.get_tokens(json_file)
         indices = range(len(passage_list))
         np.random.shuffle(indices)
 
@@ -205,11 +208,13 @@ class Preprocessor:
             os.makedirs(dir_to_save)
         with open(os.path.join(dir_to_save, 'test.passage'), 'w') as passage_file, \
              open(os.path.join(dir_to_save, 'test.question'), 'w') as question_file, \
+             open(os.path.join(dir_to_save, 'test.question_id'), 'w') as question_id_file, \
              open(os.path.join(dir_to_save, 'test.answer_text'), 'w') as answer_text_file,\
              open(os.path.join(dir_to_save, 'test.answer_span'), 'w') as ans_span_file:
              for i in tqdm(indices, desc="Writing test tokens to {}".format(dir_to_save)):
                  passage_file.write(' '.join([token.encode('utf8') for token in passage_list[i]]) + '\n')
                  question_file.write(' '.join([token.encode('utf8') for token in question_list[i]]) + '\n')
+                 question_id_file.write(str(question_id_list[i]) + "\n")
                  answer_text_file.write(answer_text_list[i].encode('utf8') + '\n')
                  ans_span_file.write(' '.join(answer_span_list[i]) + '\n')
         print "Congs! All test tokens are created"
@@ -386,17 +391,15 @@ class Preprocessor:
 if __name__ == "__main__":
     my_preprocessor = Preprocessor()
 
-
-    '''Download raw data'''
+    #Download raw data
     my_preprocessor.download("../data/data_raw")
 
 
-
+    #traind data
     '''get tokens'''
     my_preprocessor.tokenize_train("../data/data_raw/train-v1.1.json" ,
                                            "../data/data_clean/")
-    my_preprocessor.tokenize_test("../data/data_raw/dev-v1.1.json" ,
-                                              "../data/data_clean/")
+
 
     '''Make voc, rev_voc using train and valid tokens  (!!DO NOT use test tokens)'''
     my_preprocessor.make_voc("../data/data_clean/vocabulary" ,
@@ -411,5 +414,10 @@ if __name__ == "__main__":
     my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/train.question", "../data/data_clean/train.question.token_id")
     my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/valid.passage", "../data/data_clean/valid.passage.token_id")
     my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/valid.question", "../data/data_clean/valid.question.token_id")
-    my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/test.passage", "../data/data_clean/test.passage.token_id")
-    my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_clean/test.question", "../data/data_clean/test.question.token_id")
+
+    #test data
+    my_preprocessor.tokenize_test("../data/data_raw/dev-v1.1.json" ,
+                                              "../data/data_test/")
+
+    my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_test/test.passage", "../data/data_test/test.passage.token_id")
+    my_preprocessor.tokens_to_token_ids("../data/data_clean/vocabulary", "../data/data_test/test.question", "../data/data_test/test.question.token_id")

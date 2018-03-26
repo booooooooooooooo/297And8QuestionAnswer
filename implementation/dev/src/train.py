@@ -44,8 +44,8 @@ def train(dir_data, dir_output, config, dir_model):
     my_model = Model(embed_matrix, config)
 
     #read data
-    train_data = get_data_tuple("train", dir_data, config["pass_max_length"], config["ques_max_length"])
-    valid_data = get_data_tuple("valid", dir_data, config["pass_max_length"], config["ques_max_length"])
+    train_data = get_data_tuple("train", dir_data, os.path.join(dir_data, "vocabulary"), config["pass_max_length"], config["ques_max_length"])
+    valid_data = get_data_tuple("valid", dir_data, os.path.join(dir_data, "vocabulary"), config["pass_max_length"], config["ques_max_length"])
 
 
     #train, valid and test graph
