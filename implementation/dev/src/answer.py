@@ -4,6 +4,7 @@ import numpy as np
 import json
 import sys
 from tqdm import tqdm
+import datetime
 
 from preprocess import Preprocessor
 from util_data import pad_token_ids, predict_ans_text, get_data_tuple
@@ -24,9 +25,10 @@ def answer(passage, passage_mask, ques, ques_mask, best_graph_file, voc):
         beta_s_tensor = tf.get_default_graph().get_tensor_by_name("beta_s:0")
         beta_e_tensor = tf.get_default_graph().get_tensor_by_name("beta_e:0")
         #batch_size = 1 due to limited local memory
-        num = min(len(passage), 10)#NOTE: for quick unit test
         #TODO: change to xrange(len(passage))
-        for i in tqdm( xrange(num), desc = "Calcualte predictions"):
+        #NOTE: for quick unit test
+        # for i in tqdm( xrange(min(len(passage), 10)), desc = "Calcualte predictions"):
+        for i in tqdm( xrange(len(passage)), desc = "Calcualte predictions"):
             beta_s, beta_e = sess.run([beta_s_tensor, beta_e_tensor], {passage_ph : passage[i: i + 1],
                                                                        passage_mask_ph : passage_mask[i: i + 1],
                                                                        ques_ph : ques[i: i + 1],
@@ -117,8 +119,7 @@ def answer_interactive_local(dir_for_ans, stat_file, voc_file):
 
     print answer(passage, passage_mask, ques, ques_mask, best_graph_file, voc)
 
-
-def test_unique_answer(dir_test_data, voc_file, dir_output, stat_file):
+def get_test_predictions(dir_test_data, voc_file, dir_output, stat_file):
     with open(stat_file) as f:
         stat = json.load(f)
     pass_max_length = stat["config"]["pass_max_length"]
@@ -131,10 +132,15 @@ def test_unique_answer(dir_test_data, voc_file, dir_output, stat_file):
 
     #get and save predictions
     predictions = answer(passage, passage_mask, ques, ques_mask, best_graph_file, voc)
-    with open(os.path.join(dir_output, "test_predictions"), 'w') as f:
+    with open(os.path.join(dir_output, "test_predictions" + datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S")), 'w') as f:
         for pred in predictions:
             f.write(pred + "\n")
-    #calculate, print and save test score
+    return answer_text, predictions
+
+def test_on_official(dir_test_data, voc_file, dir_output, stat_file):
+    answer_text, predictions = get_test_predictions(dir_test_data, voc_file, dir_output, stat_file)
+
+    #Test score on unique answer
     f1 = 0.0
     em = 0.0
     for j in xrange(len(predictions)):
@@ -142,43 +148,42 @@ def test_unique_answer(dir_test_data, voc_file, dir_output, stat_file):
         em += exact_match_score(predictions[j].decode('utf8'), answer_text[j].decode('utf8'))
     f1 /= len(predictions)
     em /= len(predictions)
-    with open(os.path.join(dir_output, "test_score"), 'w') as f:
-        f.write(json.dumps({"f1": str(f1), "em": str(em)}))
+    test_score = {"f1": str(f1), "em": str(em)}
+    print "Test score on unique answer: "
+    print test_score
 
-
-def test_multiple_answer(dir_test_data, dir_raw_data, dir_output, stat_file):
-    with open(stat_file) as f:
-        stat = json.load(f)
-    pass_max_length = stat["config"]["pass_max_length"]
-    ques_max_length = stat["config"]["ques_max_length"]
-    best_graph_file = os.path.join(os.path.dirname(stat_file), get_best_graph(stat_file))
-
-    #prepare passage, passage_mask, ques, ques_mask
-    passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text, voc = get_data_tuple("test", dir_test_data, pass_max_length, ques_max_length)
-    # passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text = [data[0:20] for data in (passage, passage_mask, ques, ques_mask, answer_s, answer_e, answer_text)]
-
-    #get and save predictions
-    predictions = answer(passage, passage_mask, ques, ques_mask, best_graph_file, voc)
-    with open(os.path.join(dir_output, "test_predictions"), 'w') as f:
-        for pred in predictions:
-            f.write(pred + "\n")
-
-    #calculate, print and save test score
-    #TODO: make predictions = ques_id: prediction dics
+    #Test score on multiple answers
+    question_id_file = os.path.join(dir_test_data, "test" + ".question_id")
+    with open(question_id_file) as f:
+        question_id_list = [line.rstrip() for line in f.readlines()]
+    predictions = dict(zip(question_id_list, predictions))
     with open(os.path.join(dir_raw_data, "dev-v1.1.json")) as dataset_file:
         dataset_json = json.load(dataset_file)
         dataset = dataset_json['data']
-    print evaluate(dataset, predictions)
+    test_score_multiple = evaluate(dataset, predictions)
+    print "Test score on multiple answers: "
+    print test_score_multiple
+
+
+    with open(os.path.join(dir_output, "test_score" + datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S")), 'w') as f:
+        f.write(json.dumps({"unique_answer": test_score, "multiple_answers": test_score_multiple }))
+
+
 
 if __name__ == "__main__":
 
-    stat_file = "../output/job57/Stat-March-09-2018-02-06-22"
+    stat_file = "../output/job71/Stat-March-22-2018-11-55-08"
+    dir_for_ans = "../data/data_ans"
+    dir_test_data = "../data/data_test"
+    dir_raw_data = "../data/data_raw"
+    voc_file = "../data/data_clean/vocabulary"
+    dir_output = "../output/local"
+
+
     # print get_best_graph(stat_file)
 
-    dir_for_ans = "../data/data_ans"
-    voc_file = "../data/data_clean/vocabulary"
+
     # answer_interactive_local(dir_for_ans, stat_file, voc_file)
 
-    dir_test_data = "../data/data_test"
-    dir_output = "../output/local"
-    test_unique_answer(dir_test_data, voc_file, dir_output, stat_file)
+
+    test_on_official(dir_test_data, voc_file, dir_output, stat_file)
