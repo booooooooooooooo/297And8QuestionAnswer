@@ -62,28 +62,32 @@ def train(dir_data, dir_output, config, dir_model):
 
 if __name__ == "__main__":
 
-    config_match_simple = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
-                    "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 1,
-                    "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "match_simple"}
+
     config_match = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
                     "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 3,
                     "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "match"}
-    config_r_net = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
+    config_match_change1 = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
                     "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 1,
-                    "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "r_net"}
+                    "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "match_change1"}
+    config_match_change2 = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
+                    "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 1,
+                    "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "match_change2"}
+    # config_r_net = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
+    #                 "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 1,
+    #                 "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "r_net"}
     # config_r_net_iter = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
     #                      "num_units": 64, "clip_norm": 10, "lr": 2e-2, "n_epoch": 1,
     #                      "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "r_net_iter"}
 
-    config = {"match_simple" : config_match_simple, "match": config_match,
-              "r_net": config_r_net
-              #, "r_net_iter" : config_r_net_iter
+    config = {
+              "match": config_match,"match_change1" : config_match_change1
+              ,
+              "match_change2": config_match_change2
               }
 
     parser = argparse.ArgumentParser()
-    #TODO: make machine and arch optinal
     parser.add_argument("machine", choices=['local', 'floyd'])
-    parser.add_argument("arch", choices=['sanity', 'match_simple', 'match', 'r_net'])
+    parser.add_argument("arch")
     parser.add_argument("dir_model", help="dir_to_model or NA")
     args = parser.parse_args()
 
@@ -101,7 +105,7 @@ if __name__ == "__main__":
         dir_data="/data"
         dir_output="/output"
     else:
-        raise ValueError('Machine should be local or floyd')
+        raise ValueError('Does not support machine:' + args.machine)
 
     #choose arch
 
@@ -115,4 +119,4 @@ if __name__ == "__main__":
     elif args.arch in config:
         train(dir_data, dir_output, config[args.arch], args.dir_model)
     else:
-        raise ValueError('Architecture should be match_simple, match, r_net or r_net_iter')
+        raise ValueError("Does not support architecture:" + args.arch)
