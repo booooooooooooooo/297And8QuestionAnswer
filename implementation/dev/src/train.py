@@ -6,6 +6,7 @@ import json
 import os
 from tqdm import tqdm
 import random
+import datetime
 
 from model import Model
 from util_data import *
@@ -64,12 +65,15 @@ if __name__ == "__main__":
 
 
     config_match = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
-                    "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 3,
+                    "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 1,
                     "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "match"}
     config_match_change1 = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
                     "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 1,
                     "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "match_change1"}
     config_match_change2 = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
+                    "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 1,
+                    "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "match_change2"}
+    config_match_change3 = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
                     "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 1,
                     "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "match_change2"}
     # config_r_net = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
@@ -80,9 +84,13 @@ if __name__ == "__main__":
     #                      "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "r_net_iter"}
 
     config = {
-              "match": config_match,"match_change1" : config_match_change1
+              "match": config_match
+              ,
+              "match_change1" : config_match_change1
               ,
               "match_change2": config_match_change2
+              ,
+              "match_change3": config_match_change3
               }
 
     parser = argparse.ArgumentParser()
@@ -94,7 +102,7 @@ if __name__ == "__main__":
     #choose machine
     if args.machine == "local":
         dir_data = "../data/data_clean"
-        dir_output = "../output/local"
+        dir_output = "../output/local/" + datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S")
     elif args.machine == "floyd":
         '''
         data_mount="bo.nov29/datasets/squad/5"

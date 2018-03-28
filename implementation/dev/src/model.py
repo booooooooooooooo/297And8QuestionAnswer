@@ -12,6 +12,9 @@ from Encoder.EncoderPreprocess import EncoderPreprocess
 from Encoder.EncoderMatch import EncoderMatch
 from Decoder.DecoderAnsPtr import DecoderAnsPtr
 
+from Encoder.EncoderAttention import EncoderAttention
+
+
 
 
 
@@ -59,7 +62,7 @@ class Model:
                 H_p, H_q = EncoderPreprocess(self.embed_matrix, self.passage, self.passage_mask, self.ques, self.ques_mask, self.num_units).encode()
                 H_r = EncoderMatch(H_q, self.ques_mask, H_p, self.passage_mask, 2 * self.num_units, self.num_units, "general").encode()
                 beta_s, beta_e = DecoderAnsPtr(H_r, self.passage_mask, 2 * self.num_units).decode()
-        elif self.arch == "match_change1":#remove h_r
+        elif self.arch == "match_change1":#remove h_r from match layer
             with tf.variable_scope("match_change1"):
                 H_p, H_q = EncoderPreprocess(self.embed_matrix, self.passage, self.passage_mask, self.ques, self.ques_mask, self.num_units).encode()
                 H_r = EncoderMatch(H_q, self.ques_mask, H_p, self.passage_mask, 2 * self.num_units, self.num_units, "simple").encode()
@@ -69,6 +72,12 @@ class Model:
                 passage_embed = tf.nn.embedding_lookup(self.embed_matrix, self.passage)
                 ques_embed = tf.nn.embedding_lookup(self.embed_matrix, self.ques)
                 H_r = EncoderMatch(ques_embed, self.ques_mask, passage_embed, self.passage_mask, self.embed_size, self.num_units, "general").encode()
+                beta_s, beta_e = DecoderAnsPtr(H_r, self.passage_mask, 2 * self.num_units).decode()
+        elif self.arch == "match_change3":#remove preprocessing layer and h_r from match layer
+            with tf.variable_scope("match_change3"):
+                passage_embed = tf.nn.embedding_lookup(self.embed_matrix, self.passage)
+                ques_embed = tf.nn.embedding_lookup(self.embed_matrix, self.ques)
+                H_r = EncoderMatch(ques_embed, self.ques_mask, passage_embed, self.passage_mask, self.embed_size, self.num_units, "simple").encode()
                 beta_s, beta_e = DecoderAnsPtr(H_r, self.passage_mask, 2 * self.num_units).decode()
         # elif self.arch == "r_net":
         #     H_p, H_q = EncoderPreprocess(self.embed_matrix, self.passage, self.passage_mask, self.ques, self.ques_mask, self.num_units).encode()

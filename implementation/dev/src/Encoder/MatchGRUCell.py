@@ -6,7 +6,7 @@ class MatchGRUCell(tf.nn.rnn_cell.RNNCell):
         state_size = size of this cell's hidden units
         '''
         if style != "general" and style != "simple" and style != "gated":
-            raise ValueError('MatchGRUCell style should be general, simple or gated')
+            raise ValueError('MatchGRUCell does not support style:' + style)
 
         self.attentor = attentor
         self.attentor_mask = attentor_mask
@@ -46,12 +46,15 @@ class MatchGRUCell(tf.nn.rnn_cell.RNNCell):
             w = tf.get_variable("w", initializer = init, shape = (_input_size, ), dtype = tf.float32)
             b = tf.get_variable("b", initializer = init, shape = (), dtype = tf.float32)
 
-            if self.style == "simple":
+            if self.style == "general" or self.style == "gated":
                 G = tf.tanh(tf.matmul(attentor, tf.tile(tf.expand_dims(W_q, axis = [0]), [batch_size, 1, 1]))
                     + tf.expand_dims(tf.matmul(inputs, W_p) + tf.matmul(state, W_r_0) + b_p, [1]))#(batch_size, ques_max_length, _input_size)
-            else:
+            elif self.style == "simple":
                 G = tf.tanh(tf.matmul(attentor, tf.tile(tf.expand_dims(W_q, axis = [0]), [batch_size, 1, 1]))
                     + tf.expand_dims(tf.matmul(inputs, W_p)  + b_p, [1]))#(batch_size, ques_max_length, _input_size)
+            else:
+                raise ValueError('MatchGRUCell does not support style:' + self.style)
+
             alpha = tf.reshape(tf.matmul(G, tf.tile(tf.reshape(w, [1, _input_size, 1]), [batch_size, 1, 1])), [batch_size, -1])#(batch_size, ques_max_length)
             #TODO:use 10e-1 to mask alpha before appling softmax ??
             alpha = tf.nn.softmax(alpha) * attentor_mask #(batch_size, ques_max_length)
@@ -62,6 +65,7 @@ class MatchGRUCell(tf.nn.rnn_cell.RNNCell):
                 W_g = tf.get_variable("W_g", initializer = init, shape = (2 * _input_size, 2 * _input_size), dtype = tf.float32)
                 g = tf.nn.sigmoid(tf.matmul(z, W_g))
                 z = g * z
+
             #gru cell
             W_z = tf.get_variable('W_z', (2 * _input_size, _state_size), tf.float32, init)
             U_z = tf.get_variable('U_z', (_state_size, _state_size), tf.float32, init)
