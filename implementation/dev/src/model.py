@@ -73,7 +73,7 @@ class Model:
                 ques_embed = tf.nn.embedding_lookup(self.embed_matrix, self.ques)
                 H_r = EncoderMatch(ques_embed, self.ques_mask, passage_embed, self.passage_mask, self.embed_size, self.num_units, "general").encode()
                 beta_s, beta_e = DecoderAnsPtr(H_r, self.passage_mask, 2 * self.num_units).decode()
-        elif self.arch == "match_change3":#remove preprocessing layer and h_r from match layer
+        elif self.arch == "match_change3":#combine change1 and change2
             with tf.variable_scope("match_change3"):
                 passage_embed = tf.nn.embedding_lookup(self.embed_matrix, self.passage)
                 ques_embed = tf.nn.embedding_lookup(self.embed_matrix, self.ques)

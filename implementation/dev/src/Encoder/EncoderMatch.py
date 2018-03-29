@@ -6,13 +6,13 @@ from Encoder import Encoder
 class EncoderMatch(Encoder):
     def __init__(self, attentor, attentor_mask, target, target_mask, input_size, state_size, style):
 
-        if style != "general" and style != "simple" and style != "gated":
-            raise ValueError('MatchGRUCell style should be general, simple or gated')
+        # if style != "general" and style != "simple" and style != "gated":
+        #     raise ValueError('EncoderMatch does not support architecture:' + self.style)
         self.attentor = attentor
         self.attentor_mask = attentor_mask
         self.target = target
         self.target_mask = target_mask
-        self.input_size = input_size
+        self.input_size = input_size# size of last dimension of attentor and target
         self.state_size = state_size
         self.style = style
 
