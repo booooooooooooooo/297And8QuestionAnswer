@@ -12,9 +12,6 @@ from Encoder.EncoderPreprocess import EncoderPreprocess
 from Encoder.EncoderMatch import EncoderMatch
 from Decoder.DecoderAnsPtr import DecoderAnsPtr
 
-from Encoder.EncoderAttention import EncoderAttention
-
-
 
 
 
@@ -220,7 +217,7 @@ class Model:
                     # print "Sample valid_loss: {}, valid_f1: {}, valid_em: {}".format(valid_loss, valid_f1, valid_em)
                     print "================"
                     #TODO: comment out break
-                    break
+                    # break
 
             stat["train_stat"] += train_stat
 

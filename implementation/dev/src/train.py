@@ -71,7 +71,7 @@ if __name__ == "__main__":
                     "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 1,
                     "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "match_change1"}
     config_match_change2 = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
-                    "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 1,
+                    "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 10,
                     "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "match_change2"}
     config_match_change3 = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
                     "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 1,
@@ -106,9 +106,11 @@ if __name__ == "__main__":
     elif args.machine == "floyd":
         '''
         data_mount="bo.nov29/datasets/squad/5"
-        model_mount="bo.nov29/datasets/output_job67/1"
-        floyd run --gpu --env tensorflow-1.4:py2 --data $data_mount:/data --data $model_mount:/model "python train.py floyd arch /model"
         floyd run --gpu --env tensorflow-1.4:py2 --data $data_mount:/data "python train.py floyd arch NA"
+
+        model_mount="bo.nov29/datasets/output_job72/1"
+        floyd run --gpu --env tensorflow-1.4:py2 --data $data_mount:/data --data $model_mount:/model "python train.py floyd arch /model"
+
         '''
         dir_data="/data"
         dir_output="/output"
