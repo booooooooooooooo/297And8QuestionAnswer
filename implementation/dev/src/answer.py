@@ -10,6 +10,7 @@ from preprocess import Preprocessor
 from util_data import pad_token_ids, predict_ans_text, get_data_tuple
 from evaluate_v_1_1 import f1_score, exact_match_score, evaluate
 
+
 def answer(passage, passage_mask, ques, ques_mask, best_graph_file, voc):
 
     predictions = []
@@ -51,6 +52,7 @@ def get_best_graph(stat_file):
     print "Searching for best graph"
     best_graph = ""
 
+    # #use score to select best graph
     # best_score = -1.0
     # for batch_stat in stat["train_stat"]:
     #     cur_score = (float(batch_stat["valid_f1"]) + float(batch_stat["valid_em"]) )/ 2.0
@@ -58,12 +60,23 @@ def get_best_graph(stat_file):
     #         best_graph = batch_stat["graph_file"]
     #         best_score = cur_score
 
-    best_valid_loss = sys.float_info.max
+    # #use valid loss to select best graph
+    # best_valid_loss = sys.float_info.max
+    # for batch_stat in stat["train_stat"]:
+    #     if float(batch_stat["valid_loss"]) <= best_valid_loss:
+    #         best_graph = batch_stat["graph_file"]
+    #         best_valid_loss = float(batch_stat["valid_loss"])
+    # print "Have found best graph {}".format(best_graph)
+
+    #use last graph as best graph
+    epoch = -1
+    batch = -1
     for batch_stat in stat["train_stat"]:
-        if float(batch_stat["valid_loss"]) <= best_valid_loss:
+        if int(batch_stat["epoch"]) > epoch or (int(batch_stat["epoch"]) >= epoch and int(batch_stat["batch"]) > batch):
             best_graph = batch_stat["graph_file"]
-            best_valid_loss = float(batch_stat["valid_loss"])
-    print "Have found best graph {}".format(best_graph)
+            epoch = int(batch_stat["epoch"])
+            batch = int(batch_stat["batch"])
+
     return best_graph
 def prepare_interactive_local(dir_for_ans, pass_strs, ques_strs, pass_max_length, ques_max_length, voc_file):
     #make dir dir_for_ans if it does not exist
@@ -171,8 +184,12 @@ def test_on_official(dir_test_data, voc_file, dir_output, stat_file):
 
 
 if __name__ == "__main__":
+    stat_file_match = "../output/job78/Stat-March-31-2018-02-16-09"
+    stat_file_match_change1 = "../output/job71/Stat-March-22-2018-11-55-08"
+    stat_file_match_change2 = "../output/job81/Stat-April-05-2018-05-02-49"
+    stat_file_match_change3 = "../output/job75/Stat-March-29-2018-01-45-17"
 
-    stat_file = "../output/job71/Stat-March-22-2018-11-55-08"
+
     dir_for_ans = "../data/data_ans"
     dir_test_data = "../data/data_test"
     dir_raw_data = "../data/data_raw"
@@ -180,10 +197,14 @@ if __name__ == "__main__":
     dir_output = "../output/local"
 
 
-    # print get_best_graph(stat_file)
+
+    # answer_interactive_local(dir_for_ans, stat_file_match, voc_file)
+    # answer_interactive_local(dir_for_ans, stat_file_match_change1, voc_file)
+    answer_interactive_local(dir_for_ans, stat_file_match_change2, voc_file)
+    # answer_interactive_local(dir_for_ans, stat_file_match_change3, voc_file)
 
 
-    # answer_interactive_local(dir_for_ans, stat_file, voc_file)
-
-
-    test_on_official(dir_test_data, voc_file, dir_output, stat_file)
+    # test_on_official(dir_test_data, voc_file, dir_output, stat_file_match)
+    # test_on_official(dir_test_data, voc_file, dir_output, stat_file_match_change1)
+    # test_on_official(dir_test_data, voc_file, dir_output, stat_file_match_change2)
+    # test_on_official(dir_test_data, voc_file, dir_output, stat_file_match_change3)

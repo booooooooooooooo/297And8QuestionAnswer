@@ -1,0 +1,754 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%  Example usage of sjsuthesis.cls %%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[modernstyle,12pt]{sjsuthesis}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%    load any packages which are needed    %%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% these are typical
+
+\usepackage{latexsym}		% to get LASY symbols
+\usepackage{epsfig}		% to insert PostScript figures
+\usepackage{graphicx}           % to insert any other kind of figure
+
+% these are for math stuff
+
+\usepackage{amsmath}	% AMS math features (e.g., eqn alignment)
+\usepackage{amssymb}	% Various weird symbols
+\usepackage{amsfonts}	% Various useful math fonts
+\usepackage{amsthm}	% Fancy theorem-type environments
+
+% Convention: everything (except pictures) is numbered inside a single
+% sequence, starting again in each section.  This makes things much
+% easier to read.
+
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{cor}[thm]{Corollary}
+\newtheorem{conj}[thm]{Conjecture}
+\newtheorem*{main}{Main Theorem}
+\theoremstyle{definition}
+\newtheorem{defn}[thm]{Definition}
+\newtheorem{rem}[thm]{Remark}
+\newtheorem{exmp}[thm]{Example}
+\newtheorem{ques}[thm]{Question}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%       all the preamble material:       %%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{A Question Answering System on SQuAD Dataset Using an End-to-end Neural Network}
+
+\author{BO}{LI}
+
+\degree{Master of Science}		%  #1 {long descr.}
+	{M.S., Computer Science}		%  #2 {short descr.}
+
+\degreemonth{May}
+\degreeyear{2018}
+
+\dept{Department of}			%  #1 {designation}
+     {Computer Science}		        %  #2 {name}
+
+\advisor{Dr.}				%  #1 {title}
+	{Chris Pollett}			%  #2 {name}
+\advisorOrg{Department of Computer Science}
+
+\reader{Dr.~Suneuy Kim}		        %  2nd person to sign thesis
+\readerOrg{Department of Computer Science}
+
+\readerThree{Dr.~David Taylor}		%  3rd person to sign thesis
+\readerThreeOrg{Department of Computer Science}
+
+% you can optionally add \readerFour and \readerFive as well
+
+%\readerFour{Dr.~Who Dat}		%  4th person to sign thesis
+%\readerFourOrg{Department of Physics, Harvard Univ.}
+
+% NOTE: to get the front matter single spaced, put \singlespacing
+% at the start of the abstract text
+
+\abstract{TODO}
+
+
+
+% acknowledgements page is optional
+
+\acknowledgements{
+
+Thanks to
+}
+
+% the following options can be enabled or disabled
+
+%\ToCisShort	% a 1-page Table of Contents
+
+% Default: List of figures will be printed
+% Uncomment the \emptyLoF line to skip the list of figures
+%\LoFisShort	% a 1-page List of Figures
+%\emptyLoF	% no List of Figures at all
+
+%\LoTisShort	% a 1-page List of Tables
+% \emptyLoT	% no List of Tables at all
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%       BEGIN DOCUMENT...         %%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% the \begin{document} will generate all the prologue material
+% (signature page, TOC, etc.); if you want to control this
+% behavior, uncomment one of the following lines:
+%
+% \SuspendPrologue    % disables the prologue entirely
+% \SimplePrologue     % prints only title, abstract, TOC, TOF
+
+
+% the following command will cause a draft version and the
+% current date to be printed in the header area
+%
+% \draftVersion{1}
+
+
+\begin{document}
+
+\raggedright          % as per SJSU GS&R guidelines June 2010
+\parindent=30pt       % restores indentation
+
+% \singlespacing      % uncomment to print single spaced (e.g., for drafts)
+
+
+% document body goes here
+
+\chapter{Introduction}
+\chapter{Background}
+\section{Terminologies}
+
+\section{Literature Review}
+\chapter{Design}
+\chapter{Implementation}
+\chapter{Experiments}
+\chapter{Conclusion}
+
+\chapter{Getting started with \LaTeX\ and our thesis template}
+
+Template revised June 13, 2011.
+
+\section{Why \LaTeX?}
+
+There are several reasons you should write your thesis using \LaTeX\
+and our math department style file.
+
+\begin{itemize}
+\item Our style file has been customized, with the help of Graduate
+  Studies and Research, to fulfill the SJSU thesis formatting
+  requirements without any extra effort.
+\item Once you get the hang of using \LaTeX, typesetting and
+  formatting mathematics is very natural.  (In comparison, typesetting
+  mathematics in most word-processing systems can be painful and
+  time-consuming.)
+\item In \LaTeX, numbering and referencing of chapters, sections,
+  equations, and so on, is automatic, allowing for great flexibility
+  in making changes.  For example, if you want to insert an extra
+  section or an extra chapter in the middle of your thesis, or reorder
+  the sections within a chapter, in \LaTeX\ this takes just a few
+  minutes!  (See Section \ref{sect:latex-math} for an example of how
+  this works.)
+\item The same \LaTeX\ code you use to typeset the math in your thesis
+  can be moved painlessly to a slide format for a poster presentation
+  or for your thesis defense.
+\item Using \LaTeX\ lets you concentrate on content and forget about
+  appearance of your text.
+\item Finally, \LaTeX\ is often used in technical/engineering
+  workplaces to write manuals, so learning \LaTeX\ is potentially a
+  valuable job skill.
+\end{itemize}
+
+The downsides of using \LaTeX\ are that you will have to put in some
+time learning a new system and a slightly different way of thinking
+about word processing/typesetting; and to some extent, you will have
+to trade off ease of use (i.e., the point-and-click, drag-and-drop
+approach) for precise control.  You may also occasionally have to
+experiment and fiddle with things to make them work.  Nevertheless,
+for many people, this investment of time is well worth it, and often
+ends up saving time in the end.
+
+
+
+\section{Typesetting math in \LaTeX}
+\label{sect:latex-math}
+
+When you write math in \LaTeX, it is often naturally divided into {\it
+  environments\/} that correspond to the way mathematics is organized.
+For example, our math department thesis format has environments
+corresponding to standard definitions, theorems, and proofs.
+
+\begin{defn}
+Definitions look one way.
+\end{defn}
+
+\begin{thm}\label{thm:sample}
+On the other hand, theorems look like this.
+\end{thm}
+
+\begin{proof}
+And their proofs like this.  Check out how equations look:
+\begin{equation}\label{eq:ftc}
+\int_a^b \dfrac{df}{dx} \,dx = f(b)-f(a)
+\end{equation}
+(for $f$ such that $f'(x)=\frac{df}{dx}$ is continuous on $[a,b]$, for
+example).
+\end{proof}
+
+Note that the equation number appearing above is not typed in by hand,
+but actually generated by the \LaTeX\ program itself.  The great thing
+about automatic numbering is that you can refer to Theorem
+\ref{thm:sample} (in the original \LaTeX\ code, something like
+%
+\verb@Theorem \ref{thm:sample}@%
+%
+), and it will always refer to the correct theorem, even if you change
+the position of the theorem or rearrange the sections.  (Try it on the
+{\tt example.tex\/} file!)  Something similar is true for equations,
+though referring to them works a little differently; e.g., see
+\eqref{eq:ftc} (in \LaTeX, something like \verb@\eqref{eq:ftc}@).
+
+
+
+\section{Getting \LaTeX}
+
+One thing about how \LaTeX\ works that may be different for you is
+that, unlike a word processing program, the file that you type into is
+different from the file that you print out.  Specifically, for most
+up-to-date \LaTeX\ systems, you type into a file called something like
+{\tt thesis.tex}, using a type of program called a {\it text editor},
+you run the \LaTeX\ program to produce a PDF file called something
+like {\tt thesis.pdf}, and you print out {\tt thesis.pdf}.  Some
+systems keep the text editor separate from the \LaTeX\ part, and some
+systems integrate them, but either way, you should be aware that the
+parts are there somewhere.
+
+Here are some popular ways to run \LaTeX, listed by type of computer,
+with prices as of June 2007.
+
+\begin{itemize}
+\item {\bf PC, separate text editor and \LaTeX.}  Download the
+  following programs:
+  \begin{enumerate}
+  \item Get \LaTeX\ for {\bf free\/} at {\tt http://www.miktex.org}.
+    {\it One tricky point:\/} When you install MiKTeX, at some point,
+    you will be asked what your favorite paper is; make sure you
+    answer ``Letter paper'' and not the British paper size ``A4''
+    (which is the default!).
+  \item Get the WinEdt text editor at {\tt http://www.winedt.com}.
+    The creators of WinEdt request a {\bf \$30\/} shareware fee, which
+    we urge you to pay to help keep WinEdt going.
+  \end{enumerate}
+
+\item {\bf PC, integrated environment.}  Buy PCTeX at {\tt
+    http://www.pctex.com}.  This is {\bf \$150\/} (student price) for
+  the ``Publisher'' version, which is recommended if you have the
+  money, and {\bf \$50\/} (student price) for the ``Writer'' version,
+  which is recommended (sort of, see below) if you don't.
+
+\item {\bf Mac, integrated environment.} Download the TeXShop system
+  for {\bf free\/} at {\tt
+    http://www.uoregon.edu/$\sim$koch/texshop/}.
+
+\item {\bf Linux or Mac OS X, separate text editor and \LaTeX.}  If
+  you run Linux at home, \LaTeX\ is almost certainly already installed
+  on your machine, as is the text editor {\tt emacs}.  (Of course, if
+  you're a Linux user, you're the sort of person who doesn't need
+  instructions.)
+
+  Also, if you have a Mac running OS X, and you're fond of the command
+  line, you can download \LaTeX\ and {\tt emacs\/} for {\bf free\/}
+  from the usual sources --- but if your taste in computing is {\it
+    that\/} perverse, you really don't need instructions on how to do
+  that.  (Spoken from experience: This style guide was produced using
+  command-line \LaTeX\ and {\tt emacs}.)
+\end{itemize}
+
+More specifically, if you own a PC, it seems that the best option for
+most people is to use WinEdt and MikTeX.  If you are strongly
+computer-phobic, try the ``Publisher'' version of PCTeX, which can
+produce PDF output, whereas the ``Writer'' version cannot.  Only if
+you are both strongly computer-phobic and short on cash should you buy
+the ``Writer'' version of PCTeX.
+
+
+
+\section{First step: Compile the example}
+
+The next step is to run \LaTeX\ on the file {\tt example.tex\/} in
+this directory, to see if you can reproduce this file, {\tt
+  example.pdf}.  (Make a copy of this version in a safe place first.)
+We refer you to the instructions that go along with your software for
+details, but the most important distinction is between systems that
+use PDF-style latex (``pdflatex'' systems) and systems that use plain
+(old-school) latex.  This distinction becomes important if you want to
+put pictures in your thesis, so please read ahead a bit before you do
+this.  It is also important to note that if you want to use JPEG
+pictures (e.g., digital photos) directly, you should use a pdflatex
+system like WinEdt/MikTeX or TeXShop.
+
+\begin{itemize}
+\item WinEdt/MikTeX (a pdflatex system): Open {\tt example.tex\/}
+  using WinEdt, and press the ``bear'' (pdflatex) button on the menu
+  bar.
+
+\item PCTeX (a plain latex system): Open {\tt example.tex\/} using
+  PCTeX, modify the {\tt figure\/} environments in the section
+  ``Including pictures in your thesis'', below, and press the
+  ``latex'' button (see PCTeX instructions).
+
+\item TeXShop (a pdflatex system): Open {\tt example.tex\/} using
+  TeXShop, and press the ``Typeset'' button on the menu bar.
+
+\item Command-line systems (Linux, Mac OS X, etc.): You can choose
+  either the command {\tt pdflatex example\/} or the command {\tt
+    latex example}.  If you choose the latter, the output file will be
+  a file called {\tt example.dvi}, which you can convert to PDF
+  (printable) format by the commands:
+\begin{verbatim}
+dvips example -o
+ps2pdf example.ps
+\end{verbatim}
+  You may want to put that in a macro.  Note that pdflatex is more
+  direct, but you may prefer to use plain latex to include certain
+  kinds of pictures; see Section \ref{sect:pictures}.
+\end{itemize}
+
+
+
+\section{References and bibliography}
+
+The way \LaTeX\ handles references is that bibliographic information
+goes in a file like the file {\tt refs.bib\/} included in this
+directory.  Then, when you refer to a book in the course of your
+thesis, you type something like \verb@Artin~\cite{Artin:Algebra}@,
+press some appropriate sequence of typesetting buttons (see below),
+and hey presto, the reference Artin~\cite{Artin:Algebra} appears
+appropriately formatted.  Again, you just concentrate on content, and
+\LaTeX\ and our style file take care of making things look good!
+
+Though to be precise, that is not completely true.  In your text, you
+{\it do\/} need to refer to papers and books in a standard style,
+which goes something like:
+\begin{quotation}
+  (name(s) of author(s)) [reference tag]
+\end{quotation}
+The basic idea is that you refer to a reference by the name(s) of its
+author(s), and the [name] tag is supplied by \LaTeX.  A good rule of
+thumb is that if the tag is erased, your text should still make sense.
+For example: ``In Pomerance~\cite{Pomerance:Sieve}, we see
+that\ldots'' or ``For our standard algebra reference, we use
+Artin~\cite[Ch.\ 2]{Artin:Algebra}.''  It may be a little strange, at
+first, to refer to a book by its author's name, but that is the
+standard practice.  (See the bibliography section at the end of this
+document to see what the tags are referring to.)
+
+Your references are stored in a file called {\tt refs.bib}, which you
+need to edit separately.  Precise details of the format of a .bib file
+can be found elsewhere, but for the purposes of your thesis, you will
+almost certainly be able just to imitate one of the entries in the
+version of {\tt refs.bib\/} included in this package.  These include
+the following types of bibliographic references.  (Compare the source
+code of {\tt example.tex\/} with how these references appear in print
+in the text of this document and the bibliography section.)
+\begin{itemize}
+\item References to articles in a mathematical or scientific journal
+  look like Pomerance~\cite{Pomerance:Sieve} or Bektemirov, Mazur,
+  Stein, and Watkins~\cite{BMSW:EllipticCurves}.
+\item You can refer to a book, like Artin~\cite{Artin:Algebra}, or a
+  chapter within that book, as in Artin~\cite[Ch.\ 4]{Artin:Algebra}.
+  Articles and books are the most common types of references to appear
+  in theses.
+\item You may need to refer to an unpublished paper or preprint, like
+  Fermat~\cite{F:LastTheorem}.
+\item The entry Asimov~\cite{Asimov:Again} illustrates two points.
+  First, this kind of .bib entry is used for articles that appear in
+  non-journal collections of articles, like conference proceedings.
+  The other point is that \LaTeX\ will often turn capital letters in
+  titles to lowercase letters (this is part of many standard
+  bibliographic styles).  Therefore, if something like a proper noun
+  (e.g., someone's name) appears in a title, you need to put it inside
+  brackets in your .bib file to tell \LaTeX\ not to lowercase it.
+\item Finally, you may need to cite a web page or other informally
+  published electronic material.  As always, the main point is that
+  you need to give enough information for the reader to check your
+  citation, so make sure you include a very complete URL for all web
+  pages.  See the entry for Dunn~\cite{Dunn:Computability}.
+\end{itemize}
+
+Now, the first time you latex a file that contains bibliographic
+citations, the citations may look like [??].  To make the references
+in a document appear properly, try the following sequence of commands,
+or the analogous button-pushing sequence.
+
+\begin{verbatim}
+latex example
+bibtex example
+latex example
+latex example
+\end{verbatim}
+
+WinEdt, PCTeX, and TeXShop all do this sequence automatically when
+necessary, but it never hurts to bibtex and latex a few more times
+just to make sure, especially if, for example, you're just about to
+turn in the final draft of your thesis.
+
+
+
+\section{Making pictures for your thesis}
+
+Things get a little more complicated if you want to use pictures in
+your thesis.  Before you start, you need to answer three questions.
+
+\begin{enumerate}
+\item Do you want to use precise, line-drawing, diagram-type pictures;
+  do you want to use more fuzzy, photograph-like pictures; or do you
+  need both types?  If you need to make the first kind of picture,
+  you'll want to get a {\it vector graphics editor}, and if you want
+  to make the second kind of picture, you'll want to get a {\it raster
+    (bitmap) graphics editor}.
+
+\item Will you be using picture formats compatible with pdflatex,
+  namely, PDF and JPEG/.jpg files, or will you be using the picture
+  format compatible with plain latex, namely, EPS?  Note that you will
+  have to choose one approach or the other and stick with it; there is
+  no mixing the two systems.
+
+\item Will you be using some kind of well-known mathematical software
+  (e.g., MATLAB or Maple) to make pictures?  If so, which of the above
+  output formats does your program produce?
+\end{enumerate}
+
+Once you've answered those questions, you can decide which program(s)
+to buy or download.
+
+\begin{itemize}
+\item If you need a vector graphics editor (diagram-type pictures),
+  the standard commercial program is Adobe Illustrator ({\bf \$200\/}
+  student price, PC and Mac, Spartan Bookstore).  Xfig is a good {\bf
+    free\/} program that is close enough to Illustrator for most
+  purposes; it can be downloaded for Linux or Mac OS X at {\tt
+    http://xfig.org/}.  (For Mac OS X, you may first have to install
+  the X Window system from the Optional Packages folder of the Mac OS
+  X Install DVD.)  Winfig, which is basically the Windows/PC version
+  of xfig, is available at {\tt
+    http://www.schmidt-web-berlin.de/winfig/} for a {\bf \$25\/}
+  shareware registration fee.
+
+\item If you need a raster/bitmap graphics editor (photograph-type
+  pictures), the standard commercial program is Adobe Photoshop ({\bf
+    \$300\/} student price, PC and Mac, Spartan Bookstore).  There is
+  an excellent {\bf free\/} program named, unfortunately, GIMP (GNU
+  Image Manipulation Program) that is downloadable at {\tt
+    http://www.gimp.org/}, in PC and Mac/Linux versions.  (Again, for
+  Mac OS X, you will first need to install the X Window system.)
+\end{itemize}
+
+
+
+\section{Including pictures in your thesis}
+\label{sect:pictures}
+
+Again, the precise method of including pictures depends on whether
+your version of \LaTeX\ is a modern pdflatex system (e.g.,
+WinEdt/MikTeX, TeXShop) or an old-school plain latex system (e.g.,
+PCTeX).  In any case, the basic idea is that each picture goes in a
+{\tt figure\/} environment, whose placement is somewhat independent of
+the regular placement of other text in your thesis.
+
+With pdflatex-style systems, you can include either PDF (vector
+graphics) pictures or JPEG (raster/bitmap graphics) pictures.  Figure
+\ref{f:smileypdf} shows the result of including a PDF file in a
+\LaTeX\ document, and Figure \ref{f:hijpg} shows the result of
+including a JPEG file in a \LaTeX\ document.  Note that figures will
+often {\it not\/} appear in the location in your text where you
+originally ask them to appear, so your text should not depend on a
+figure appearing in one particular location.  In other words, your
+main text should still make sense if the figure is removed completely.
+(As a rule, however, there should be a reference to a figure soon
+before it appears in your thesis, much as we have referred to Figures
+\ref{f:smileypdf} and \ref{f:hijpg} here just before they actually
+appear.)
+
+\begin{figure}[htbp]\centering
+  % put a comment character (%) at the beginning of the next line for
+  % plain latex systems like PCTeX
+  \includegraphics{smiley.pdf}
+  \caption{A PDF figure}
+  \label{f:smileypdf}
+\end{figure}
+
+\begin{figure}[htbp]\centering
+  % put a comment character (%) at the beginning of the next line for
+  % plain latex systems like PCTeX
+  \includegraphics{hi.jpg}
+  \caption{A JPEG figure}
+  \label{f:hijpg}
+\end{figure}
+
+Finally, as promised, Figure \ref{f:smileyeps} shows the result of
+including an EPS file in a \LaTeX\ document.  Again, note that this
+will not work for pdflatex-style systems, so make sure you plan ahead.
+
+\begin{figure}[htbp]\centering
+  (uncomment this next line for plain latex systems)
+  %\includegraphics{smiley.eps}
+  \caption{An EPS (encapsulated Postscript) figure}
+  \label{f:smileyeps}
+\end{figure}
+
+Note that currently, this file automatically produces a List of
+Figures in its front matter (things before Chapter 1).  If fewer than
+three figures appear in your thesis (e.g., if you do not use any
+figures), you should remove the List of Figures by changing the line
+at the beginning of this file that says
+\verb@%\emptyLoF@ to \verb@\emptyLoF@.
+
+
+
+\section{Tables}
+\label{sect:tables}
+
+Tables are handled much the same as figures, though since tables are
+easier to typeset, they can be made within \LaTeX\ without the use of
+some external program.  Table \ref{tab:NSA} gives an example of a
+table and how it is labeled by its caption.  Note that as a rule,
+table captions are placed above the table and not below, though this
+can vary with different standard styles.  Again, tables should be
+referred to in the text soon before they actually appear.
+
+\begin{table}[htbp]\centering
+  \caption{Starting salaries at NSA}
+  \label{tab:NSA}
+  \begin{tabular}{|r|l|} \hline
+    Highest degree earned & Average starting salary \\ \hline\hline
+    Bachelor's & \$42,207 \\
+    Master's & \$58,203 \\
+    Ph.\ D. & \$86,172 \\ \hline
+  \end{tabular}
+\end{table}
+
+If you have more than 3 tables within your thesis, you will need to
+have a List of Tables, similar to the List of Figures mentioned in
+Section \ref{sect:pictures}.  Just put a {\tt \%} in front of the
+\verb@\emptyLoT@ command at the beginning of this file to make the
+List of Tables appear.
+
+
+
+\section{Abstract and introduction}
+
+When you have completed the technical content of your thesis, one of
+the very last things you should do is to write your abstract and your
+introduction.  Both are summaries of your thesis, but roughly
+speaking, the abstract is for experts, and the introduction is for
+novices.  More precisely:
+
+\begin{itemize}
+\item Your abstract should give a very brief (at most 150 words, by
+  Graduate Studies and Research rules) technical summary of what you
+  did in your thesis.  You do not need to give much, if any, context
+  for what you did; the point is to let an expert know very quickly
+  what is contained in your thesis.
+\item Your introduction should also summarize what is in your thesis,
+  but should provide context and background for the reader unfamiliar
+  with your subject.  A good introduction answers questions like: What
+  is the point of all this?  What previous work has been done on this
+  topic?  What is new or original here, and what is previously
+  well-known?
+\end{itemize}
+
+If you make your entire Chapter 1 your introduction (recommended),
+here is a good way to structure it.  (Of course, this is only one way
+to write an introduction, and you are not required to use this
+approach, but it does seem to work quite well.)
+\begin{itemize}
+\item Section 1.1: Try to state the main problem you are considering
+  to the extent that you can without going too much into details of
+  definitions.  Give context and history for the problem: What has
+  been done previously, who did it, and when?  Try to give a clear
+  idea of what is new here, what is standard material, and what is
+  somewhere in the middle (new exposition of well-known facts).
+\item Section 1.2: Give an overview of what is contained in your
+  thesis.  A seemingly boring but actually very useful way to do this
+  is to expand on your table of contents: ``In Chapter 2, we\ldots.
+  In Chapter 3, we\ldots.''
+\item Section 1.3: Define any unusual notation you might be using.
+\end{itemize}
+Of course, one of the great things about doing your thesis in \LaTeX\
+is that you can insert a new Chapter 1 near the end of your writing
+process, and the rest of your thesis will automatically renumber
+itself to match!
+
+
+
+\section{Writing mathematics well}
+\label{sect:well}
+
+What we have discussed so far should give you some idea of how to
+produce a reasonable-looking document using our \LaTeX\ document
+class.  What we have not really discussed, however, is how to write
+mathematics {\it well}.  This is a complicated and subtle issue that,
+to be honest, many mathematicians have not mastered.  We therefore
+mention only a few key points.
+
+\begin{enumerate}
+\item Theses in mathematics should be written using the usual
+  conventions of formal writing.  For example, do not use
+  contractions.
+\item The strangest conventions of written mathematics are the use of
+  the ``mathematical we'' (first person plural) and the present tense.
+  The basic idea is that, in a situation where a scientific paper
+  might use the passive voice and the past tense (``The groups of
+  order 144 were studied''), a math paper uses ``we'' in the present
+  tense (``We study the groups of order 144'').  In general, all of
+  your thesis except the introduction should be written in the present
+  tense.
+\item In an introduction, the past tense is useful for distinguishing
+  between work previously done on your topic and what you are doing in
+  your thesis: ``Wiles and Taylor showed that\ldots.  We show
+  that\ldots.''
+\item The biggest key is to be organized.  Give your work structure
+  and put it into some kind of outline framework, instead of just
+  telling a story 5-year-old-style: ``And then\ldots.  And
+  then\ldots.''
+\item A few small things:
+  \begin{itemize}
+  \item Words like Theorem x.y, Lemma x.y, Chapter x, Section x.y,
+    should all be capitalized.
+  \item Do not start a sentence with a mathematical symbol.  For
+    example, instead of ``$G$ is therefore abelian,'' use ``Therefore,
+    $G$ is abelian'' or ``The group $G$ is therefore abelian.''
+  \item There are different ways to deal with equations mod $n$,
+    depending on whether the equation appears in text or in a
+    stand-alone equation.  In text, an equation might look like
+    $2+2\equiv 21$ (mod~$n$), and as a stand-alone equation, the same
+    equation would become
+    \begin{equation}
+      \label{eq:modn}
+      2+2\equiv 21 \pmod{n}.
+    \end{equation}
+    Compare the source code for {\tt example.tex\/} to see how those
+    two equations are produced.
+  \end{itemize}
+\end{enumerate}
+
+For more ideas on the style and substance of writing mathematics, see
+{\it The Chicago Manual of Style\/}~\cite[Ch.\ 14]{Chicago} (note how
+this citation shows how \LaTeX\ handles references with no author or
+editor) and Knuth, Larrabee, and Roberts~\cite{KLR:WritingMath}.  A
+free version of the latter source can be found in the file {\tt
+  mathwriting.pdf\/}; pages 1--6 give a good list of tips to help you
+get started.
+
+
+\section{Last words}
+
+You may have noticed that all of the chapter and section titles in
+this document are capitalized in what is known as {\it sentence
+  style\/}; for example, the title of Section \ref{sect:well} is
+``Writing mathematics well'', not ``Writing Mathematics Well,'' as one
+would do in {\it headline style}.  You can use whichever style you
+prefer, as long as you are consistent, though if you have no
+preference, it seems to be easier to use sentence-style
+capitalization.
+
+For more about \LaTeX, try the following references.  All can be
+purchased online at the usual places or at many technical bookstores.
+
+\begin{itemize}
+\item Griffiths and Higham~\cite{GH:Latex} is a very good beginner's
+  guide, and is especially notable for its brevity (just 94 pages).
+
+\item Lamport~\cite{L:Latex} is the classic guide, and while it is
+  neither entirely for beginners nor exhaustive as a reference, it
+  strikes a good balance between the two extremes.
+
+\item Kopka and Daly~\cite{KD:Latex} is encyclopedic and thorough.
+  Not at all meant for beginners, but a good reference.
+
+\item For the truly hardcore who want to try things like rewriting
+  style files, there is always Knuth~\cite{K:TeX}.
+\end{itemize}
+
+Please send corrections and suggestions to Tim Hsu
+(hsu@math.sjsu.edu), who maintains this template.  And have fun!
+
+
+
+
+
+
+\chapter{Book the first: Recalled to life}
+
+This other chapter is just to illustrate how the table of contents,
+etc., work.  Note that chapters after the first chapter all get page
+numbers.  (Though one of the best parts of using our \LaTeX\ style
+file is that you no longer have to think about things like that!)
+
+\section{A section of words}
+
+It was the best of times, it was the worst of times, it was the age of
+wisdom, it was the age of foolishness, it was the epoch of belief, it
+was the epoch of incredulity, it was the season of Light, it was the
+season of Darkness, it was the spring of hope, it was the winter of
+despair, we had everything before us, we had nothing before us, we
+were all going direct to Heaven, we were all going direct the other
+way- in short, the period was so far like the present period, that
+some of its noisiest authorities insisted on its being received, for
+good or for evil, in the superlative degree of comparison only.
+
+\section{Just another section}
+
+To show how the table of contents stuff works, and how multiple
+sections work.
+
+
+% if you want to keep macros or chapters in separate files
+% you can do that and include them with \input like this:
+
+%\input macros.tex
+%\input ch1.tex
+%\input ch2.tex
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%  Bibliography %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\bibliographystyle{amsalpha}	% or "siam", or "alpha", or "abbrv"
+				% see other styles in
+				% texmf/bibtex/bst
+
+%\nocite{*}		% uncomment to list all refs in database,
+			% cited or not.
+
+\bibliography{refs}		% assumes bib database in "refs.bib"
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%  Appendices %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\appendix	% don't forget this line if you have appendices!
+
+\chapter{Gratuitous Appendix}
+Nothing to see here.
+
+%\input appA.tex
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%   THE END   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}
