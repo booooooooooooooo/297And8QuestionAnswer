@@ -232,19 +232,19 @@ dir_match_change3="bo.nov29/datasets/output_job75/1"
         floyd run --env tensorflow-1.4:py2  --data $dir_test_data:/dir_test_data --data $dir_voc:/dir_voc --data $dir_match_change1:/dir_match_change1 "python answer.py floyd"
         '''
 
-        print "Testing on match_change1"
-        test_on_official(dir_test_data, voc_file, dir_output, stat_file_match_change1, "match_change1")
+        # print "Testing on match_change1"
+        # test_on_official(dir_test_data, voc_file, dir_output, stat_file_match_change1, "match_change1")
 
         '''
-        floyd run --env tensorflow-1.4:py2  --data $dir_test_data:/dir_test_data --data $dir_match_change2:/dir_match_change2 "python answer.py floyd"
+        floyd run --env tensorflow-1.4:py2  --data $dir_test_data:/dir_test_data --data $dir_voc:/dir_voc --data $dir_match_change2:/dir_match_change2 "python answer.py floyd"
         '''
 
         # print "Testing on match_change2"
         # test_on_official(dir_test_data, voc_file, dir_output, stat_file_match_change2, "match_change2")
 
         '''
-        floyd run --env tensorflow-1.4:py2  --data $dir_test_data:/dir_test_data  --data $dir_match_change3:/dir_match_change3 "python answer.py floyd"
+        floyd run --env tensorflow-1.4:py2  --data $dir_test_data:/dir_test_data  --data $dir_voc:/dir_voc --data $dir_match_change3:/dir_match_change3 "python answer.py floyd"
         '''
 
-        # print "Testing on match_change3"
-        # test_on_official(dir_test_data, voc_file, dir_output, stat_file_match_change3, "match_change3")
+        print "Testing on match_change3"
+        test_on_official(dir_test_data, voc_file, dir_output, stat_file_match_change3, "match_change3")

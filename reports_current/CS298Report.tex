@@ -144,42 +144,67 @@ Attention mechanism adds more context information in encoding or decoding proces
 
 Pointer Network enables decoder to output a sequence of indexes in input sequence.
 
-\section{Literature Review}
+\subsection{Literature Review}
 \chapter{Design}
 \chapter{Implementation}
 \chapter{Experiments}
-\subsection{Data}
-The SQuAD data is in json format. I extract passage, question and answer unicode strings from the raw json file. Then I use a natural language processing library {\tt nltk} to tokenize the strings.
+\section{Data}
+I use Stanford Question Answering Dataset (SQuAD) to do experiemnts.  It contains 100,000+ question-answer pairs on 500+ articles. The training set and dev set are visible to users. However, the test set is hidden. To perform my experiments, I split the training set into my training and dev set, and use the dev set as my test set. After such splitting, my training set contains 78839 question-answer pairs, my dev set contains 8760 question-answer pairs, and my test set contains 10570 question-answer pairs.
 
-Then I face two ways to process the data. The first way is to query the corresponding word vector of each token from the GloVe word vectors. Another way is to make a vocabulary and turn each token sequence to an index sequence based on the vocabulary. At the same time, a small size embedding matrix is made from the original GloVe data. The index of each token in this matrix is same with that in vocabulary. The index sequences and embedding matrix is feed into the neural network. Since the index sequences requires much less memory than the word vector sequences, this second way saves a lot memory than the first way when processing large data set.
+ Regarding to data processing, I use a Python natural language processing library {\tt nltk} to tokenize raw strings in json file into passage-question-answer triplets in the format of word token sequences.
+
+Then I face two ways to represent the word tokens. The first way is to query the corresponding word vector of each token from the GloVe embedding matrix and turn the word sequences into vector sequences.  The second way is to make a vocabulary and turn each word sequence to an index sequence based on the vocabulary. At the same time, a smaller embedding matrix is made from the original GloVe embedding matrix. The index of each token in this matrix is same with that in vocabulary. The index sequences and the smaller embedding matrix is fed into the neural network. Since the index sequences require much less memory than the vector sequences, the second way saves a lot of memory than the first way when large data set is used.
+
+After training, the embedding matrix becomes part of the tensorflow graph, and is unchanged during testing. Also, the vocabulary remains unchanged during testing. Words not found in vocabulary during testing are treated as unknown word. The word vector of unknown words is the average of all vectors of known words in my training and dev set.
+
+TODO: table: size of train, dev and test set
 
 TODO: table: size of json file, voc file, embedding matrix file, token\_id file of train and valid data
 
 TODO: figure: work flow of data processing
 
-\subsection{Settings}
-At the first step, I refer to other people's experimental settings to set my parameters. Then I do several experiments on different learning rate, since this is the most important parameters.
+\section{Settings}
+At the first step, I refer to the experimental settings of TODOCiteInnerPeacegithub to set some of my parameters. The dimension of GloVe word vectors is 100, the size of hidden units is 64, the regularization scale of L2-regularization is 0.001 and the batch size is 32. For passage length and question length, I plot out their distributions and find out that 400 is a reasonable cut point for passage, and 30 is a reasonable cut point for question.
 
-TODO: table of experimental settings
+TODO: figure of passage length, question length
+
+I use the default settings of tensorflow for adam optimizer. I sample out 200 instances from train set to estimate train error, and from dev set to estimate validation error. The normalization boundary to clip gradients is set as 5.
+
+Then I do several experiments on different learning rate, since this is the most important parameters. I initially planed to do this on the match architecture, but due to some code bugs at that time, I actually do the experiments on match\_change1 architecture.I started the experiments from 0.002, which is used by TODOCiteInnerPeacegithub. It performs well. Then I try several larger value. However, all the larger values I try do not perform well. So I set learning rate to 0.002.
+
 TODO: figure of different lr
+
 
 The settings that work well on one architectures also work well on other three architectures. This really sames a lot of time and money.
 
-
 I used Tesla K80 12 GB Memory 61 GB RAM 100 GB SSD GPU to train the four models.
 
-\subsection{Results}
+TODO: table of all experimental settings
 
-Training process including training time, loss change, score change etc.
+I use F1 score and exact match score to evaluate the performance of each architecture. TODO:explain F1 and em
 
-Testing on official data set
 
-Interactive Testing on match architecture.
+\section{Results}
 
-\subsection{Analysis}
-More context brings ....
+For match architecture, the model converges after around 8 epochs. Match\_change1 and match\_change2 perform similar to match. For match\_change2, the model converges after around 4 epochs.  including training time, loss change, score change etc. For all four architectures, training each epoch costs around 2 hours on the Tesla GPU I use.
 
-Different ways to add context matter.
+TODO:figureoftrainingstat
+
+Figure TODO:citefigure shows the testing results of on test data set of the four architectures. In the original dev set, which is our test set, each question corresponds to multiple answers. This makes sense since in reality we might have several different ways to answer a same question. We use two ways to calculate the scores. The first way is choose the first answer, the second way is calculating scores for each answer and choose the best score.In either way, match, match\_change1 and match\_change2 perform similarly, but match\_change3 behaves much worse than the other three.
+
+
+TODO:figureoftestingresult
+
+Interactive Testing on match architecture shower some interesting reuslts.
+
+TODO:figures of interactive testing result.
+
+\section{Analysis}
+We can draw several interesting insights from the results. First, more context information increases, or at least does not decrease the accuracy. Second, the ways to add context information are various. Third, duplicate context might not be necessary.
+
+
+
+
 
 \chapter{Conclusion}
 
