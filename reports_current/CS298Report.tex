@@ -129,10 +129,58 @@ Thanks to
 \chapter{Background}
 \section{Terminologies}
 
+\subsection{Distributed Word Representation}
+
+\subsection{The Encoder-Decoder architecture with recurrent neural networks}
+
+Encoder-Decoder architecture
+
+Recurrent Neural Network (RNN)
+
+The Encoder-Decoder architecture with recurrent neural networks is a effective way to do sequence to sequence prediction.
+
+Attention mechanism adds more context information in encoding or decoding process. As such,
+
+
+Pointer Network enables decoder to output a sequence of indexes in input sequence.
+
 \section{Literature Review}
 \chapter{Design}
 \chapter{Implementation}
 \chapter{Experiments}
+\subsection{Data}
+The SQuAD data is in json format. I extract passage, question and answer unicode strings from the raw json file. Then I use a natural language processing library {\tt nltk} to tokenize the strings.
+
+Then I face two ways to process the data. The first way is to query the corresponding word vector of each token from the GloVe word vectors. Another way is to make a vocabulary and turn each token sequence to an index sequence based on the vocabulary. At the same time, a small size embedding matrix is made from the original GloVe data. The index of each token in this matrix is same with that in vocabulary. The index sequences and embedding matrix is feed into the neural network. Since the index sequences requires much less memory than the word vector sequences, this second way saves a lot memory than the first way when processing large data set.
+
+TODO: table: size of json file, voc file, embedding matrix file, token\_id file of train and valid data
+
+TODO: figure: work flow of data processing
+
+\subsection{Settings}
+At the first step, I refer to other people's experimental settings to set my parameters. Then I do several experiments on different learning rate, since this is the most important parameters.
+
+TODO: table of experimental settings
+TODO: figure of different lr
+
+The settings that work well on one architectures also work well on other three architectures. This really sames a lot of time and money.
+
+
+I used Tesla K80 12 GB Memory 61 GB RAM 100 GB SSD GPU to train the four models.
+
+\subsection{Results}
+
+Training process including training time, loss change, score change etc.
+
+Testing on official data set
+
+Interactive Testing on match architecture.
+
+\subsection{Analysis}
+More context brings ....
+
+Different ways to add context matter.
+
 \chapter{Conclusion}
 
 \chapter{Getting started with \LaTeX\ and our thesis template}

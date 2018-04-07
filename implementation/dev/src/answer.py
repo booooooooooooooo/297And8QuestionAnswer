@@ -26,11 +26,10 @@ def answer(passage, passage_mask, ques, ques_mask, best_graph_file, voc):
         ques_mask_ph = tf.get_default_graph().get_tensor_by_name("question_mask_placeholder:0")
         beta_s_tensor = tf.get_default_graph().get_tensor_by_name("beta_s:0")
         beta_e_tensor = tf.get_default_graph().get_tensor_by_name("beta_e:0")
-        #batch_size = 1 due to limited local memory
-        #TODO: change to xrange(len(passage))
-        #NOTE: for quick unit test
+
+        #NOTE: for quick unit test; TODO: change to xrange(len(passage))
         # for i in tqdm( xrange(min(len(passage), 10)), desc = "Calcualte predictions"):
-        for i in tqdm( xrange(len(passage)), desc = "Calcualte predictions"):
+        for i in tqdm( xrange(len(passage)), desc = "Calcualte predictions"):#batch_size = 1 due to limited local memory
             beta_s, beta_e = sess.run([beta_s_tensor, beta_e_tensor], {passage_ph : passage[i: i + 1],
                                                                        passage_mask_ph : passage_mask[i: i + 1],
                                                                        ques_ph : ques[i: i + 1],
@@ -146,13 +145,16 @@ def get_test_predictions(dir_test_data, voc_file, dir_output, stat_file):
 
     #get and save predictions
     predictions = answer(passage, passage_mask, ques, ques_mask, best_graph_file, voc)
-    with open(os.path.join(dir_output, "test_predictions" + datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S")), 'w') as f:
-        for pred in predictions:
-            f.write(pred + "\n")
+    # with open(os.path.join(dir_output, "test_predictions" + datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S")), 'w') as f:
+    #     for pred in predictions:
+    #         f.write(pred + "\n")
     return answer_text, predictions
 
 def test_on_official(dir_test_data, voc_file, dir_output, stat_file, arch):
     answer_text, predictions = get_test_predictions(dir_test_data, voc_file, dir_output, stat_file)
+    with open(os.path.join(dir_output, "test_predictions_" + arch + "_" + datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S")), 'w') as f:
+        for predict_text in predictions:
+            f.write(predict_text + "\n");
 
     #Test score on unique answer
     f1 = 0.0
@@ -171,7 +173,6 @@ def test_on_official(dir_test_data, voc_file, dir_output, stat_file, arch):
     with open(question_id_file) as f:
         question_id_list = [line.rstrip() for line in f.readlines()]
     predictions = dict(zip(question_id_list, predictions))
-    #TODO: save predictions
     with open(os.path.join(dir_test_data, "dev-v1.1.json")) as dataset_file:
         dataset_json = json.load(dataset_file)
         dataset = dataset_json['data']
@@ -180,9 +181,8 @@ def test_on_official(dir_test_data, voc_file, dir_output, stat_file, arch):
     print test_score_multiple
 
 
-    with open(os.path.join(dir_output, "test_score_" + arch + datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S")), 'w') as f:
+    with open(os.path.join(dir_output, "test_score_" + arch + "_" + datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S")), 'w') as f:
         f.write(json.dumps({"unique_answer": test_score, "multiple_answers": test_score_multiple }))
-
 
 
 if __name__ == "__main__":
@@ -206,17 +206,12 @@ if __name__ == "__main__":
 
     if args.machine == "floyd":
         '''
-        dir_test_data="bo.nov29/datasets/squad_test/1"
-        dir_voc="bo.nov29/datasets/squad/5"
-        dir_match="bo.nov29/datasets/output_job78/1"
-        dir_match_change1="bo.nov29/datasets/output_job71/1"
-        dir_match_change2="bo.nov29/datasets/output_job81/1"
-        dir_match_change3="bo.nov29/datasets/output_job75/1"
-
-        floyd run --env tensorflow-1.4:py2  --data $dir_test_data:/dir_test_data --data $dir_voc:/dir_voc --data $dir_match:/dir_match --data $dir_match_change1:/dir_match_change1 --data $dir_match_change2:/dir_match_change2 --data $dir_match_change3:/dir_match_change3 "python answer.py floyd"
-
-        floyd run --env tensorflow-1.4:py2  --data $dir_test_data:/dir_test_data --data $dir_voc:/dir_voc --data $dir_match:/dir_match --data $dir_match_change1:/dir_match_change1 "python answer.py floyd"
-
+dir_test_data="bo.nov29/datasets/squad_test/1"
+dir_voc="bo.nov29/datasets/squad/5"
+dir_match="bo.nov29/datasets/output_job78/1"
+dir_match_change1="bo.nov29/datasets/output_job71/1"
+dir_match_change2="bo.nov29/datasets/output_job81/1"
+dir_match_change3="bo.nov29/datasets/output_job75/1"
         '''
         dir_test_data = "/dir_test_data"
         voc_file = "/dir_voc/vocabulary"
@@ -226,11 +221,30 @@ if __name__ == "__main__":
         stat_file_match_change2 = "/dir_match_change2/Stat-April-05-2018-05-02-49"
         stat_file_match_change3 = "/dir_match_change3/Stat-March-29-2018-01-45-17"
 
-        print "Testing on match"
-        test_on_official(dir_test_data, voc_file, dir_output, stat_file_match, "match")
+        '''
+        floyd run --env tensorflow-1.4:py2  --data $dir_test_data:/dir_test_data --data $dir_voc:/dir_voc --data $dir_match:/dir_match "python answer.py floyd"
+        '''
+
+        # print "Testing on match"
+        # test_on_official(dir_test_data, voc_file, dir_output, stat_file_match, "match")
+
+        '''
+        floyd run --env tensorflow-1.4:py2  --data $dir_test_data:/dir_test_data --data $dir_voc:/dir_voc --data $dir_match_change1:/dir_match_change1 "python answer.py floyd"
+        '''
+
         print "Testing on match_change1"
         test_on_official(dir_test_data, voc_file, dir_output, stat_file_match_change1, "match_change1")
+
+        '''
+        floyd run --env tensorflow-1.4:py2  --data $dir_test_data:/dir_test_data --data $dir_match_change2:/dir_match_change2 "python answer.py floyd"
+        '''
+
         # print "Testing on match_change2"
         # test_on_official(dir_test_data, voc_file, dir_output, stat_file_match_change2, "match_change2")
+
+        '''
+        floyd run --env tensorflow-1.4:py2  --data $dir_test_data:/dir_test_data  --data $dir_match_change3:/dir_match_change3 "python answer.py floyd"
+        '''
+
         # print "Testing on match_change3"
         # test_on_official(dir_test_data, voc_file, dir_output, stat_file_match_change3, "match_change3")
