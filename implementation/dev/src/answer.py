@@ -5,6 +5,7 @@ import json
 import sys
 from tqdm import tqdm
 import datetime
+import argparse
 
 from preprocess import Preprocessor
 from util_data import pad_token_ids, predict_ans_text, get_data_tuple
@@ -150,7 +151,7 @@ def get_test_predictions(dir_test_data, voc_file, dir_output, stat_file):
             f.write(pred + "\n")
     return answer_text, predictions
 
-def test_on_official(dir_test_data, voc_file, dir_output, stat_file):
+def test_on_official(dir_test_data, voc_file, dir_output, stat_file, arch):
     answer_text, predictions = get_test_predictions(dir_test_data, voc_file, dir_output, stat_file)
 
     #Test score on unique answer
@@ -170,7 +171,8 @@ def test_on_official(dir_test_data, voc_file, dir_output, stat_file):
     with open(question_id_file) as f:
         question_id_list = [line.rstrip() for line in f.readlines()]
     predictions = dict(zip(question_id_list, predictions))
-    with open(os.path.join(dir_raw_data, "dev-v1.1.json")) as dataset_file:
+    #TODO: save predictions
+    with open(os.path.join(dir_test_data, "dev-v1.1.json")) as dataset_file:
         dataset_json = json.load(dataset_file)
         dataset = dataset_json['data']
     test_score_multiple = evaluate(dataset, predictions)
@@ -178,33 +180,57 @@ def test_on_official(dir_test_data, voc_file, dir_output, stat_file):
     print test_score_multiple
 
 
-    with open(os.path.join(dir_output, "test_score" + datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S")), 'w') as f:
+    with open(os.path.join(dir_output, "test_score_" + arch + datetime.datetime.now().strftime("%B-%d-%Y-%I-%M-%S")), 'w') as f:
         f.write(json.dumps({"unique_answer": test_score, "multiple_answers": test_score_multiple }))
 
 
 
 if __name__ == "__main__":
-    stat_file_match = "../output/job78/Stat-March-31-2018-02-16-09"
-    stat_file_match_change1 = "../output/job71/Stat-March-22-2018-11-55-08"
-    stat_file_match_change2 = "../output/job81/Stat-April-05-2018-05-02-49"
-    stat_file_match_change3 = "../output/job75/Stat-March-29-2018-01-45-17"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("machine", choices=['local', 'floyd'])
+    args = parser.parse_args()
 
+    if args.machine == 'local':
+        dir_for_ans = "../data/data_ans"
+        voc_file = "../data/data_clean/vocabulary"
 
-    dir_for_ans = "../data/data_ans"
-    dir_test_data = "../data/data_test"
-    dir_raw_data = "../data/data_raw"
-    voc_file = "../data/data_clean/vocabulary"
-    dir_output = "../output/local"
+        stat_file_match = "../output/job78/Stat-March-31-2018-02-16-09"
+        # stat_file_match_change1 = "../output/job71/Stat-March-22-2018-11-55-08"
+        # stat_file_match_change2 = "../output/job81/Stat-April-05-2018-05-02-49"
+        # stat_file_match_change3 = "../output/job75/Stat-March-29-2018-01-45-17"
 
+        answer_interactive_local(dir_for_ans, stat_file_match, voc_file)
+        # answer_interactive_local(dir_for_ans, stat_file_match_change1, voc_file)
+        # answer_interactive_local(dir_for_ans, stat_file_match_change2, voc_file)
+        # answer_interactive_local(dir_for_ans, stat_file_match_change3, voc_file)
 
+    if args.machine == "floyd":
+        '''
+        dir_test_data="bo.nov29/datasets/squad_test/1"
+        dir_voc="bo.nov29/datasets/squad/5"
+        dir_match="bo.nov29/datasets/output_job78/1"
+        dir_match_change1="bo.nov29/datasets/output_job71/1"
+        dir_match_change2="bo.nov29/datasets/output_job81/1"
+        dir_match_change3="bo.nov29/datasets/output_job75/1"
 
-    # answer_interactive_local(dir_for_ans, stat_file_match, voc_file)
-    # answer_interactive_local(dir_for_ans, stat_file_match_change1, voc_file)
-    answer_interactive_local(dir_for_ans, stat_file_match_change2, voc_file)
-    # answer_interactive_local(dir_for_ans, stat_file_match_change3, voc_file)
+        floyd run --env tensorflow-1.4:py2  --data $dir_test_data:/dir_test_data --data $dir_voc:/dir_voc --data $dir_match:/dir_match --data $dir_match_change1:/dir_match_change1 --data $dir_match_change2:/dir_match_change2 --data $dir_match_change3:/dir_match_change3 "python answer.py floyd"
 
+        floyd run --env tensorflow-1.4:py2  --data $dir_test_data:/dir_test_data --data $dir_voc:/dir_voc --data $dir_match:/dir_match --data $dir_match_change1:/dir_match_change1 "python answer.py floyd"
 
-    # test_on_official(dir_test_data, voc_file, dir_output, stat_file_match)
-    # test_on_official(dir_test_data, voc_file, dir_output, stat_file_match_change1)
-    # test_on_official(dir_test_data, voc_file, dir_output, stat_file_match_change2)
-    # test_on_official(dir_test_data, voc_file, dir_output, stat_file_match_change3)
+        '''
+        dir_test_data = "/dir_test_data"
+        voc_file = "/dir_voc/vocabulary"
+        dir_output = "/output"
+        stat_file_match = "/dir_match/Stat-March-31-2018-02-16-09"
+        stat_file_match_change1 = "/dir_match_change1/Stat-March-22-2018-11-55-08"
+        stat_file_match_change2 = "/dir_match_change2/Stat-April-05-2018-05-02-49"
+        stat_file_match_change3 = "/dir_match_change3/Stat-March-29-2018-01-45-17"
+
+        print "Testing on match"
+        test_on_official(dir_test_data, voc_file, dir_output, stat_file_match, "match")
+        print "Testing on match_change1"
+        test_on_official(dir_test_data, voc_file, dir_output, stat_file_match_change1, "match_change1")
+        # print "Testing on match_change2"
+        # test_on_official(dir_test_data, voc_file, dir_output, stat_file_match_change2, "match_change2")
+        # print "Testing on match_change3"
+        # test_on_official(dir_test_data, voc_file, dir_output, stat_file_match_change3, "match_change3")
