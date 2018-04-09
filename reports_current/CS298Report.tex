@@ -129,7 +129,17 @@ Thanks to
 \chapter{Background}
 \section{Terminologies}
 
-\subsection{Distributed Word Representation}
+\subsection{Word Feature Vector}
+
+Word Feature Vector (WFC) was firstly came up with by CITEBengio2003. A word feature vector carries information about the likeliness of each word from the vocabulary to be its neighbour. A word feature represents a word according to its relationship with all words in the vocabulary.
+
+In CITEBengio2003, the word feature vectors of a given text is learned from training a neural probabilistic language model(NPLM) on the text. The NPLM is illustrated in CITEfigurenlpmfromcs297report, where V is the vocabulary, $w_t$ represents a word from $V$, and the matrix $C$ contains the word feature vectors of all words in $V$. Each instance of the training set is a sequence of words $w_1,...,w_T$. The purpose of NPLM is to train a model $f$ such that $ f(w_t, ..., w_{t-n+1}) = \hat{P}(w_t | w_{t-1},...,w_{t-n+1})$. The computation of $f(w_t, ..., w_{t-n+1})$ is divided into two parts.
+First, we map each $w$ to a WFC by selecting the corresponding row in $C$ to get $x=(C(w_{t-1}),... ,C(w_{t-n+1}))$. Second, we get $f(w_t, ..., w_{t-n+1})$ through $y=b+W\cdot x + U\cdot tanh(d + H\cdot x)$ and $ f(w_t, ..., w_{t-n+1}) = \frac{e^{y_{w_t}}}{\sum_{i}^{}e^{y_i}}$. The loss function to minimize is $L = -\frac{1}{T}\sum _{t}^{} \log{f(w_t, ..., w_{t-n+1})}$.
+
+
+The advantage of WFC. Distributed word representation enables learning dependencies on longer sentences, compared with n-grams, which only considers around 3 words in practice due to the infeasibility of computation when n is larger.
+
+The usage of WFC.
 
 \subsection{The Encoder-Decoder architecture with recurrent neural networks}
 
@@ -144,9 +154,40 @@ Attention mechanism adds more context information in encoding or decoding proces
 
 Pointer Network enables decoder to output a sequence of indexes in input sequence.
 
-\subsection{Literature Review}
+\section{Related Work}
+Wang's match-lstm
+
+r-net
+
+other papers.
+
+The reason to refer to Wang's match-lstm to design baseline model.
+
 \chapter{Design}
+I refer Wang's model to design my baseline architecture. Then I modify the baseline architecture in three different ways to analyze how the architecture works and seek for some ways to simply the baseline architecture but keep the accuracy.
+
+\section{Baseline Match Architecture}
+
+\section{Match\_change1 Architecture}
+Talk about the mathematical fomula like what wang's paper does. copy and paste from CS297 report to fill this chapter.
+\section{Match\_change2 Architecture}
+
+\section{Match\_change3 Architecture}
+
 \chapter{Implementation}
+\section{Batch Gradient Descent}
+
+Padding is necessary. This changes the architecture to
+
+Split clean data to batches
+
+\section{Tensorflow Graph}
+train, save and restore tf graph
+
+\section{Building RNN using Tensorflow}
+RNN cell, "home made" match rnn cell, default lstm cell.
+
+dynamic rnn
 \chapter{Experiments}
 \section{Data}
 I use Stanford Question Answering Dataset (SQuAD) to do experiemnts.  It contains 100,000+ question-answer pairs on 500+ articles. The training set and dev set are visible to users. However, the test set is hidden. To perform my experiments, I split the training set into my training and dev set, and use the dev set as my test set. After such splitting, my training set contains 78839 question-answer pairs, my dev set contains 8760 question-answer pairs, and my test set contains 10570 question-answer pairs.
@@ -154,6 +195,10 @@ I use Stanford Question Answering Dataset (SQuAD) to do experiemnts.  It contain
  Regarding to data processing, I use a Python natural language processing library {\tt nltk} to tokenize raw strings in json file into passage-question-answer triplets in the format of word token sequences.
 
 Then I face two ways to represent the word tokens. The first way is to query the corresponding word vector of each token from the GloVe embedding matrix and turn the word sequences into vector sequences.  The second way is to make a vocabulary and turn each word sequence to an index sequence based on the vocabulary. At the same time, a smaller embedding matrix is made from the original GloVe embedding matrix. The index of each token in this matrix is same with that in vocabulary. The index sequences and the smaller embedding matrix is fed into the neural network. Since the index sequences require much less memory than the vector sequences, the second way saves a lot of memory than the first way when large data set is used.
+
+The next step is to pad passage and question, as mentioned in Chapter TODO:CITE. There is a {\tt pad} token in vocabulary, and the corresponding word vector is zero vector.
+
+At last, split data into batches.
 
 After training, the embedding matrix becomes part of the tensorflow graph, and is unchanged during testing. Also, the vocabulary remains unchanged during testing. Words not found in vocabulary during testing are treated as unknown word. The word vector of unknown words is the average of all vectors of known words in my training and dev set.
 
