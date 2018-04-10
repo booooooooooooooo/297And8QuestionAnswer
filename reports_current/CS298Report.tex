@@ -127,44 +127,47 @@ Thanks to
 
 \chapter{Introduction}
 \chapter{Background}
-\section{Terminologies}
-
-\subsection{Word Feature Vector}
-
+\section{Word Feature Vector}
 Word Feature Vector (WFC) was firstly came up with by CITEBengio2003. A word feature vector carries information about the likeliness of each word from the vocabulary to be its neighbour. A word feature represents a word according to its relationship with all words in the vocabulary.
 
 In CITEBengio2003, the word feature vectors of a given text is learned from training a neural probabilistic language model(NPLM) on the text. The NPLM is illustrated in CITEfigurenlpmfromcs297report, where V is the vocabulary, $w_t$ represents a word from $V$, and the matrix $C$ contains the word feature vectors of all words in $V$. Each instance of the training set is a sequence of words $w_1,...,w_T$. The purpose of NPLM is to train a model $f$ such that $ f(w_t, ..., w_{t-n+1}) = \hat{P}(w_t | w_{t-1},...,w_{t-n+1})$. The computation of $f(w_t, ..., w_{t-n+1})$ is divided into two parts.
 First, we map each $w$ to a WFC by selecting the corresponding row in $C$ to get $x=(C(w_{t-1}),... ,C(w_{t-n+1}))$. Second, we get $f(w_t, ..., w_{t-n+1})$ through $y=b+W\cdot x + U\cdot tanh(d + H\cdot x)$ and $ f(w_t, ..., w_{t-n+1}) = \frac{e^{y_{w_t}}}{\sum_{i}^{}e^{y_i}}$. The loss function to minimize is $L = -\frac{1}{T}\sum _{t}^{} \log{f(w_t, ..., w_{t-n+1})}$.
 
 
-The advantage of WFC. Distributed word representation enables learning dependencies on longer sentences, compared with n-grams, which only considers around 3 words in practice due to the infeasibility of computation when n is larger.
+WFC enables learning dependencies on longer sentences. In comparison, n-grams only considers around 3 words in practice due to the computation infeasibility when n is larger. As such, a natural language model built on WFC can consider more context information than that built on n-grams. More context generally brings more more accurate result.
 
-The usage of WFC.
+The usage of WFC is far beyond simply predicting a word's neighbours. In practice, WFC is a common way to represent the words in an end-to-end neural network model which does a natural language processing task.
+\section{Recurrent Neural Networks (RNNs)}
+Recurrent neural networks (RNNs) CITE(Rumelhart et al., 1986a) are neural networks with sequence-based specialization. They are used for modeling sequential data.
 
-\subsection{The Encoder-Decoder architecture with recurrent neural networks}
+TODO:figure10.2fromdeeplearningbook
+
+In this research, I use two types of design patterns. The first type is a RNN with recurrent connections between hidden states and the sequence of hidden states are the output of the RNN. The second type is also a RNN with recurrent connections between hidden states, but the last hidden state is the output of the RNN.
+
+I use Long Short Term Memory (LSTM) cell and Gated Recurrent Unit (GRU) cell instead of the basic RNN cell. They prevent the RNNs from vanishing after a few rollings, as illustrated in CITEAPPENDIX.
+\section{Bidirectional RNNs}
+\section{Encoder-Decoder Sequence-to-Sequence Architecture}
 
 Encoder-Decoder architecture
 
-Recurrent Neural Network (RNN)
-
 The Encoder-Decoder architecture with recurrent neural networks is a effective way to do sequence to sequence prediction.
 
-Attention mechanism adds more context information in encoding or decoding process. As such,
+\section{Attention Mechanism}
 
+Attention mechanism adds more context informatio n in encoding or decoding process. As such,
+
+
+
+
+\section{Pointer Network}
 
 Pointer Network enables decoder to output a sequence of indexes in input sequence.
 
-\section{Related Work}
-Wang's match-lstm
 
-r-net
 
-other papers.
-
-The reason to refer to Wang's match-lstm to design baseline model.
 
 \chapter{Design}
-I refer Wang's model to design my baseline architecture. Then I modify the baseline architecture in three different ways to analyze how the architecture works and seek for some ways to simply the baseline architecture but keep the accuracy.
+I refer Wang's model to design my baseline architecture. The reason to refer to Wang's match-lstm to design baseline model. Then I modify the baseline architecture in three different ways to analyze how the architecture works and seek for some ways to simply the baseline architecture but keep the accuracy.
 
 \section{Baseline Match Architecture}
 
