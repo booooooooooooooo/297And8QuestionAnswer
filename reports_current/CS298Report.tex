@@ -186,15 +186,15 @@ TODO:figureOfPointerNetwork
 
 \chapter{Design}
 
-Considering the limited computation resource, I choose CiteWang'spaper as the main reference of my design. The model in CiteWang'spaper reflects a general architecture to do question answering task, and the number of layers is not too much to train. In Section citeBaselineArchitecture I introduce CiteWang'spaper and how I modify it to get my baseline architecture. Then I describe my three changes on the baseline architecture to analyze how the baseline architecture works.
+Considering the limited computation resource, I choose CiteWang'spaper as the main reference of my design. The model in CiteWang'spaper reflects a general architecture to do question answering task, and the number of layers is not too many to train. In Section citeBaselineArchitecture I introduce CiteWang'spaper and how I modify it to get my baseline architecture. Then I describe my three changes on the baseline architecture to analyze how the baseline architecture works.
 
 \section{Baseline Architecture}
 
-Wang and Jiang proposed an end-to-end neural network model on SQuAD dataset. While predicting, the inputs to the model are test data and pretrained word vectors, the outputs are the predicted answers. While training, the inputs are train data and word vectors, the outputs are losses to be optimised. The word vectors trained using GloVe algorithm[3] are used to do word embedding. The word vectors are not updated during training.
+Wang and Jiang CiteWang'spaper proposed an encoder-decoder sequence-to-sequence architecture for the question answering task on SQuAD dataset. Each instance of training data includes one passage, one question and one answer. The passage is a sequence of tokens, the question is a sequence of tokens, and the answer is two indices indicating the start and end position in passage. Recall that each answer is part of the corresponding passage in SQuAD dataset.
 
-The model architecture includes three layers-the LSTM preprocessing layer, the match-LSTM layer and the Answer Pointer(Ans-Ptr) layer.
+Before feeding training data into model, tokens in passages and questions are vectorized to word feature vectors. As such, some pre-trained word feature vector matrix is an additional dataset in need.
 
-The LSTM preprossing layer encode each word sequence in passage and question to a sequence of hidden states using a standard one direction LSTM. The passage and question are processed separately.
+The vectorized training data is feed into the encoder. The encoder includes two layers - preprocessing layer and bi-directional match-LSTM layer. In preprossing layer, a LSTM network runs over each passage word feature vector sequence and outputs a sequence of LSTM hidden states. The same LSTM is used to encode each question word vector sequence to a sequence of LSTM hidden states.
 
 $$H^p = \overrightarrow{LSTM}(P)$$
 $$H^q = \overrightarrow{LSTM}(Q)$$
@@ -208,11 +208,11 @@ where
  $$p: length \ of\ passage$$
  $$q: length\ of\ question$$
  $$l: dimension\ of\ LSTM\ hidden\ states$$
- $$d: dimension\ of\ word\ embedding$$
+ $$d: dimension\ of\ word\ feature\ vector$$
 
-The match-LSTM layer uses the model in paper \cite{wang2015learning}. In this layer, a word-by-word attention mechanism and a LSTM are used together to encode hidden presentations of both passage and question to one sequence of hidden states that indicate the degree of matching between each token in the passage and each token in the question. To be specific,
+In bi-directional match-LSTM layer, a LSTM equipped with passage-question attention, which is called match-LSTM, is used to encode each sequence passage hidden states and the pairing sequence of question hidden states together to a sequence of hidden states of the match-LSTM. To be specific,
 
-$$\overrightarrow{G} = tahn(W^qH^q + (W^p{h_i}^p + W^r\overrightarrow{{h_{i-1}}^r} + b^p) \otimes e_q)$$
+$$\overrightarrow{G} = tanh(W^qH^q + (W^p{h_i}^p + W^r\overrightarrow{{h_{i-1}}^r} + b^p) \otimes e_q)$$
 $$\overrightarrow{\alpha _i} = softmax(w^t\overrightarrow{G_i} + b \otimes e_q)$$
 
 
@@ -232,22 +232,23 @@ H^q\overrightarrow{ {\alpha _i}}^T \\
 \end{bmatrix}
 \in R^{2l}
 \]
-$$\overrightarrow{{h_i}^r} = \overrightarrow{LSTM}(\overrightarrow{z_i}, \overrightarrow{{h_{i-1}}^r})$$
+$$\overrightarrow{{h_i}^r} = \overrightarrow{LSTM}(\overrightarrow{z_i}, \overrightarrow{{h_{i-1}}^r}).$$
 
 After iterating between getting attention vector $\overrightarrow{\alpha _i}$ and getting hidden state ${{h_{i}}^r}$ $p$ times, we get $[{{h_{1}}^r}, ..., {{h_{p}}^r}]$. Concatenate them to get
 
-$$\overrightarrow{H_r} = [{{h_{1}}^r}, ..., {{h_{p}}^r}] \in R^{l \times p}$$.
+$$\overrightarrow{H_r} = [{{h_{1}}^r}, ..., {{h_{p}}^r}] \in R^{l \times p}.$$
 
-To go over passage from both directions to get context information both before and after each word, go over $H_p$ from right to left to get $\overleftarrow{H_r}$. Then concatenate $\overrightarrow{H_r}$ and $\overleftarrow{H_r}$ to get
+Then go over $H_p$ from right to left to get $\overleftarrow{H_r}$. Concatenate $\overrightarrow{H_r}$ and $\overleftarrow{H_r}$ to get the final output of encoding process
 
 \[ H_r =
 \begin{bmatrix}
 \overrightarrow{H_r} \\
 \overleftarrow{H_r} \\
 \end{bmatrix}
-\in R^{2l \times p}
+\in R^{2l \times p}.
 \]
-The Answer Pointer layer is motivated by the Pointer Net in paper \cite{vinyals2015pointer}. It has a similar structure with match-LSTM. However, instead of aiming at a sequence of hidden states, Ans-Ptr layer aims at the weight vector. Here I only explain the boundary model, which I will implement.
+
+The decoding process includes only one layer - Answer Pointer layer. This layer is motivated by the Pointer Net in paper citevinyals2015pointer I have discussed in Section CITE. Wang and Jiang CITE proposed two ways to design this layer. Here I only explain the boundary model.
 
 $$F_k = tahn(VH_r + (W^a{h_{k-1}}^a +  b^a) \otimes e_p)$$
 $$\overrightarrow{\beta _k} = softmax(v^tF_k + c \otimes e_p)$$
