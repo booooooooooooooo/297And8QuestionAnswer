@@ -146,51 +146,175 @@ In this research, I use two types of design patterns. The first type is a RNN wi
 
 I use Long Short Term Memory (LSTM) cell and Gated Recurrent Unit (GRU) cell instead of the basic RNN cell. They prevent the RNNs from vanishing after a few rollings, as illustrated in CITEAPPENDIX.
 \section{Bidirectional RNNs}
+
+The RNNs of Section CITEREFERPREVIOUSSECTION, rolls from left to right. As such, the $h_t$ only contains context information from $x_1$ to $x_t$, but does not contain context information from $x_{t+1}$ to the end. However, in most sequence-to-sequence tasks, we want $h_t$ to contain the information of the whole sequence. Bidirectional RNNs makes this possible. In a bidirectional RNN, one RNN rolls from left to right, another RNN rolls from right to left. At time t, using both $h1_t$ and $h2_t$ would get context information from the whole sequence.
+
+TODO:FITUREOFBIDIREDTIONALRNNmyresearchuses
+
 \section{Encoder-Decoder Sequence-to-Sequence Architecture}
 
-Encoder-Decoder architecture
+Sequence-to-sequence means the input to the model is a sequence, and the output from the model is also a sequence. An encoder-decoder architecture can be applied to do this task. The process of understanding the input sequence is considered as encoding the input sequence to some vectors. The process of generating output is considered as decoding the vectors.
 
-The Encoder-Decoder architecture with recurrent neural networks is a effective way to do sequence to sequence prediction.
+TODO:figureOfEncoderDecoderSequenceToSequenceArch
+
+The answer questioning task is a sequence-to-sequence task. The input sequences are questions and passages, and the output sequences are answers.
 
 \section{Attention Mechanism}
 
-Attention mechanism adds more context informatio n in encoding or decoding process. As such,
+Attention mechanism was first came up with by CiteBahdanau et al. (2015) in the application of neural machine translation. Neural machine translation is also a sequence-to-sequence task. The input sequence is some words in one language, and the output sequence is the same content in another language. In the encoder-decoder sequence-to-sequence architecture for neural machine translation, a RNN encodes the input sequence to one state, and the decoder decodes the state to the output sequence. However, a big problem here is the state cannot contain all the information of a long input sequence. The attention mechanism was invented to let the decoding process knows about the input sequence. CiteDeepLearningbookChapter12 summarizes the attention mechanism used in neural machine translation into three components:
+\begin{itemize}
+\item{A process that reads raw data.}
+\item{A list of feature vectors storing the output of the reader.}
+\item{A process that exploits the content of the memory to sequentially perform a task, at each time step having the ability put attention on the content of one memory element (or a few, with a different weight).}
+\end{itemize}
+
+TODO:fitureOfAtentionInNMT
+
+Although the attention mechanism was invented for doing machine learning task, it can be applied to many other tasks of natural language processing. I will explain how attention mechanism is used in this project in Chpter CITEDESIGNCHAPTER
 
 
 
 
 \section{Pointer Network}
 
-Pointer Network enables decoder to output a sequence of indexes in input sequence.
+CiteOriolVinyalsetal discovered Pointer Network in 2015. Pointer Network enables decoder to output a sequence of indexes in input sequence. It uses attention weight as a probability distribution to select a member from the input sequence as the output token. This usage is different from that in neural machine translation where the attention weight is used to get a weighted average vector from input sequence and use it as context information to generate the output.
+
+TODO:figureOfPointerNetwork
 
 
 
 
 \chapter{Design}
-I refer Wang's model to design my baseline architecture. The reason to refer to Wang's match-lstm to design baseline model. Then I modify the baseline architecture in three different ways to analyze how the architecture works and seek for some ways to simply the baseline architecture but keep the accuracy.
 
-\section{Baseline Match Architecture}
+Considering the limited computation resource, I choose CiteWang'spaper as the main reference of my design. The model in CiteWang'spaper reflects a general architecture to do question answering task, and the number of layers is not too much to train. In Section citeBaselineArchitecture I introduce CiteWang'spaper and how I modify it to get my baseline architecture. Then I describe my three changes on the baseline architecture to analyze how the baseline architecture works.
 
-\section{Match\_change1 Architecture}
-Talk about the mathematical fomula like what wang's paper does. copy and paste from CS297 report to fill this chapter.
-\section{Match\_change2 Architecture}
+\section{Baseline Architecture}
 
-\section{Match\_change3 Architecture}
+Wang and Jiang proposed an end-to-end neural network model on SQuAD dataset. While predicting, the inputs to the model are test data and pretrained word vectors, the outputs are the predicted answers. While training, the inputs are train data and word vectors, the outputs are losses to be optimised. The word vectors trained using GloVe algorithm[3] are used to do word embedding. The word vectors are not updated during training.
+
+The model architecture includes three layers-the LSTM preprocessing layer, the match-LSTM layer and the Answer Pointer(Ans-Ptr) layer.
+
+The LSTM preprossing layer encode each word sequence in passage and question to a sequence of hidden states using a standard one direction LSTM. The passage and question are processed separately.
+
+$$H^p = \overrightarrow{LSTM}(P)$$
+$$H^q = \overrightarrow{LSTM}(Q)$$
+
+where
+
+ $$P\in R^{d \times p}: passage$$
+ $$Q\in R^{d \times q}: question$$
+ $$H^p\in R^{l \times p}: encoded\ passage$$
+ $$H^q\in R^{l \times q}: encoded\ question$$
+ $$p: length \ of\ passage$$
+ $$q: length\ of\ question$$
+ $$l: dimension\ of\ LSTM\ hidden\ states$$
+ $$d: dimension\ of\ word\ embedding$$
+
+The match-LSTM layer uses the model in paper \cite{wang2015learning}. In this layer, a word-by-word attention mechanism and a LSTM are used together to encode hidden presentations of both passage and question to one sequence of hidden states that indicate the degree of matching between each token in the passage and each token in the question. To be specific,
+
+$$\overrightarrow{G} = tahn(W^qH^q + (W^p{h_i}^p + W^r\overrightarrow{{h_{i-1}}^r} + b^p) \otimes e_q)$$
+$$\overrightarrow{\alpha _i} = softmax(w^t\overrightarrow{G_i} + b \otimes e_q)$$
+
+
+where
+
+$$W^q, W^p, W^r\in R^{l \times l} $$
+$$b_p, w\in R^{l}  $$
+$$b \in R $$
+$$\overrightarrow{{h_{i-1}}^r}\in R^{l}: one\ column\ of\ H_p  $$
+
+and
+
+\[ \overrightarrow{z_i} =
+\begin{bmatrix}
+{h_i}^p \\
+H^q\overrightarrow{ {\alpha _i}}^T \\
+\end{bmatrix}
+\in R^{2l}
+\]
+$$\overrightarrow{{h_i}^r} = \overrightarrow{LSTM}(\overrightarrow{z_i}, \overrightarrow{{h_{i-1}}^r})$$
+
+After iterating between getting attention vector $\overrightarrow{\alpha _i}$ and getting hidden state ${{h_{i}}^r}$ $p$ times, we get $[{{h_{1}}^r}, ..., {{h_{p}}^r}]$. Concatenate them to get
+
+$$\overrightarrow{H_r} = [{{h_{1}}^r}, ..., {{h_{p}}^r}] \in R^{l \times p}$$.
+
+To go over passage from both directions to get context information both before and after each word, go over $H_p$ from right to left to get $\overleftarrow{H_r}$. Then concatenate $\overrightarrow{H_r}$ and $\overleftarrow{H_r}$ to get
+
+\[ H_r =
+\begin{bmatrix}
+\overrightarrow{H_r} \\
+\overleftarrow{H_r} \\
+\end{bmatrix}
+\in R^{2l \times p}
+\]
+The Answer Pointer layer is motivated by the Pointer Net in paper \cite{vinyals2015pointer}. It has a similar structure with match-LSTM. However, instead of aiming at a sequence of hidden states, Ans-Ptr layer aims at the weight vector. Here I only explain the boundary model, which I will implement.
+
+$$F_k = tahn(VH_r + (W^a{h_{k-1}}^a +  b^a) \otimes e_p)$$
+$$\overrightarrow{\beta _k} = softmax(v^tF_k + c \otimes e_p)$$
+
+
+where
+$$V \in R^{l \times 2l}$$
+$$W^a\in R^{l \times l} $$
+$$b_a, v\in R^{l}  $$
+$$c \in R $$
+$$\overrightarrow{{h_{k-1}}^a}\in R^{l}: hidden\ state\ at\ positiom\ i\ of\ answer\ LSTM  $$
+
+and answer LSTM is
+
+
+$$\overrightarrow{{h_k}^a} = \overrightarrow{LSTM}(H^r\beta _k^T, h_{k-1}^a)$$
+
+By iterating between the attention mechanism and the answer LSTM two times, we could get $\beta _0$ and $\beta _1$. Let $a_s$ denote the start index of the answer, and $a_e$ denote the end index, then we have
+
+$$p(a|H^r) = p(a_s|H_r)p(a_r|H_r)=\beta _{0, a_s} \times \beta_{1, a_e}$$
+
+where $$\beta_{k, j} = jth\ token\ of\ \beta _k$$
+
+To train the model, the loss function
+
+$$J(\theta) = -\frac{1}{N}\sum_{i=1}^{N} \log{p(a^n|H^r)} $$
+
+is minimized.
+
+\section{First Change to Baseline Architecture}
+
+\section{Second Change to Baseline Architecture}
+
+\section{Third Change to Baseline Architecture}
 
 \chapter{Implementation}
+
 \section{Batch Gradient Descent}
 
-Padding is necessary. This changes the architecture to
+To achieve batched training, paragraphs should be padded to a same length. Similarly, questions are also padded the a same length. As such, the model in implementation has some difference with the theoretical one explained in \ref{theoreticalModel}.
 
-Split clean data to batches
+In preprocessing layer,
+$$H^p = H^p \circ passage\_mask$$
+$$H^q = H^q \circ question\_mask$$
+
+In match-LSTM layer,
+$$\overrightarrow{\alpha _i} = softmax( (w^t\overrightarrow{G_i} + b \otimes e_q) \circ question\_mask)$$
+
+
+$$H_r = H_r \circ passage\_mask$$
+
+In Ans-Ptr layer,
+$$\overrightarrow{\beta _k} = softmax( (v^tF_k + c \otimes e_p) \circ passage\_mask)$$
+
 
 \section{Tensorflow Graph}
-train, save and restore tf graph
+Describe the graph of baseline architecture.
 
-\section{Building RNN using Tensorflow}
-RNN cell, "home made" match rnn cell, default lstm cell.
+TODO:conceptionalFigureOfTfGraphOfBaseline
 
-dynamic rnn
+How the graph is shared among train, valid and test
+
+
+\section{Implementation Architecture}
+
+TODO:figureOfWholePipeline
+
 \chapter{Experiments}
 \section{Data}
 I use Stanford Question Answering Dataset (SQuAD) to do experiemnts.  It contains 100,000+ question-answer pairs on 500+ articles. The training set and dev set are visible to users. However, the test set is hidden. To perform my experiments, I split the training set into my training and dev set, and use the dev set as my test set. After such splitting, my training set contains 78839 question-answer pairs, my dev set contains 8760 question-answer pairs, and my test set contains 10570 question-answer pairs.
