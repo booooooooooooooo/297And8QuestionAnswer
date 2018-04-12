@@ -73,7 +73,8 @@
 % NOTE: to get the front matter single spaced, put \singlespacing
 % at the start of the abstract text
 
-\abstract{TODO}
+\abstract{Question Answering(QA) is about making a computer program that could answer questions in natural language automatically. QA techniques are widely used. End-to-end neural network architectures are state-of-art techniques for question answering tasks. Challenges of applying end-to-end models include getting more accurate results, reducing network size, explaining how the model works and so on. In this project, I focus on reducing network size and explaining the model. Based on match-lstm and answer pointer model designed by citewang, I design a baseline architecture. Then I make three changes to the baseline architecture to do comparisons. I successfully implemented the four models and got reasonable training and testing results. Through comparing the results of three changed models with the baseline model, I also found some redundant design in the baseline model - preprocessing layer and the $h_r$ in bidirecional match-lstm layer provides duplicate context information.
+}
 
 
 
@@ -127,9 +128,13 @@ Thanks to
 
 \chapter{Introduction}
 
-Question Answering(QA) is about making a computer program that could answer questions in natural language automatically. QA techniques are widely used among search engines, personal assistant applications on smart phones, voice control systems and a lot more other applications. In recent years, more end-to-end neural network architectures are built to do question answering tasks. In contrast, traditional solutions use syntactic and semantic analyses and hand made features. End-to-end neural network approach gives more accurate result. However, traditional ways are more explainable. The Stanford Question Answering Dataset (SQuAD) is used in this project. It includes questions asked by human beings on Wikipedia articles. The answer to each question is a segment of the corresponding Wikipedia article\cite{rajpurkar2016squad}. In total, SQuAD contains 100,000+ question-answer pairs on 500+ articles\cite{rajpurkar2016squad}. The goal of this project is to build a QA system on SQuAD using an end-to-end neural network architecture.
+Question Answering(QA) is about making a computer program that could answer questions in natural language automatically. QA techniques are widely used among search engines, personal assistant applications on smart phones, voice control systems and a lot more other applications. In recent years, more end-to-end neural network architectures are built to do question answering tasks. The end-to-end neural network approach gives more accurate result than traditional solutions, which use syntactic and semantic analyses and hand made features.Challenges of applying end-to-end models include getting more accurate results, reducing network size, explaining how the model works and so on.
 
-This report is about my progress in CS297. Section \ref{sec:calculation}  corresponds to deliverable 1, which is a study on the mathematical basis of neural network. Section \ref{sec:embdding} corresponds to Deliverable 2, in which I did word embedding of Chinese classic poems. Section \ref{sec:setup} and Section \ref{sec:implementpaper} correspond to Deliverable 3 and 4, which include setting up development infrastructure, understanding model, and designing implementation architecture for my QA system. Section \ref{sec:summary} summarizes my work in CS297 and proposes future work in CS298.
+The Stanford Question Answering Dataset (SQuAD) is used in this project. It includes questions asked by human beings on Wikipedia articles. The answer to each question is a segment of the corresponding Wikipedia article cite{rajpurkar2016squad}. In total, SQuAD contains 100,000+ question-answer pairs on 500+ articles cite{rajpurkar2016squad}. The goal of this project is to build a QA system on SQuAD using an end-to-end neural network architecture.
+
+In this project, I focus on reducing network size and explaining the model. Based on match-lstm and answer pointer model designed by citewang, I design a baseline architecture. Then I make three changes to the baseline architecture to do comparisons. I successfully implemented the four models and got reasonable training and testing results. Through comparing the results of three changed models with the baseline model, I also found some redundant design in the baseline model - preprocessing layer and the $h_r$ in bidirecional match-lstm layer provides duplicate context information.
+
+
 
 \chapter{Background}
 \section{Word Feature Vector}
