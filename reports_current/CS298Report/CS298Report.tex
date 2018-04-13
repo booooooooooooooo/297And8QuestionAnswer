@@ -73,7 +73,7 @@
 % NOTE: to get the front matter single spaced, put \singlespacing
 % at the start of the abstract text
 
-\abstract{Question Answering(QA) is about making a computer program that could answer questions in natural language automatically. QA techniques are widely used. End-to-end neural network architectures are state-of-art techniques for question answering tasks. Challenges of applying end-to-end models include getting more accurate results, reducing network size, explaining how the model works and so on. In this project, I focus on reducing network size and explaining the model. Based on match-lstm and answer pointer model designed by citewang, I design a baseline architecture. Then I make three changes to the baseline architecture to do comparisons. I successfully implemented the four models and got reasonable training and testing results. Through comparing the results of three changed models with the baseline model, I also found some redundant design in the baseline model - preprocessing layer and the $h_r$ in bidirecional match-lstm layer provides duplicate context information.
+\abstract{Question Answering(QA) is about making a computer program that could answer questions in natural language automatically. QA techniques are widely used. End-to-end neural network architectures are state-of-art techniques for question answering tasks. Challenges of applying end-to-end models include getting more accurate results, reducing network size, explaining how the model works and so on. In this project, I focus on reducing network size and explaining the model. Based on match-lstm and answer pointer model, I design a baseline architecture. Then I make three changes to the baseline architecture to do comparisons. I successfully implemented the four models and got reasonable training and testing results. Through comparing the results of three changed models with the baseline model, I also found some redundant design in the baseline model - preprocessing layer and the $h_r$ in bidirecional match-lstm layer provides duplicate context information.
 }
 
 
@@ -130,34 +130,51 @@ Thanks to
 
 Question Answering(QA) is about making a computer program that could answer questions in natural language automatically. QA techniques are widely used among search engines, personal assistant applications on smart phones, voice control systems and a lot more other applications. In recent years, more end-to-end neural network architectures are built to do question answering tasks. The end-to-end neural network approach gives more accurate result than traditional solutions, which use syntactic and semantic analyses and hand made features.Challenges of applying end-to-end models include getting more accurate results, reducing network size, explaining how the model works and so on.
 
-The Stanford Question Answering Dataset (SQuAD) is used in this project. It includes questions asked by human beings on Wikipedia articles. The answer to each question is a segment of the corresponding Wikipedia article cite{rajpurkar2016squad}. In total, SQuAD contains 100,000+ question-answer pairs on 500+ articles cite{rajpurkar2016squad}. The goal of this project is to build a QA system on SQuAD using an end-to-end neural network architecture.
+The Stanford Question Answering Dataset (SQuAD) is used in this project. As described by \cite{rajpurkar2016squad}, it includes questions asked by human beings on Wikipedia articles. The answer to each question is a segment of the corresponding Wikipedia article. In total, SQuAD contains 100,000+ question-answer pairs on 500+ articles. The goal of this project is to build a QA system on SQuAD using an end-to-end neural network architecture.
 
-In this project, I focus on reducing network size and explaining the model. Based on match-lstm and answer pointer model designed by citewang, I design a baseline architecture. Then I make three changes to the baseline architecture to do comparisons. I successfully implemented the four models and got reasonable training and testing results. Through comparing the results of three changed models with the baseline model, I also found some redundant design in the baseline model - preprocessing layer and the $h_r$ in bidirecional match-lstm layer provides duplicate context information.
+In this project, I focus on reducing network size and explaining the model. Based on match-lstm and answer pointer model designed in \cite{wang2016machine}, I design a baseline architecture. Then I make three changes to the baseline architecture to do comparisons. I successfully implemented the four models and got reasonable training and testing results. Through comparing the results of three changed models with the baseline model, I also found some redundant design in the baseline model - preprocessing layer and the $h_r$ in bidirecional match-lstm layer provides duplicate context information.
 
 
 
 \chapter{Background}
 \section{Word Feature Vector}
-Word Feature Vector (WFC) was firstly came up with by CITEBengio2003. A word feature vector carries information about the likeliness of each word from the vocabulary to be its neighbour. A word feature represents a word according to its relationship with all words in the vocabulary.
+Word Feature Vector (WFC) was firstly came up with in \cite{bengio2003neural}. A word feature vector carries information about the likeliness of each word from the vocabulary to be its neighbour. A word feature represents a word according to its relationship with all words in the vocabulary.
 
-In CITEBengio2003, the word feature vectors of a given text is learned from training a neural probabilistic language model(NPLM) on the text. The NPLM is illustrated in CITEfigurenlpmfromcs297report, where V is the vocabulary, $w_t$ represents a word from $V$, and the matrix $C$ contains the word feature vectors of all words in $V$. Each instance of the training set is a sequence of words $w_1,...,w_T$. The purpose of NPLM is to train a model $f$ such that $ f(w_t, ..., w_{t-n+1}) = \hat{P}(w_t | w_{t-1},...,w_{t-n+1})$. The computation of $f(w_t, ..., w_{t-n+1})$ is divided into two parts.
+\begin{figure}[htbp]\centering
+  % put a comment character (%) at the beginning of the next line for
+  % plain latex systems like PCTeX
+  \includegraphics[width=15cm, height=12cm]{figures/nplm_architecture.png}
+  \caption{Neural architecture: $f(i,w_{t-1},... ,w_{t-n+1}) =g(i,C(w_{t-1}),... ,C(w_{t-n+1}))$ where $g$ is the neural network and $C(i)$ is the $i$-th word feature vector\cite{bengio2003neural}}
+  \label{f:nplm_architecture.png}
+\end{figure}
+
+As showed in Figure \ref{f:nplm_architecture.png}, the word feature vectors of a given text is learned from training a neural probabilistic language model(NPLM) on the text. The NPLM is illustrated in CITEfigurenlpmfromcs297report, where V is the vocabulary, $w_t$ represents a word from $V$, and the matrix $C$ contains the word feature vectors of all words in $V$. Each instance of the training set is a sequence of words $w_1,...,w_T$. The purpose of NPLM is to train a model $f$ such that $ f(w_t, ..., w_{t-n+1}) = \hat{P}(w_t | w_{t-1},...,w_{t-n+1})$. The computation of $f(w_t, ..., w_{t-n+1})$ is divided into two parts.
 First, we map each $w$ to a WFC by selecting the corresponding row in $C$ to get $x=(C(w_{t-1}),... ,C(w_{t-n+1}))$. Second, we get $f(w_t, ..., w_{t-n+1})$ through $y=b+W\cdot x + U\cdot tanh(d + H\cdot x)$ and $ f(w_t, ..., w_{t-n+1}) = \frac{e^{y_{w_t}}}{\sum_{i}^{}e^{y_i}}$. The loss function to minimize is $L = -\frac{1}{T}\sum _{t}^{} \log{f(w_t, ..., w_{t-n+1})}$.
 
 
 WFC enables learning dependencies on longer sentences. In comparison, n-grams only considers around 3 words in practice due to the computation infeasibility when n is larger. As such, a natural language model built on WFC can consider more context information than that built on n-grams. More context generally brings more more accurate result.
 
 The usage of WFC is far beyond simply predicting a word's neighbours. In practice, WFC is a common way to represent the words in an end-to-end neural network model which does a natural language processing task.
-\section{Recurrent Neural Networks (RNNs)}
-Recurrent neural networks (RNNs) CITE(Rumelhart et al., 1986a) are neural networks with sequence-based specialization. They are used for modeling sequential data.
 
-TODO:figure10.2fromdeeplearningbook
+\section{Recurrent Neural Networks (RNNs)}\label{sect:rnn}
+Recurrent neural networks (RNNs) \cite{rumelhart1986learning} are neural networks with sequence-based specialization. They are used for modeling sequential data. Figure \ref{f:rnnWithNoOutputs} is a simple recurrent network with no outputs. $x$ is the input. $h$ is the hidden state. The relation between $h$ and $x$ is $h_t = f(h_{t-1}, x; \theta)$ where $\theta$ is hyperparameters.
+
+\begin{figure}[htbp]\centering
+  % put a comment character (%) at the beginning of the next line for
+  % plain latex systems like PCTeX
+  \includegraphics[width=12cm, height=3cm]{figures/rnnWithNoOutputs}
+  \caption{A recurrent network with no outputs\cite{bengio2003neural}}
+  \label{f:rnnWithNoOutputs}
+\end{figure}
 
 In this research, I use two types of design patterns. The first type is a RNN with recurrent connections between hidden states and the sequence of hidden states are the output of the RNN. The second type is also a RNN with recurrent connections between hidden states, but the last hidden state is the output of the RNN.
 
-I use Long Short Term Memory (LSTM) cell and Gated Recurrent Unit (GRU) cell instead of the basic RNN cell. They prevent the RNNs from vanishing after a few rollings, as illustrated in CITEAPPENDIX.
+I use Long Short Term Memory (LSTM) cell and Gated Recurrent Unit (GRU) cell instead of the basic RNN cell. They prevent the RNNs from vanishing after a few iterations.
+
 \section{Bidirectional RNNs}
 
-The RNNs of Section CITEREFERPREVIOUSSECTION, rolls from left to right. As such, the $h_t$ only contains context information from $x_1$ to $x_t$, but does not contain context information from $x_{t+1}$ to the end. However, in most sequence-to-sequence tasks, we want $h_t$ to contain the information of the whole sequence. Bidirectional RNNs makes this possible. In a bidirectional RNN, one RNN rolls from left to right, another RNN rolls from right to left. At time t, using both $h1_t$ and $h2_t$ would get context information from the whole sequence.
+The RNNs of Section \ref{sect:rnn}
+, rolls from left to right. As such, the $h_t$ only contains context information from $x_1$ to $x_t$, but does not contain context information from $x_{t+1}$ to the end. However, in most sequence-to-sequence tasks, we want $h_t$ to contain the information of the whole sequence. Bidirectional RNNs makes this possible. In a bidirectional RNN, one RNN rolls from left to right, another RNN rolls from right to left. At time t, using both $h1_t$ and $h2_t$ would get context information from the whole sequence.
 
 TODO:FITUREOFBIDIREDTIONALRNNmyresearchuses
 
@@ -171,7 +188,7 @@ The answer questioning task is a sequence-to-sequence task. The input sequences 
 
 \section{Attention Mechanism}
 
-Attention mechanism was first came up with by CiteBahdanau et al. (2015) in the application of neural machine translation. Neural machine translation is also a sequence-to-sequence task. The input sequence is some words in one language, and the output sequence is the same content in another language. In the encoder-decoder sequence-to-sequence architecture for neural machine translation, a RNN encodes the input sequence to one state, and the decoder decodes the state to the output sequence. However, a big problem here is the state cannot contain all the information of a long input sequence. The attention mechanism was invented to let the decoding process knows about the input sequence. CiteDeepLearningbookChapter12 summarizes the attention mechanism used in neural machine translation into three components:
+Attention mechanism was first came up with in \cite{bahdanau2014neural} in the application of neural machine translation. Neural machine translation is also a sequence-to-sequence task. The input sequence is some words in one language, and the output sequence is the same content in another language. In the encoder-decoder sequence-to-sequence architecture for neural machine translation, a RNN encodes the input sequence to one state, and the decoder decodes the state to the output sequence. However, a big problem here is the state cannot contain all the information of a long input sequence. The attention mechanism was invented to let the decoding process knows about the input sequence. \cite{goodfellow2016deep} summarizes the attention mechanism used in neural machine translation into three components:
 \begin{itemize}
 \item{A process that reads raw data.}
 \item{A list of feature vectors storing the output of the reader.}
@@ -180,28 +197,28 @@ Attention mechanism was first came up with by CiteBahdanau et al. (2015) in the 
 
 TODO:fitureOfAtentionInNMT
 
-Although the attention mechanism was invented for doing machine learning task, it can be applied to many other tasks of natural language processing. I will explain how attention mechanism is used in this project in Chpter CITEDESIGNCHAPTER
+Although the attention mechanism was invented for doing machine learning task, it can be applied to many other tasks of natural language processing. I will explain how attention mechanism is used in this project in Chapter \ref{chap:design}
 
 
 
 
-\section{Pointer Network}
+\section{Pointer Network}\label{sect:pointerNet}
 
-CiteOriolVinyalsetal discovered Pointer Network in 2015. Pointer Network enables decoder to output a sequence of indexes in input sequence. It uses attention weight as a probability distribution to select a member from the input sequence as the output token. This usage is different from that in neural machine translation where the attention weight is used to get a weighted average vector from input sequence and use it as context information to generate the output.
+Pointer Network\cite{vinyals2015pointer} was discovered in 2015. Pointer Network enables decoder to output a sequence of indexes in input sequence. It uses attention weight as a probability distribution to select a member from the input sequence as the output token. This usage is different from that in neural machine translation where the attention weight is used to get a weighted average vector from input sequence and use it as context information to generate the output.
 
 TODO:figureOfPointerNetwork
 
 
 
 
-\chapter{Design}
+\chapter{Design}\label{chap:design}
 
-Considering the limited computation resource, I choose CiteWang'spaper as the main reference of my design. The model in CiteWang'spaper reflects a general architecture to do question answering task, and the number of layers is not too many to train. In this chapter, I introduce CiteWang'spaper first. Then I describe how I modify it to design my baseline architecture and how I modify the baseline architecture to analyze how the baseline architecture works.
+Considering the limited computation resource, I choose \cite{wang2016machine} as the main reference of my design. The model in \cite{wang2016machine} reflects a general architecture to do question answering task, and the number of layers is not too many to train. In this chapter, I introduce \cite{wang2016machine} first. Then I describe how I modify it to design my baseline architecture and how I modify the baseline architecture to analyze how the baseline architecture works.
 
 
-\section{Review on Paper citewangspaper}
+\section{Match-lstm and Answer Pointer Model}
 
-Wang and Jiang CiteWang'spaper proposed an encoder-decoder sequence-to-sequence architecture for the question answering task on SQuAD dataset. Each instance of training data includes one passage, one question and one answer. The passage is a sequence of tokens, the question is a sequence of tokens, and the answer is two indices indicating the start and end position in passage. Recall that each answer is part of the corresponding passage in SQuAD dataset.
+Wang and Jiang  proposed an encoder-decoder sequence-to-sequence architecture for the question answering task on SQuAD dataset in \cite{wang2016machine}. Each instance of training data includes one passage, one question and one answer. The passage is a sequence of tokens, the question is a sequence of tokens, and the answer is two indices indicating the start and end position in passage. Recall that each answer is part of the corresponding passage in SQuAD dataset.
 
 Before feeding training data into model, tokens in passages and questions are vectorized to word feature vectors. As such, some pre-trained word feature vector matrix is an additional dataset in need.
 
@@ -259,7 +276,7 @@ Then go over $H_p$ from right to left to get $\overleftarrow{H_r}$. Concatenate 
 \in R^{2l \times p}.
 \]
 
-The decoding process includes only one layer - Answer Pointer layer. This layer is motivated by the Pointer Net in paper citevinyals2015pointer I have discussed in Section CITE. Wang and Jiang CITE proposed two ways to design this layer. Here I only explain the boundary way. In this way, each instance of the output of the decoding process is two probability distributions. The first probability tells how likely each token in passage to be the start of the answer. The second probability distribution tells how likely each token in passage to be the end of the answer. To be specific,
+The decoding process includes only one layer - Answer Pointer layer. This layer is motivated by the Pointer Net in \cite{vinyals2015pointer} I have discussed in Section \ref{sect:pointerNet}. Wang and Jiang proposed two ways to design this layer. Here I only explain the boundary way. In this way, each instance of the output of the decoding process is two probability distributions. The first probability tells how likely each token in passage to be the start of the answer. The second probability distribution tells how likely each token in passage to be the end of the answer. To be specific,
 
 $$F_k = tahn(VH_r + (W^a{h^a_{k-1}} +  b^a) \otimes e_p)$$
 $$\beta _k = softmax(v^tF_k + c \otimes e_p)$$
@@ -314,7 +331,7 @@ My third change is combining the first and second change.
 
 \chapter{Implementation}
 
-\section{Padding}
+\section{Padding}\label{sect:padding}
 
 In practice, passages have different length, and questions also have different length. We must cut or extend all passages to a same length, and all questions to a same length. This process is called padding. Due to padding, the architecture in implementation has some difference with the theoretical one.
 
@@ -360,7 +377,7 @@ I use Stanford Question Answering Dataset (SQuAD) to do experiemnts.  It contain
 
 Then I face two ways to represent the word tokens. The first way is to query the corresponding word vector of each token from the GloVe embedding matrix and turn the word sequences into vector sequences.  The second way is to make a vocabulary and turn each word sequence to an index sequence based on the vocabulary. At the same time, a smaller embedding matrix is made from the original GloVe embedding matrix. The index of each token in this matrix is same with that in vocabulary. The index sequences and the smaller embedding matrix is fed into the neural network. Since the index sequences require much less memory than the vector sequences, the second way saves a lot of memory than the first way when large data set is used.
 
-The next step is to pad passage and question, as mentioned in Chapter TODO:CITE. There is a {\tt pad} token in vocabulary, and the corresponding word vector is zero vector.
+The next step is to pad passage and question, as mentioned in Section \ref{sect:padding}. There is a {\tt pad} token in vocabulary, and the corresponding word vector is zero vector.
 
 At last, split data into batches.
 
@@ -373,13 +390,13 @@ TODO: table: size of json file, voc file, embedding matrix file, token\_id file 
 TODO: figure: work flow of data processing
 
 \section{Settings}
-At the first step, I refer to the experimental settings of TODOCiteInnerPeacegithub to set some of my parameters. The dimension of GloVe word vectors is 100, the size of hidden units is 64, the regularization scale of L2-regularization is 0.001 and the batch size is 32. For passage length and question length, I plot out their distributions and find out that 400 is a reasonable cut point for passage, and 30 is a reasonable cut point for question.
+At the first step, I refer to the experimental settings in InnerPeace-Wu's Github page to set some of my parameters. The dimension of GloVe word vectors is 100, the size of hidden units is 64, the regularization scale of L2-regularization is 0.001 and the batch size is 32. For passage length and question length, I plot out their distributions and find out that 400 is a reasonable cut point for passage, and 30 is a reasonable cut point for question.
 
 TODO: figure of passage length, question length
 
 I use the default settings of tensorflow for adam optimizer. I sample out 200 instances from train set to estimate train error, and from dev set to estimate validation error. The normalization boundary to clip gradients is set as 5.
 
-Then I do several experiments on different learning rate, since this is the most important parameters. I initially planed to do this on the match architecture, but due to some code bugs at that time, I actually do the experiments on match\_change1 architecture.I started the experiments from 0.002, which is used by TODOCiteInnerPeacegithub. It performs well. Then I try several larger value. However, all the larger values I try do not perform well. So I set learning rate to 0.002.
+Then I do several experiments on different learning rate, since this is the most important parameters. I initially planed to do this on the match architecture, but due to some code bugs at that time, I actually do the experiments on match\_change1 architecture. I started the experiments from 0.002, which is used in InnerPeace-Wu's Github page. It performs well. Then I try several larger value. However, all the larger values I try do not perform well. So I set learning rate to 0.002.
 
 TODO: figure of different lr
 
@@ -447,12 +464,12 @@ In the future, I plan to research on the opposite direction - adding more contex
 %%%%%%%%%%%%%%%%%%%%%%%%  Appendices %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\appendix	% don't forget this line if you have appendices!
+% \appendix	% don't forget this line if you have appendices!
 
-\chapter{Gratuitous Appendix}
-Nothing to see here.
+% \chapter{Gratuitous Appendix}
+% Nothing to see here.
 
-%\input appA.tex
+% %\input appA.tex
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
