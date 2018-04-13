@@ -141,8 +141,6 @@ In this project, I focus on reducing network size and explaining the model. Base
 Word Feature Vector (WFC) was firstly came up with in \cite{bengio2003neural}. A word feature vector carries information about the likeliness of each word from the vocabulary to be its neighbour. A word feature represents a word according to its relationship with all words in the vocabulary.
 
 \begin{figure}[htbp]\centering
-  % put a comment character (%) at the beginning of the next line for
-  % plain latex systems like PCTeX
   \includegraphics[width=15cm, height=12cm]{figures/nplm_architecture.png}
   \caption{Neural architecture: $f(i,w_{t-1},... ,w_{t-n+1}) =g(i,C(w_{t-1}),... ,C(w_{t-n+1}))$ where $g$ is the neural network and $C(i)$ is the $i$-th word feature vector\cite{bengio2003neural}}
   \label{f:nplm_architecture.png}
@@ -160,8 +158,6 @@ The usage of WFC is far beyond simply predicting a word's neighbours. In practic
 Recurrent neural networks (RNNs) \cite{rumelhart1986learning} are neural networks with sequence-based specialization. They are used for modeling sequential data. Figure \ref{f:rnnWithNoOutputs} is a simple recurrent network with no outputs. $x$ is the input. $h$ is the hidden state. The relation between $h$ and $x$ is $h_t = f(h_{t-1}, x; \theta)$ where $\theta$ is hyperparameters.
 
 \begin{figure}[htbp]\centering
-  % put a comment character (%) at the beginning of the next line for
-  % plain latex systems like PCTeX
   \includegraphics[width=12cm, height=3cm]{figures/rnnWithNoOutputs}
   \caption{A recurrent network with no outputs\cite{bengio2003neural}}
   \label{f:rnnWithNoOutputs}
@@ -174,39 +170,57 @@ I use Long Short Term Memory (LSTM) cell and Gated Recurrent Unit (GRU) cell ins
 \section{Bidirectional RNNs}
 
 The RNNs of Section \ref{sect:rnn}
-, rolls from left to right. As such, the $h_t$ only contains context information from $x_1$ to $x_t$, but does not contain context information from $x_{t+1}$ to the end. However, in most sequence-to-sequence tasks, we want $h_t$ to contain the information of the whole sequence. Bidirectional RNNs makes this possible. In a bidirectional RNN, one RNN rolls from left to right, another RNN rolls from right to left. At time t, using both $h1_t$ and $h2_t$ would get context information from the whole sequence.
+iterate from left to right. As such, the $h_t$ only contains context information from $x_1$ to $x_t$, but does not contain context information from $x_{t+1}$ to the end. However, in most sequence-to-sequence tasks, we want $h_t$ to contain the information of the whole sequence. Bidirectional RNNs make this possible. In a bidirectional RNN, one RNN rolls from left to right, and another RNN rolls from right to left. As illustrated in Figure \ref{f:bidirectionalRnn}, at time t, using both $h_t$ and $g_t$ would get context information from the whole sequence.
 
-TODO:FITUREOFBIDIREDTIONALRNNmyresearchuses
+\begin{figure}[htbp]\centering
+  \includegraphics[width=7cm, height=10cm]{figures/bidirectionalRnn}
+  \caption{A typical bidirectional recurrent neural network. $h$ and $g$ are states. $x$ is input, $o$ is output, $y$ is ground truth, $L$ is loss.\cite{goodfellow2016deep}}
+  \label{f:bidirectionalRnn}
+\end{figure}
 
 \section{Encoder-Decoder Sequence-to-Sequence Architecture}
 
-Sequence-to-sequence means the input to the model is a sequence, and the output from the model is also a sequence. An encoder-decoder architecture can be applied to do this task. The process of understanding the input sequence is considered as encoding the input sequence to some vectors. The process of generating output is considered as decoding the vectors.
+Sequence-to-sequence means the input to the model is a sequence, and the output from the model is also a sequence. An encoder-decoder architecture can be applied to do this task. The process of understanding the input sequence is considered as encoding the input sequence to some vectors $C$. The process of generating output is considered as decoding the vectors $C$.
 
-TODO:figureOfEncoderDecoderSequenceToSequenceArch
+Figure \ref{f:encoderDecoder} shows an basic encoder-decoder architecture used by some natural language processing tasks such as Machine translation and speech recongnition. The $x$s are inputs, and the $y$s are outputs.
 
-The answer questioning task is a sequence-to-sequence task. The input sequences are questions and passages, and the output sequences are answers.
+\begin{figure}[htbp]\centering
+  \includegraphics[width=10cm, height=10cm]{figures/encoderDecoder.png}
+  \caption{An example of encoder-decoder sequence to sequence architecture\cite{goodfellow2016deep}}
+  \label{f:encoderDecoder}
+\end{figure}
 
-\section{Attention Mechanism}
+The answer questioning task is a sequence-to-sequence task. However, the input sequences are actually two sequences - questions and passages, and the output sequences are answers. As such, in the encoding process, we need some method to make the passages aware of the questions, and encode passages and questions together to some vectors $C$. I will talk about the details in Chapter \ref{chap:design}.
 
-Attention mechanism was first came up with in \cite{bahdanau2014neural} in the application of neural machine translation. Neural machine translation is also a sequence-to-sequence task. The input sequence is some words in one language, and the output sequence is the same content in another language. In the encoder-decoder sequence-to-sequence architecture for neural machine translation, a RNN encodes the input sequence to one state, and the decoder decodes the state to the output sequence. However, a big problem here is the state cannot contain all the information of a long input sequence. The attention mechanism was invented to let the decoding process knows about the input sequence. \cite{goodfellow2016deep} summarizes the attention mechanism used in neural machine translation into three components:
+\section{Attention Mechanism}\label{sect:attention}
+
+Attention mechanism was first came up with in \cite{bahdanau2014neural} in the application of neural machine translation. Neural machine translation is also a sequence-to-sequence task. The input sequence is some words in one language, and the output sequence is the same content in another language. In the encoder-decoder sequence-to-sequence architecture for neural machine translation, a RNN encodes the input sequence to one state, and the decoder decodes the state to the output sequence. However, a big problem here is the state cannot contain all the information of a long input sequence. The attention mechanism was invented to let the decoding process knows about the input sequence.
+
+Figure \ref{f:attention} shows how attention mechanism is added to the basic encoder-decoder architecture for machine translation described in Figure \ref{f:encoderDecoder}. When decoding $y_t$, use $s_{t-1}$ to query states of encoding process to get weights $\alpha _1 ... \alpha _T$, then get weighted average of $h_1 ... h_T$ - $c_t$, then get $s_t =f(s_{t-1},y_{t-1},c_t)$, and at last get $y_t$ from $s_t$.
+
+\begin{figure}[htbp]\centering
+  \includegraphics[width=8cm, height=10cm]{figures/attention}
+  \caption{How attention is used to generate the $y_t$ \cite{bahdanau2014neural}}
+  \label{f:attention}
+\end{figure}
+
+\cite{goodfellow2016deep} summarizes the attention mechanism used in neural machine translation into three components:
 \begin{itemize}
 \item{A process that reads raw data.}
 \item{A list of feature vectors storing the output of the reader.}
 \item{A process that exploits the content of the memory to sequentially perform a task, at each time step having the ability put attention on the content of one memory element (or a few, with a different weight).}
 \end{itemize}
 
-TODO:fitureOfAtentionInNMT
 
-Although the attention mechanism was invented for doing machine learning task, it can be applied to many other tasks of natural language processing. I will explain how attention mechanism is used in this project in Chapter \ref{chap:design}
+
+Although the attention mechanism was invented for doing machine translation task, it can be applied to many other tasks of natural language processing. I will explain how attention mechanism is used in this project in Chapter \ref{chap:design}
 
 
 
 
 \section{Pointer Network}\label{sect:pointerNet}
 
-Pointer Network\cite{vinyals2015pointer} was discovered in 2015. Pointer Network enables decoder to output a sequence of indexes in input sequence. It uses attention weight as a probability distribution to select a member from the input sequence as the output token. This usage is different from that in neural machine translation where the attention weight is used to get a weighted average vector from input sequence and use it as context information to generate the output.
-
-TODO:figureOfPointerNetwork
+Pointer Network\cite{vinyals2015pointer} was discovered in 2015. Pointer Network enables decoder to output a sequence of indexes in input sequence. It uses attention weight as a probability distribution to select a member from the input sequence as the output token. Taking the notation in Section \ref{sect:attention}, the output is $y_t = argmax_t{(\alpha _1 ... \alpha _T)}$. The iteration of decoding process is $s_t =f(s_{t-1},c_t)$.
 
 
 
