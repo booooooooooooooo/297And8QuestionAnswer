@@ -11,6 +11,7 @@ from util_data import *
 from Encoder.EncoderPreprocess import EncoderPreprocess
 from Encoder.EncoderMatch import EncoderMatch
 from Decoder.DecoderAnsPtr import DecoderAnsPtr
+from Decoder.DecoderAnsPtrCorrected import DecoderAnsPtrCorrected
 
 
 
