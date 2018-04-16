@@ -76,6 +76,11 @@ class Model:
                 ques_embed = tf.nn.embedding_lookup(self.embed_matrix, self.ques)
                 H_r = EncoderMatch(ques_embed, self.ques_mask, passage_embed, self.passage_mask, self.embed_size, self.num_units, "simple").encode()
                 beta_s, beta_e = DecoderAnsPtr(H_r, self.passage_mask, 2 * self.num_units).decode()
+        elif self.arch == "match_corrected":
+            with tf.variable_scope("match_corrected"):
+                H_p, H_q = EncoderPreprocess(self.embed_matrix, self.passage, self.passage_mask, self.ques, self.ques_mask, self.num_units).encode()
+                H_r = EncoderMatch(H_q, self.ques_mask, H_p, self.passage_mask, 2 * self.num_units, self.num_units, "general").encode()
+                beta_s, beta_e = DecoderAnsPtrCorrected(H_r, self.passage_mask, 2 * self.num_units).decode()
         # elif self.arch == "r_net":
         #     H_p, H_q = EncoderPreprocess(self.embed_matrix, self.passage, self.passage_mask, self.ques, self.ques_mask, self.num_units).encode()
         #     with tf.variable_scope("match_p_q"):
