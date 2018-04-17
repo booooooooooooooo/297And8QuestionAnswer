@@ -77,7 +77,7 @@ if __name__ == "__main__":
                     "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 1,
                     "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "match_change2"}
     config_match_corrected = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
-                    "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 1,
+                    "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 9,
                     "reg_scale": 0.001, "batch_size": 32, "sample_size": 200, "arch": "match_corrected"}
     # config_r_net = {"embed_size":100, "pass_max_length": 400, "ques_max_length": 30,
     #                 "num_units": 64, "clip_norm": 5, "lr": 2e-3, "n_epoch": 1,

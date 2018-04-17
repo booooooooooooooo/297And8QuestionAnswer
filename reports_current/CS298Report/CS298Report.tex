@@ -42,7 +42,7 @@
 %%%%%%%%%%%%       all the preamble material:       %%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\title{A Question Answering System on SQuAD Dataset Using an End-to-end Neural Network}
+\title{A Question Answering System Using Encoder-Decoder Recurrent Neural Networks}
 
 \author{BO}{LI}
 
@@ -73,7 +73,7 @@
 % NOTE: to get the front matter single spaced, put \singlespacing
 % at the start of the abstract text
 
-\abstract{Question Answering(QA) is about making a computer program that could answer questions in natural language automatically. QA techniques are widely used. End-to-end neural network architectures are state-of-art techniques for question answering tasks. Challenges of applying end-to-end models include getting more accurate results, reducing network size, explaining how the model works and so on. In this project, I focus on reducing network size and explaining the model. Based on match-lstm and answer pointer model, I design a baseline architecture. Then I make three changes to the baseline architecture to do comparisons. I successfully implemented the four models and got reasonable training and testing results. Through comparing the results of three changed models with the baseline model, I also found some redundant design in the baseline model - preprocessing layer and the $h_r$ in bidirecional match-lstm layer provides duplicate context information.
+\abstract{Question Answering (QA) is about making a computer program that could answer questions in natural language. It is one of the most challenging tasks in natural language processing. At the present, the state-of-art performance of QA is produced by applying neural network models. In this project, I build a QA system using an encoder-decode recurrent neural network architecture. Besides, I research on how to explain the model and how to reduce network size without decreasing accuracy. The baseline encoder-decoder recurrent neural network I apply is the match-lstm and answer pointer model. Based on it, I design three changes to explain some parts of the baseline model and try to reduce the size of the baseline model. My contributions include: I successfully implement match-lstm and answer pointer model by getting TODOADDRESULT; I compare the baseline model and three changes and find out some redundant design in the baseline model -  preprocessing layer and the $h_r$ in bidirecional match-lstm layer provides duplicate context information.
 }
 
 
@@ -128,11 +128,12 @@ Thanks to
 
 \chapter{Introduction}
 
-Question Answering(QA) is about making a computer program that could answer questions in natural language automatically. QA techniques are widely used among search engines, personal assistant applications on smart phones, voice control systems and a lot more other applications. In recent years, more end-to-end neural network architectures are built to do question answering tasks. The end-to-end neural network approach gives more accurate result than traditional solutions, which use syntactic and semantic analyses and hand made features.Challenges of applying end-to-end models include getting more accurate results, reducing network size, explaining how the model works and so on.
+Question Answering(QA) is about making a computer program that could answer questions in natural language. QA techniques are widely used among search engines, personal assistant applications on smart phones, voice control systems and a lot more other applications. QA is one of the most challenging tasks in natural language processing. In recent years, more neural network models are built to do question answering tasks. This approach gives more accurate result than traditional solutions, which use syntactic and semantic analyses and hand made features. However, researchers are still working hard to achieve better results, reducing network size without changing accuracy, explaining how the networks work and so on.
 
-The Stanford Question Answering Dataset (SQuAD) is used in this project. As described by \cite{rajpurkar2016squad}, it includes questions asked by human beings on Wikipedia articles. The answer to each question is a segment of the corresponding Wikipedia article. In total, SQuAD contains 100,000+ question-answer pairs on 500+ articles. The goal of this project is to build a QA system on SQuAD using an end-to-end neural network architecture.
+In this project, I implement a QA system using an encoder-decoder recurrent neural networks. The baseline model I use is the one designed by \cite{wang2016machine}. Then I make three changes to the baseline model to find out how to explain the baseline model and reduce its size. The data used is the Stanford Question Answering Dataset (SQuAD). As described by \cite{rajpurkar2016squad}, it includes questions asked by human beings on Wikipedia articles. The answer to each question is a segment of the corresponding Wikipedia article. In total, SQuAD contains 100,000+ question-answer pairs on 500+ articles.
 
-In this project, I focus on reducing network size and explaining the model. Based on match-lstm and answer pointer model designed in \cite{wang2016machine}, I design a baseline architecture. Then I make three changes to the baseline architecture to do comparisons. I successfully implemented the four models and got reasonable training and testing results. Through comparing the results of three changed models with the baseline model, I also found some redundant design in the baseline model - preprocessing layer and the $h_r$ in bidirecional match-lstm layer provides duplicate context information.
+
+I successfully process all raw data using Python and implement the four different models using a machine learning framework Tensorflow. TODOwriteResults. Through comparing the results of 4 different models, I also find some redundant design in the baseline model - preprocessing layer and the $h_r$ in bidirecional match-lstm layer provides duplicate context information.
 
 
 
