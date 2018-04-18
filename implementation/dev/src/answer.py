@@ -221,7 +221,7 @@ dir_match_corrected="bo.nov29/datasets/output_job100/1"
         stat_file_match_change1 = "/dir_match_change1/Stat-March-22-2018-11-55-08"
         stat_file_match_change2 = "/dir_match_change2/Stat-April-05-2018-05-02-49"
         stat_file_match_change3 = "/dir_match_change3/Stat-March-29-2018-01-45-17"
-        stat_file_match_corrected = "dir_match_corrected/Stat-April-17-2018-04-36-10"
+        stat_file_match_corrected = "/dir_match_corrected/Stat-April-17-2018-04-36-10"
 
         '''
         floyd run --env tensorflow-1.4:py2  --data $dir_test_data:/dir_test_data --data $dir_voc:/dir_voc --data $dir_match:/dir_match "python answer.py floyd"

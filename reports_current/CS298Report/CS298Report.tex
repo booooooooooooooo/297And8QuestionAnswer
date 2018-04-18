@@ -228,10 +228,10 @@ Pointer Network\cite{vinyals2015pointer} was discovered in 2015. Pointer Network
 
 \chapter{Design}\label{chap:design}
 
-Considering the limited computation resource, I choose \cite{wang2016machine} as the main reference of my design. The model in \cite{wang2016machine} reflects a general architecture to do question answering task, and the number of layers is not too many to train. In this chapter, I introduce \cite{wang2016machine} first. Then I describe how I modify it to design my baseline architecture and how I modify the baseline architecture to analyze how the baseline architecture works.
+Considering the limited computation resource, I choose \cite{wang2016machine} as the main reference of my design. The model in \cite{wang2016machine} reflects a general architecture to do question answering task, and the number of layers is not too many to train. In this chapter, I introduce the match\_lstm and answer pointer model in \cite{wang2016machine} first. For convenience, I will call this model MLAP. Then I describe how I modify MLAP to analyze how it works and how to improve it.
 
 
-\section{Match-lstm and Answer Pointer Model}
+\section{Match-lstm and Answer Pointer (MLAP) Model}
 
 Wang and Jiang  proposed an encoder-decoder sequence-to-sequence architecture for the question answering task on SQuAD dataset in \cite{wang2016machine}. Each instance of training data includes one passage, one question and one answer. The passage is a sequence of tokens, the question is a sequence of tokens, and the answer is two indices indicating the start and end position in passage. Recall that each answer is part of the corresponding passage in SQuAD dataset.
 
@@ -477,18 +477,58 @@ I used Tesla K80 12 GB Memory 61 GB RAM 100 GB SSD GPU to train the four models.
 
 \section{Results}
 
-For match architecture, the model converges after around 8 epochs. Match\_change1 and match\_change2 perform similar to match. For match\_change2, the model converges after around 4 epochs.  including training time, loss change, score change etc. For all four architectures, training each epoch costs around 2 hours on the Tesla GPU I use.
-
-TODO:figureoftrainingstat
-
-Figure TODO:citefigure shows the testing results of on test data set of the four architectures. In the original dev set, which is our test set, each question corresponds to multiple answers. This makes sense since in reality we might have several different ways to answer a same question. We use two ways to calculate the scores. The first way is choose the first answer, the second way is calculating scores for each answer and choose the best score.In either way, match, match\_change1 and match\_change2 perform similarly, but match\_change3 behaves much worse than the other three.
 
 
-TODO:figureoftestingresult
+describe patterns in trainning。 For match architecture, the model converges after around 8 epochs. Match\_change1 and match\_change2 perform similar to match. For match\_change2, the model converges after around 4 epochs.  including training time, loss change, score change etc. For all four architectures, training each epoch costs around 2 hours on the Tesla GPU I use.
 
-Interactive Testing on match architecture shower some interesting reuslts.
+\begin{figure}[htbp]\centering
+  \includegraphics[width=12cm, height=12cm]{figures/match_corrected.png}
+  \caption{Training Process of MLAP Model}
+  \label{f:mlap}
+\end{figure}
 
-TODO:figures of interactive testing result.
+\begin{figure}[htbp]\centering
+  \includegraphics[width=12cm, height=12cm]{figures/match_baseline.png}
+  \caption{Training Process of Baseline Model}
+  \label{f:baseline}
+\end{figure}
+
+\begin{figure}[htbp]\centering
+  \includegraphics[width=12cm, height=12cm]{figures/match_change1.png}
+  \caption{Training Process of Baseline Change1 Model}
+  \label{f:baseline_change1}
+\end{figure}
+
+\begin{figure}[htbp]\centering
+  \includegraphics[width=12cm, height=12cm]{figures/match_change2.png}
+  \caption{Training Process of Baseline Change2 Model}
+  \label{f:baseline_change2}
+\end{figure}
+
+\begin{figure}[htbp]\centering
+  \includegraphics[width=12cm, height=12cm]{figures/match_change3.png}
+  \caption{Training Process of Baseline Change3 Model}
+  \label{f:baseline_change3}
+\end{figure}
+
+describe all results. In the original dev set, which is our test set, each question corresponds to multiple answers. This makes sense since in reality we might have several different ways to answer a same question. We use two ways to calculate the scores. The first way is choose the first answer, the second way is calculating scores for each answer and choose the best score.In either way, match, match\_change1 and match\_change2 perform similarly, but match\_change3 behaves much worse than the other three.
+
+
+\begin{table}[htbp]\centering
+  \caption{Testing Results}
+  \label{tab:test_results}
+  \begin{tabular}{|c|c|c|}
+    \hline
+    Model& Test Exact Match & Test F1 \\
+    \hline\hline
+    MLAP & \ 23.4 &\ 33.6 \\
+    Baseline & \ 33.0 &\ 45.8 \\
+    Baseline Change1 & \ 33.0 &\ 46.2 \\
+    Baseline Change2 & \ 33.0 &\ 45.6 \\
+    Baseline Change3 & \ 24.3 &\ 33.9 \\
+    \hline
+  \end{tabular}
+\end{table}
 
 \section{Analysis}
 We can draw several interesting insights from the results. First, more context information increases, or at least does not decrease the accuracy. Second, the ways to add context information are various. Third, duplicate context might not be necessary.
