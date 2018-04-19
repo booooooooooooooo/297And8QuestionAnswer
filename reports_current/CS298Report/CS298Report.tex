@@ -42,7 +42,7 @@
 %%%%%%%%%%%%       all the preamble material:       %%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\title{A Question Answering System Using Encoder-Decoder Recurrent Neural Networks}
+\title{A Question Answering System Using Encoder-Decoder Sequence-to-sequence Recurrent Neural Networks}
 
 \author{BO}{LI}
 
@@ -73,7 +73,7 @@
 % NOTE: to get the front matter single spaced, put \singlespacing
 % at the start of the abstract text
 
-\abstract{Question Answering (QA) is about making a computer program that could answer questions in natural language. It is one of the most challenging tasks in natural language processing. At the present, the state-of-art performance of QA is produced by applying neural network models. In this project, I build a QA system using an encoder-decode recurrent neural network architecture. Besides, I research on how to explain the model and how to reduce network size without decreasing accuracy. The baseline encoder-decoder recurrent neural network I apply is the match-lstm and answer pointer model. Based on it, I design three changes to explain some parts of the baseline model and try to reduce the size of the baseline model. My contributions include: I successfully implement match-lstm and answer pointer model by getting TODOADDRESULT; I compare the baseline model and three changes and find out some redundant design in the baseline model -  preprocessing layer and the $h_r$ in bidirecional match-lstm layer provides duplicate context information.
+\abstract{Question Answering (QA) is about making a computer program that could answer questions in natural language. It is one of the most challenging tasks in natural language processing. At the present, the state-of-art performance of QA is produced by applying neural network models. In this project, I successfully build a QA system using an encoder-decode recurrent neural network architecture called match-lstm and answer pointer model. Based on it, I implement four changes to understand the model and try to reduce the size of the model. I get two interesting observations. First, the performance increases when quering attention using weighted input instead of lstm state. Second, preprocessing layer and the $h_r$ in bidirecional match-lstm layer might provide duplicate context information.
 }
 
 
@@ -82,7 +82,7 @@
 
 \acknowledgements{
 
-Thanks to
+Thanks to my advisor Dr. Pollett for his patience, support and guidance during this project. Thanks to Dr. Kim and Dr. Taylor for their generous service in committee.
 }
 
 % the following options can be enabled or disabled
@@ -128,18 +128,21 @@ Thanks to
 
 \chapter{Introduction}
 
-Question Answering(QA) is about making a computer program that could answer questions in natural language. QA techniques are widely used among search engines, personal assistant applications on smart phones, voice control systems and a lot more other applications. QA is one of the most challenging tasks in natural language processing. In recent years, more neural network models are built to do question answering tasks. This approach gives more accurate result than traditional solutions, which use syntactic and semantic analyses and hand made features. However, researchers are still working hard to achieve better results, reducing network size without changing accuracy, explaining how the networks work and so on.
+Question Answering(QA) is about making a computer program that could answer questions in natural language. QA techniques are widely used among search engines, personal assistant applications on smart phones, voice control systems and a lot more other applications. QA is one of the most challenging tasks in natural language processing. In recent years, more neural network models are built to do question answering tasks. This approach gives more accurate result than traditional solutions, which use syntactic and semantic analyses and hand made features. Researchers keep designing new neural network models to seek for better results, although better results are usually achieved by making more complex neural networks.
 
-In this project, I implement a QA system using an encoder-decoder recurrent neural networks. The baseline model I use is the one designed by \cite{wang2016machine}. Then I make three changes to the baseline model to find out how to explain the baseline model and reduce its size. The data used is the Stanford Question Answering Dataset (SQuAD). As described by \cite{rajpurkar2016squad}, it includes questions asked by human beings on Wikipedia articles. The answer to each question is a segment of the corresponding Wikipedia article. In total, SQuAD contains 100,000+ question-answer pairs on 500+ articles.
+Encoder-decoder sequence-to-sequence recurrent neural networks are very efficient at modeling natural language processing tasks. Such networks encode the an input sequence to some vectors and then decode them to an output sequence. Recurrent neural networks are applicable here since they are good at processing sequence. Encoder-decoder sequence-to-sequence recurrent neural networks have been very successful at machine translation. Since question answering is also a sequence-to-sequence task, researching on how to apply the encoder-decoder sequence-to-sequence recurrent neural networks to do question answering is meaningful.
 
 
-I successfully process all raw data using Python and implement the four different models using a machine learning framework Tensorflow. TODOwriteResults. Through comparing the results of 4 different models, I also find some redundant design in the baseline model - preprocessing layer and the $h_r$ in bidirecional match-lstm layer provides duplicate context information.
+In this project, I choose the match lstm and answer pointer model which is designed by Wang and Jiang\cite{wang2016machine} as my baseline model. It is an encoder-decode sequence-to-sequence recurrent network model. Besides, the network size is not too big to train using the limited computation resource I could access. I first implement it to build a question answering system. Then I make four changes to understand it and try to improve it. The data used is the Stanford Question Answering Dataset (SQuAD). As described by \cite{rajpurkar2016squad}, it includes questions asked by human beings on Wikipedia articles. The answer to each question is a segment of the corresponding Wikipedia article. In total, SQuAD contains 100,000+ question-answer pairs on 500+ articles.
+
+I successfully process all raw data using Python and implement the five different models using a machine learning framework Tensorflow. Through comparing the results of 5 different models, I get two interesting observations. First, the performance increases when querying attention using a weighted input instead of a lstm state. Second, preprocessing layer and the $h_r$ in bidirecional match-lstm layer might provide duplicate context information.
 
 
 
 \chapter{Background}
 \section{Word Feature Vector}
-Word Feature Vector (WFC) was firstly came up with in \cite{bengio2003neural}. A word feature vector carries information about the likeliness of each word from the vocabulary to be its neighbour. A word feature represents a word according to its relationship with all words in the vocabulary.
+
+Word Feature Vector (WFC) was firstly came up by Bengio, Yoshua and Ducharme in \cite{bengio2003neural}. A word feature represents a word according to its relationship with all words in the vocabulary. This distance from a word feature vector to any other word feature vector tells how likely this word appears together with the other word.
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=15cm, height=12cm]{figures/nplm_architecture.png}
@@ -147,16 +150,33 @@ Word Feature Vector (WFC) was firstly came up with in \cite{bengio2003neural}. A
   \label{f:nplm_architecture.png}
 \end{figure}
 
-As showed in Figure \ref{f:nplm_architecture.png}, the word feature vectors of a given text is learned from training a neural probabilistic language model(NPLM) on the text. The NPLM is illustrated in CITEfigurenlpmfromcs297report, where V is the vocabulary, $w_t$ represents a word from $V$, and the matrix $C$ contains the word feature vectors of all words in $V$. Each instance of the training set is a sequence of words $w_1,...,w_T$. The purpose of NPLM is to train a model $f$ such that $ f(w_t, ..., w_{t-n+1}) = \hat{P}(w_t | w_{t-1},...,w_{t-n+1})$. The computation of $f(w_t, ..., w_{t-n+1})$ is divided into two parts.
-First, we map each $w$ to a WFC by selecting the corresponding row in $C$ to get $x=(C(w_{t-1}),... ,C(w_{t-n+1}))$. Second, we get $f(w_t, ..., w_{t-n+1})$ through $y=b+W\cdot x + U\cdot tanh(d + H\cdot x)$ and $ f(w_t, ..., w_{t-n+1}) = \frac{e^{y_{w_t}}}{\sum_{i}^{}e^{y_i}}$. The loss function to minimize is $L = -\frac{1}{T}\sum _{t}^{} \log{f(w_t, ..., w_{t-n+1})}$.
+The word feature vectors of the vocabulary from a given text is learned from training a neural probabilistic language model (NPLM) on the text. Denote V as the vocabulary, $w_t$ as a word from $V$, and the matrix $C$ as the word feature vectors of all words in $V$. Each instance of the training set is a sequence of words $w_1,...,w_T$. The purpose of NPLM is to train a model $f$ such that
+
+$$ f(w_t, ..., w_{t-n+1}) = \hat{P}(w_t | w_{t-1},...,w_{t-n+1}).$$
+
+The computation of $f(w_t, ..., w_{t-n+1})$ is divided into two parts.
+First, we map each $w$ to a WFC by selecting the corresponding row in $C$ to get
+
+$$x=(C(w_{t-1}),... ,C(w_{t-n+1})).$$
+
+Second, we get $f(w_t, ..., w_{t-n+1})$ through
+
+$$y=b+W\cdot x + U\cdot tanh(d + H\cdot x)$$
+
+and
+
+$$ f(w_t, ..., w_{t-n+1}) = \frac{e^{y_{w_t}}}{\sum_{i}^{}e^{y_i}}.$$
+
+The loss function to minimize is $$L = -\frac{1}{T}\sum _{t}^{} \log{f(w_t, ..., w_{t-n+1})}.$$
 
 
-WFC enables learning dependencies on longer sentences. In comparison, n-grams only considers around 3 words in practice due to the computation infeasibility when n is larger. As such, a natural language model built on WFC can consider more context information than that built on n-grams. More context generally brings more more accurate result.
+WFC enables learning dependencies on longer sentences with reasonable computation resource and time. In comparison, although n-grams could lean long term dependency by choosing large n, in practice, current computation resource could only supports $n$ to be around 3. As such, a natural language model built on WFC can consider more context information than that built on n-grams. More context generally brings more accurate result.
 
-The usage of WFC is far beyond simply predicting a word's neighbours. In practice, WFC is a common way to represent the words in an end-to-end neural network model which does a natural language processing task.
+The usage of WFC is far beyond simply predicting a word's neighbours. In practice, WFC is a common way to represent the words in a neural network model which does a natural language processing task. In this project, I use WFC to initialize each word input to models.
 
 \section{Recurrent Neural Networks (RNNs)}\label{sect:rnn}
-Recurrent neural networks (RNNs) \cite{rumelhart1986learning} are neural networks with sequence-based specialization. They are used for modeling sequential data. Figure \ref{f:rnnWithNoOutputs} is a simple recurrent network with no outputs. $x$ is the input. $h$ is the hidden state. The relation between $h$ and $x$ is $h_t = f(h_{t-1}, x; \theta)$ where $\theta$ is hyperparameters.
+
+Recurrent neural networks (RNNs) \cite{rumelhart1986learning} are used for modeling sequential data. Figure \ref{f:rnnWithNoOutputs} is a simple recurrent network with no outputs. $x$ is the input. $h$ is the hidden state. The relation between $h$ and $x$ is $h_t = f(h_{t-1}, x; \theta)$ where $\theta$ is hyperparameters.
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=3cm]{figures/rnnWithNoOutputs}
@@ -164,9 +184,12 @@ Recurrent neural networks (RNNs) \cite{rumelhart1986learning} are neural network
   \label{f:rnnWithNoOutputs}
 \end{figure}
 
-In this research, I use two types of design patterns. The first type is a RNN with recurrent connections between hidden states and the sequence of hidden states are the output of the RNN. The second type is also a RNN with recurrent connections between hidden states, but the last hidden state is the output of the RNN.
 
-I use Long Short Term Memory (LSTM) cell and Gated Recurrent Unit (GRU) cell instead of the basic RNN cell. They prevent the RNNs from vanishing after a few iterations.
+
+Despite the fitness of RNNs to sequential data, in practice, vanishing problem troubles the usage of RNNs. Vanishing means the gradients become smaller and smaller as the network going forward. When this happens, the networks are learning very slow or even stop learning. The main solution to vanishing problem is using a more complex learning unit. In 1997, hochreiter invented Long Short Term Momory (LSTM) cell \cite{hochreiter1997long}. LSTM has one more memory cell to remember long term context and use forget gate, input gate and output gate to control how much information into and out of the current unit. Aside from LSTM, Cho et al. invented Gated Recurrent Unit (GRU)\cite{cho2014learning} which has a simplified structure but similar function with LSTM.
+
+
+In this project, I use LSTM and GRU equally as learning unit. Among various RNN structures, I mainly use two types. The first type is a RNN with recurrent connections between hidden states. The sequence of hidden states are the output of the RNN. The second type is also a RNN with recurrent connections between hidden states. However, the last hidden state is the output of the RNN.
 
 \section{Bidirectional RNNs}
 
