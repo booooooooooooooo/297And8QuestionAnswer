@@ -262,10 +262,10 @@ Pointer Network\cite{vinyals2015pointer} was invented by Vinyals et al. in 2015.
 
 \chapter{Design}\label{chap:design}
 
-Considering the limited computation resource, I choose \cite{wang2016machine} as the main reference of my design. The model in \cite{wang2016machine} reflects a general architecture to do question answering task, and the number of layers is not too many to train. In this chapter, I introduce the match\_lstm and answer pointer model in \cite{wang2016machine} first. For convenience, I will call this model MLAP. Then I describe how I modify MLAP to analyze how it works and how to improve it.
+In this chapter, I will review the baseline model - match lstm and answer pointer model, and my four changes on the baseline model. The baseline model is quite suitable for a master project. First, it reflects a general encoder-decoder sequence-to-sequence RNN architecture to do question answering task. Second, its network size is not too large to train given the limited computation resource I can access.
 
 
-\section{Match-lstm and Answer Pointer (MLAP) Model}
+\section{Baseline Model: Match-lstm and Answer Pointer (MLAP) }
 
 Wang and Jiang  proposed an encoder-decoder sequence-to-sequence architecture for the question answering task on SQuAD dataset in \cite{wang2016machine}. Each instance of training data includes one passage, one question and one answer. The passage is a sequence of tokens, the question is a sequence of tokens, and the answer is two indices indicating the start and end position in passage. Recall that each answer is part of the corresponding passage in SQuAD dataset.
 
@@ -358,25 +358,29 @@ $$J(\theta) = -\frac{1}{N}\sum_{i=1}^{N} \log{p(a^n|H^r)} $$
 
 is minimized.
 
-\section{Baseline Architecture}
+\section{Change Zero to Baseline Model}
 
-The difference from my baseline architecture to Wang's design is the decoding part. My output of the decoding part is same with theirs, but I choose a simplified way to get there. I use the same way to get $F_k$ and $\beta _k$, but let ${h_k}^a = H^r\beta _{k}^T$ and $h_{-1}^a = \overrightarrow{0}$.
+The difference from my Change Zero to baseline model is in the decoding part. In change zero, I use
 
-\section{First Change to Baseline Architecture}
+$${h_k}^a = H^r\beta _{k}^T.$$
 
-My first change to baseline architecture is removing the $W^r\overrightarrow{{h_{i-1}}^r}$ in bi-directional match-LSTM layer. I am interested in this experiments since I guess the $\overrightarrow{{h_{i-1}}^r}$ only carries some redundant information. After this change,
+That is, I use attention weights to calculate a weighted average of input states, then use this weighted average to query the next attention weights.
+
+\section{Change One to Baseline Model}
+
+The difference between change one and change zero is removing the $W^r\overrightarrow{{h_{i-1}}^r}$ in bi-directional match-LSTM layer. I am interested in this experiments since I guess the $\overrightarrow{{h_{i-1}}^r}$ might carries some redundant information. After this change,
 
 
 $$\overrightarrow{G} = tanh(W^qH^q + (W^p{h_i}^p + b^p) \otimes e_q)$$
 
 
-\section{Second Change to Baseline Architecture}
+\section{Change Two to Baseline Model}
 
-My second change to baseline architecture is removing the preprocessing layer in encoding process.
+The difference between chagne two and change zero is removing the preprocessing layer in encoding process. This is the check whether preprocessing layer carries some redundant information.
 
-\section{Third Change to Baseline Architecture}
+\section{Change Three to Baseline Model}
 
-My third change is combining the first and second change.
+The difference between change three and change zero is both preprocessing layer and $W^r\overrightarrow{{h_{i-1}}^r}$ in bi-directional match-LSTM layer are removed. This is to experiment whether they context information of both is carried in some other place in the change zero model.
 
 \chapter{Implementation}
 
@@ -417,6 +421,8 @@ Figure \ref{f:tf_graph} describes an abstract graph of all the models I implemen
 
 
 \section{Implementation Pipelines}
+
+The train and validation process produces a brunch of Tensorflow graphs. The validation loss is used to choose best graph. Then the best graph is used to do testing.
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=3cm]{figures/pipeline.png}
