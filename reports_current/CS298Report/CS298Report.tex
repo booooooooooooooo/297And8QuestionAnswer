@@ -144,12 +144,6 @@ I successfully process all raw data using Python and implement the five differen
 
 Word Feature Vector (WFC) was firstly came up by Bengio, Yoshua and Ducharme in \cite{bengio2003neural}. A word feature represents a word according to its relationship with all words in the vocabulary. This distance from a word feature vector to any other word feature vector tells how likely this word appears together with the other word.
 
-\begin{figure}[htbp]\centering
-  \includegraphics[width=15cm, height=12cm]{figures/nplm_architecture.png}
-  \caption{Neural architecture: $f(i,w_{t-1},... ,w_{t-n+1}) =g(i,C(w_{t-1}),... ,C(w_{t-n+1}))$ where $g$ is the neural network and $C(i)$ is the $i$-th word feature vector\cite{bengio2003neural}}
-  \label{f:nplm_architecture.png}
-\end{figure}
-
 The word feature vectors of the vocabulary from a given text is learned from training a neural probabilistic language model (NPLM) on the text. Denote V as the vocabulary, $w_t$ as a word from $V$, and the matrix $C$ as the word feature vectors of all words in $V$. Each instance of the training set is a sequence of words $w_1,...,w_T$. The purpose of NPLM is to train a model $f$ such that
 
 $$ f(w_t, ..., w_{t-n+1}) = \hat{P}(w_t | w_{t-1},...,w_{t-n+1}).$$
@@ -176,11 +170,17 @@ The usage of WFC is far beyond simply predicting a word's neighbours. In practic
 
 \section{Recurrent Neural Networks (RNNs)}\label{sect:rnn}
 
-Recurrent neural networks (RNNs) \cite{rumelhart1986learning} are used for modeling sequential data. Figure \ref{f:rnnWithNoOutputs} is a simple recurrent network with no outputs. $x$ is the input. $h$ is the hidden state. The relation between $h$ and $x$ is $h_t = f(h_{t-1}, x; \theta)$ where $\theta$ is hyperparameters.
+Recurrent neural networks (RNNs) \cite{rumelhart1986learning} are used for modeling sequential data. Figure \ref{f:rnnWithNoOutputs} is a simple recurrent network with no outputs. $x$ is the input. $h$ is the hidden state. $\theta$ is hyperparameter. The relation between $h$ and $x$ is
+
+$$h_t = f(h_{t-1}, x_t; \theta).$$
+
+An example of $f$ is
+
+$$h_t = sigmoid(W_h h_{t-1} + W_x x_t + b).$$
 
 \begin{figure}[htbp]\centering
-  \includegraphics[width=12cm, height=3cm]{figures/rnnWithNoOutputs}
-  \caption{A recurrent network with no outputs\cite{bengio2003neural}}
+  \includegraphics[width=9cm, height=3cm]{figures/rnnWithNoOutputs}
+  \caption{A simple recurrent network}
   \label{f:rnnWithNoOutputs}
 \end{figure}
 
@@ -197,56 +197,67 @@ The RNNs of Section \ref{sect:rnn}
 iterate from left to right. As such, the $h_t$ only contains context information from $x_1$ to $x_t$, but does not contain context information from $x_{t+1}$ to the end. However, in most sequence-to-sequence tasks, we want $h_t$ to contain the information of the whole sequence. Bidirectional RNNs make this possible. In a bidirectional RNN, one RNN rolls from left to right, and another RNN rolls from right to left. As illustrated in Figure \ref{f:bidirectionalRnn}, at time t, using both $h_t$ and $g_t$ would get context information from the whole sequence.
 
 \begin{figure}[htbp]\centering
-  \includegraphics[width=7cm, height=10cm]{figures/bidirectionalRnn}
-  \caption{A typical bidirectional recurrent neural network. $h$ and $g$ are states. $x$ is input, $o$ is output, $y$ is ground truth, $L$ is loss.\cite{goodfellow2016deep}}
+  \includegraphics[width=8cm, height=5cm]{figures/bidirectionalRnn.png}
+  \caption{A simple bidirectional recurrent neural network}
   \label{f:bidirectionalRnn}
 \end{figure}
 
+In this project, I use bidirectional RNNs in encoding part.
+
 \section{Encoder-Decoder Sequence-to-Sequence Architecture}
 
-Sequence-to-sequence means the input to the model is a sequence, and the output from the model is also a sequence. An encoder-decoder architecture can be applied to do this task. The process of understanding the input sequence is considered as encoding the input sequence to some vectors $C$. The process of generating output is considered as decoding the vectors $C$.
-
-Figure \ref{f:encoderDecoder} shows an basic encoder-decoder architecture used by some natural language processing tasks such as Machine translation and speech recongnition. The $x$s are inputs, and the $y$s are outputs.
+Sequence-to-sequence means the input to the model is a sequence, and the output from the model is also a sequence. An encoder-decoder architecture can be applied to do this task. The process of understanding the input sequence is considered as encoding the input sequence to some vectors $Crypto$. The process of generating output is considered as decoding the $Crypto$. Figure \ref{f:encoderDecoder} shows the concept of encoder-decoder architecture . The $x$s are inputs, the $h$s are states in encoding process, the $y$s are outputs, and the $g$s are states of decoding process.
 
 \begin{figure}[htbp]\centering
-  \includegraphics[width=10cm, height=10cm]{figures/encoderDecoder.png}
-  \caption{An example of encoder-decoder sequence to sequence architecture\cite{goodfellow2016deep}}
+  \includegraphics[width=10cm, height=7cm]{figures/encoderDecoder.png}
+  \caption{The concept of encoder-decoder sequence to sequence architecture}
   \label{f:encoderDecoder}
 \end{figure}
 
-The answer questioning task is a sequence-to-sequence task. However, the input sequences are actually two sequences - questions and passages, and the output sequences are answers. As such, in the encoding process, we need some method to make the passages aware of the questions, and encode passages and questions together to some vectors $C$. I will talk about the details in Chapter \ref{chap:design}.
+In this project, the question answering task is a sequence-to-sequence task. However, the input sequences are actually two sequences - questions and passages, and the output sequences are answers. As such, in the encoding process, we need some more method to make the passages aware of the questions and encode them together - the attention mechanism.
 
 \section{Attention Mechanism}\label{sect:attention}
 
-Attention mechanism was first came up with in \cite{bahdanau2014neural} in the application of neural machine translation. Neural machine translation is also a sequence-to-sequence task. The input sequence is some words in one language, and the output sequence is the same content in another language. In the encoder-decoder sequence-to-sequence architecture for neural machine translation, a RNN encodes the input sequence to one state, and the decoder decodes the state to the output sequence. However, a big problem here is the state cannot contain all the information of a long input sequence. The attention mechanism was invented to let the decoding process knows about the input sequence.
+Attention mechanism was first came up with by Bahdanau et al. in \cite{bahdanau2014neural} in the application of neural machine translation. In the neural machine translation task, the input sequence is some words in one language, and the output sequence is the same content in another language. In the encoder-decoder sequence-to-sequence architecture for neural machine translation, a RNN encodes the input sequence to one state, and the decoder decodes the state to the output sequence. However, a big problem here is one state cannot contain all the information of a long input sequence. The attention mechanism was invented to enable the decoding process knows about the input sequence.
 
-Figure \ref{f:attention} shows how attention mechanism is added to the basic encoder-decoder architecture for machine translation described in Figure \ref{f:encoderDecoder}. When decoding $y_t$, use $s_{t-1}$ to query states of encoding process to get weights $\alpha _1 ... \alpha _T$, then get weighted average of $h_1 ... h_T$ - $c_t$, then get $s_t =f(s_{t-1},y_{t-1},c_t)$, and at last get $y_t$ from $s_t$.
+Figure \ref{f:attention} shows how attention mechanism works in machine translation. $y$ is output, $g$ is state, and $c$ is attention vector. When geting $g_2$, aside from $g_1$, $y_1$ and $c_2$ are also inputs. We have
+
+$$g_2 =f(g_{1},y_{1},c_2).$$
+
+$c_2$ is produced by using $g_1$ to ``query'' the encoding states $h_1, ... h_n$.
+
+$$c_2 = \sum{\alpha _i h_i}$$
+$$\alpha _i = \exp{e_i} / \sum{\exp{e_i}}$$
+$$e_i = attention(h_i, g_1)$$
+
+Then function $attention$ could be a feed forward step of neural network such as $e_i = tanh(W_h h_i + W_g g_1 + b)$.
+
 
 \begin{figure}[htbp]\centering
-  \includegraphics[width=8cm, height=10cm]{figures/attention}
-  \caption{How attention is used to generate the $y_t$ \cite{bahdanau2014neural}}
+  \includegraphics[width=8cm, height=8cm]{figures/attention}
+  \caption{Attention mechanism in machine translation}
   \label{f:attention}
 \end{figure}
 
-\cite{goodfellow2016deep} summarizes the attention mechanism used in neural machine translation into three components:
-\begin{itemize}
-\item{A process that reads raw data.}
-\item{A list of feature vectors storing the output of the reader.}
-\item{A process that exploits the content of the memory to sequentially perform a task, at each time step having the ability put attention on the content of one memory element (or a few, with a different weight).}
-\end{itemize}
 
 
 
-Although the attention mechanism was invented for doing machine translation task, it can be applied to many other tasks of natural language processing. I will explain how attention mechanism is used in this project in Chapter \ref{chap:design}
+Although the attention mechanism was invented for doing machine translation task, it can be applied to many other tasks of natural language processing. We can simply understand ``attention'' as ``being aware of a sequence''. In machine translation, the decoding process needs to ``be aware of the encoding states''. In this project, we need the passage to ``be aware of the question'', and the answer to ``be aware of the encoding states of passage and question''. I will explain how the attention mechanism is used in this project in detail in Chapter \ref{chap:design}
 
 
 
 
 \section{Pointer Network}\label{sect:pointerNet}
 
-Pointer Network\cite{vinyals2015pointer} was discovered in 2015. Pointer Network enables decoder to output a sequence of indexes in input sequence. It uses attention weight as a probability distribution to select a member from the input sequence as the output token. Taking the notation in Section \ref{sect:attention}, the output is $y_t = argmax_t{(\alpha _1 ... \alpha _T)}$. The iteration of decoding process is $s_t =f(s_{t-1},c_t)$.
+Pointer Network\cite{vinyals2015pointer} was invented by Vinyals et al. in 2015. Pointer Network enables decoder to output tokens from input sequence. Attention mechanism is used in pointer network. However, aside from getting a weighted average of encoding states, the weights $\alpha$s is considered as a probability distribution based on which a token from input sequence is selected as the output. Then we have $y_2 = x_k$ when $k = argmax_i(\alpha _2,i)$. Note that $y_i$ is not considered as input to produce decoding state.
 
 
+
+\begin{figure}[htbp]\centering
+  \includegraphics[width=8cm, height=8cm]{figures/pointerNetwork.png}
+  \caption{The concept of pointer network}
+  \label{f:pointerNetwork}
+\end{figure}
 
 
 \chapter{Design}\label{chap:design}
