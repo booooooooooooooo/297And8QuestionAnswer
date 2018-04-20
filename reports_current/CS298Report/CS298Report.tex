@@ -384,48 +384,55 @@ The difference between change three and change zero is both preprocessing layer 
 
 \chapter{Implementation}
 
-\section{Padding}\label{sect:padding}
+\section{Adjust Data to Support Batch Training}\label{sect:padding}
 
-In practice, passages have different length, and questions also have different length. We must cut or extend all passages to a same length, and all questions to a same length. This process is called padding. Due to padding, the architecture in implementation has some difference with the theoretical one.
+In practice, passages have different length. So do questions. However, in one specific model, the number of times to iterate encoding or decoding process is fixed. We are intended to use all training data to train the model instead of using a single instance. As such, adjusting all passages to a same length and adjusting all questions to another same length is necessary. For sequences longer than a fixed length, we cut some part of the sentence out. For sequences shorted than a fixed length, we use some special vector to pad them.
 
-Assume in data processing step, each passage is paired with one $passage_mask$ vector of size $passage_padding_length$, and each question is paired with one $question_mask$ of size $question_padding_length$. The entry of mask vector is either 0 or 1. 0 indicates the current token does not exit in original sequence.
+Due to this adjustment, the models in implementation has some difference with the theoretical ones. Below I will talking about the difference taking the baseline model as example.
 
-In preprocessing layer,
+Assume in data processing step, each passage is adjusted to $passage\_padding\_length$ and is paired with an vector $passage\_mask$ which has size $passage\_padding\_length$ and each question is adjusted to $question\_padding\_length$ and paired with one $question\_mask$ which has size $question\_padding\_length$. The entry of mask vector is either 0 or 1. 0 indicates the current token does not exit in original sequence. 1 indicates the opposite. When constructing the model, every effort is made to prevent the model from distracted by not existing tokens.
+
+In preprocessing layer, after getting a sequence of hidden states, the mask vector is used to reset the value of not existing positions to zero by an additional step
 $$H^p = H^p \circ (passage\_mask \otimes l)$$
-$$H^q = H^q \circ (question\_mask \otimes l)$$
+$$H^q = H^q \circ (question\_mask \otimes l).$$
 
-In match-LSTM layer,
-$$\overrightarrow{\alpha _i} = softmax( (w^t\overrightarrow{G_i} + b \otimes e_q) ) \circ question\_mask $$
+In match-LSTM layer, the attention weights of not existing tokens are also set to zero by an additional step
+$$\overrightarrow{\alpha _i} = softmax( (w^t\overrightarrow{G_i} + b \otimes e_q) ) \circ question\_mask .$$
 
+Similar to preprocessing layer, we have
+$$H_r = H_r \circ (passage\_mask \otimes 2l).$$
 
-$$H_r = H_r \circ (passage\_mask \otimes 2l)$$
-
-In Ans-Ptr layer,
-$$\beta _k = softmax( (v^tF_k + c \otimes e_p) ) \circ passage\_mask$$
+In Ans-Ptr layer, similar to match-LSTM layer, we have
+$$\beta _k = softmax( (v^tF_k + c \otimes e_p) ) \circ passage\_mask.$$
 
 
 \section{Tensorflow Graph}
-Tensorflow is an open source machine learning framework. The central idea of Tensorflow is describing a complex numeric computation as a graph. Each node of a graph is a operation, and the edges of a node are values needed to perform the operation. Variables are "trainable" nodes. Placeholders are nodes whose values are fed in run time. Take the baseline architecture as example, variables should be used to represent all the parameters of encoding and decoding layers, and placeholders should be used to represent passages, questions, and answers. To train a graph, we do not need to compute the gradients on our own. Instead, we call some APIs of Tensorflow to get a train operation, and then feed data through placeholders to the operation to update the parameters.
 
-
-
-Figure \ref{f:tf_graph} describes an abstract graph of all the models I implement. The cloud shape represents the placeholders whose values are to be fed in run time. The Variables are included in Encoder and Decoder. The Rectangles represent Tensors in the calculation process. The circles represent the final Tensors we use. In both training and testing, the passages are questions are feed into graph. In the embedding step, the model transforms tokens to vectors using given word feature vector matrix. The Encoder encodes vectors to $H_r$, and the Decoder decoders $H_r$ to two probability distributions - $\beta _0$ and $\beta _1$. In testing, the predicted answers are determined from the two probability distrubutions. In training, the loss is calculated using $\beta _0$, $\beta _1$ and ground truth answers feed through answer placeholders. From the loss, an train operation is calculated, which include the gradients on all Variables. Running the train operation with data fed in through placeholders will update all the Variables.
+Tensorflow is an open source machine learning framework. The central idea of Tensorflow is describing a complex numeric computation as a graph.  {\tt Variables} are "trainable" nodes.  {\tt Placeholders} are nodes whose values are fed in run time. Taking the baseline model as an example,  {\tt Variables} should be used to represent all the parameters of encoding and decoding layers and {\tt Placeholders} should be used to represent passages, questions, and answers. To train a graph, we do not need to compute the gradients on our own. Instead, we call some APIs of Tensorflow to get a train operation, and then feed data through placeholders to the train operation to update the parameters.
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=12cm]{figures/tf_graph.png}
-  \caption{Abstract Tensorflow Graph}
+  \caption{Concept of Tensorflow graphs in this project}
   \label{f:tf_graph}
 \end{figure}
+
+Figure \ref{f:tf_graph} describes the concept of the Tensorflow graphs I use in this project. The cloud shape represents the {\tt Placeholders} whose values are to be fed in run time. The {\tt Variables} are included in {\tt Encoder} and {\tt Decoder}. The rectangles represent Tensors in the calculation process. The circles represent the final Tensors we use.
+
+Here is how to build the graph. In the embedding step, the model transforms tokens to word feature vectors using a given word feature vector matrix. This matrix is part of the graph is is constant. The {\tt Encoder} encodes vectors to $H_r$ using a lot of {\tt Variables}, and the {\tt Decoder} decoders $H_r$ using a lot of {\tt Variables} to two probability distributions $\beta _0$ and $\beta _1$. Recall that $\beta _0$ tells the likeliness of each token in passage to be the start of the answer and $\bet _1$ tells the likeliness of each token in passage to be the end of the answer. The loss is calculated using $\beta _0$, $\beta _1$ and ground truth answers feed through answer {\tt Placeholders}. From the loss, a train operation is calculated. It includes the gradients on all {\tt Variables}.
+
+Here is how the run time works. In training and validation process, the passages, questions and answers are fed into the graph. Running the train operation with data fed into through {\tt Placeholders} will update all the {\tt Variables}. In testing process, only passages and questions are fed into the graph. The predicted answers are determined from $\beta _0$ and $\beta _1$.
+
+
 
 
 
 
 \section{Implementation Pipelines}
 
-The train and validation process produces a brunch of Tensorflow graphs. The validation loss is used to choose best graph. Then the best graph is used to do testing.
+The train and validation process produces a brunch of Tensorflow graphs. The validation loss is used to choose the best graph. Then the best graph is used to do testing.
 
 \begin{figure}[htbp]\centering
-  \includegraphics[width=12cm, height=3cm]{figures/pipeline.png}
+  \includegraphics[width=11cm, height=3cm]{figures/pipeline.png}
   \caption{Implementation Pipelines}
   \label{f:pipeline}
 \end{figure}
