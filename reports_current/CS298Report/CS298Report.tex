@@ -507,42 +507,52 @@ I used F1 score and exact match score to evaluate the performance of each archit
 
 I used Tesla K80 12 GB Memory 61 GB RAM 100 GB SSD GPU to train the four models.
 
-
 \section{Results}
+\subsection{Training Process}
 
+Figure \ref{f:mlap}, \ref{f:baseline_change0}, \ref{f:baseline_change1}, \ref{f:baseline_change2} and \ref{f:baseline_change3} show the training process of the baseline match lstm and answer pointer model, baseline change zero model, baseline change one model, baseline change two model and  baseline change three model. One epoch contains roughly 25 * 100 mini batches. The train loss on the 200 sample train instances and the valid loss on the 200 sample valid instances are calculated every 100 mini batches. So do sample train scores and sample validation scores. Training one epoch roughly costs 100 minutes. A through training of each model requires around 10 epochs and costs around 17 hours.
 
+As indicated by Figure \ref{f:mlap}, the baseline model converges after 3 epochs. The sample train f1 score converges to 0.5, the sample train exact match score converges to 0.35, the sample valid f1 score converges to 0.3, and the sample valid exact match score converges to 0.2.
 
-describe patterns in trainning。 For match architecture, the model converges after around 8 epochs. Match\_change1 and match\_change2 perform similar to match. For match\_change2, the model converges after around 4 epochs.  including training time, loss change, score change etc. For all four architectures, training each epoch costs around 2 hours on the Tesla GPU I use.
+As indicated by Figure \ref{f:baseline_change0}, the baseline change 0 model keeps learning in 10 epochs. The sample train f1 score converges to 0.6, the sample train exact match score converges to 0.5, the sample valid f1 score converges to 0.4, and the sample valid exact match score converges to 0.3.
+
+As indicated by Figure \ref{f:baseline_change1}, the baseline change 1 model converges after 10 epochs. The sample train f1 score converges to 0.65, the sample train exact match score converges to 0.45, the sample valid f1 score converges to 0.4, and the sample valid exact match score converges to 0.3.
+
+As indicated by Figure \ref{f:baseline_change2}, the baseline change 2 model converges after 4 epochs. The sample train f1 score converges to 0.6, the sample train exact match score converges to 0.4, the sample valid f1 score converges to 0.4, and the sample valid exact match score converges to 0.2.
+
+As indicated by Figure \ref{f:baseline_change3}, the baseline change 3 model keeps learning in the 10 epochs. The sample train f1 score converges to 0.5, the sample train exact match score converges to 0.35, the sample valid f1 score converges to 0.3, and the sample valid exact match score converges to 0.2.
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=12cm]{figures/match_corrected.png}
-  \caption{Training Process of MLAP Model}
+  \caption{Training process of baseline MLAP model}
   \label{f:mlap}
 \end{figure}
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=12cm]{figures/match_baseline.png}
-  \caption{Training Process of Baseline Model}
-  \label{f:baseline}
+  \caption{Training process of baseline change zero model}
+  \label{f:baseline_change0}
 \end{figure}
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=12cm]{figures/match_change1.png}
-  \caption{Training Process of Baseline Change1 Model}
+  \caption{Training process of baseline change one model}
   \label{f:baseline_change1}
 \end{figure}
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=12cm]{figures/match_change2.png}
-  \caption{Training Process of Baseline Change2 Model}
+  \caption{Training process of baseline change two model}
   \label{f:baseline_change2}
 \end{figure}
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=12cm]{figures/match_change3.png}
-  \caption{Training Process of Baseline Change3 Model}
+  \caption{Training process of baseline change three model}
   \label{f:baseline_change3}
 \end{figure}
+
+\subsection{Testing Results}
 
 describe all results. In the original dev set, which is our test set, each question corresponds to multiple answers. This makes sense since in reality we might have several different ways to answer a same question. We use two ways to calculate the scores. The first way is choose the first answer, the second way is calculating scores for each answer and choose the best score.In either way, match, match\_change1 and match\_change2 perform similarly, but match\_change3 behaves much worse than the other three.
 
@@ -554,11 +564,11 @@ describe all results. In the original dev set, which is our test set, each quest
     \hline
     Model& Test Exact Match & Test F1 \\
     \hline\hline
-    MLAP & \ 23.4 &\ 33.6 \\
-    Baseline & \ 33.0 &\ 45.8 \\
-    Baseline Change1 & \ 33.0 &\ 46.2 \\
-    Baseline Change2 & \ 33.0 &\ 45.6 \\
-    Baseline Change3 & \ 24.3 &\ 33.9 \\
+    Baseline: MLAP & \ 23.4 &\ 33.6 \\
+    Baseline Change 0& \ 33.0 &\ 45.8 \\
+    Baseline Change 1 & \ 33.0 &\ 46.2 \\
+    Baseline Change 2 & \ 33.0 &\ 45.6 \\
+    Baseline Change 3 & \ 24.3 &\ 33.9 \\
     \hline
   \end{tabular}
 \end{table}
