@@ -358,7 +358,7 @@ $$J(\theta) = -\frac{1}{N}\sum_{i=1}^{N} \log{p(a^n|H^r)} $$
 
 is minimized.
 
-\section{Change Zero to Baseline Model}
+\section{Change Zero to Baseline Model} \label{sect:change_0}
 
 The difference from my Change Zero to baseline model is in the decoding part. In change zero, I use
 
@@ -554,9 +554,6 @@ As indicated by Figure \ref{f:baseline_change3}, the baseline change 3 model kee
 
 \subsection{Testing Results}
 
-describe all results. In the original dev set, which is our test set, each question corresponds to multiple answers. This makes sense since in reality we might have several different ways to answer a same question. We use two ways to calculate the scores. The first way is choose the first answer, the second way is calculating scores for each answer and choose the best score.In either way, match, match\_change1 and match\_change2 perform similarly, but match\_change3 behaves much worse than the other three.
-
-
 \begin{table}[htbp]\centering
   \caption{Testing Results}
   \label{tab:test_results}
@@ -573,8 +570,20 @@ describe all results. In the original dev set, which is our test set, each quest
   \end{tabular}
 \end{table}
 
+Table \ref{tab:test_results} shows the testing results of all models. For the baseline MLAP model, I only get F1 score 33.6 and exact match score 23.4. This does not reproduce the F1 score 71.2 and the exact match score 61.1 of the reference paper\cite{wang2016machine}. The baseline change 0, baseline change 1 and baseline change 2 models behave similarly with F1 score around 46 and exact match score around 33. The baseline change 3 model behaves worse the baseline change 0, 1 and 2 with F1 score 33.9 and exact match score 24.3.
+
+
+
+
 \section{Analysis}
-We can draw several interesting insights from the results. First, more context information increases, or at least does not decrease the accuracy. Second, the ways to add context information are various. Third, duplicate context might not be necessary.
+
+Comparing testing results of the baseline model with that of the original paper, the difference is quite surprising. To find out why my implementation of baseline model does not reproduce the results of original paper, further debug, parameter tuning and training are needed.
+
+Comparing testing results change 0 model with baseline model, the scores increase. As I mentioned in Section \ref{sect:change_0}, the difference of two models is whether using state of decoding lstm or a weighted average of inputs to query the next attention weights. The subtle difference is whether adding one more nonlinear layer. It turns out not including the decoding lstm makes the model perform better.
+
+Comparing the testing results of change 1 and 2 with that of change 0, I found remove either preprocessing layer or the $h_r$ in bidirectional match lstm layer does not decrease the model performance. A reasonable guess is the two provides duplicate context information.
+
+Comparing the testing results of change 3 with that of change 0, I found removing both preprocessing layer and the $h_r$ in bidirectional match lstm layer decreases performance a lot. This mean the context information provides by these two parts are not provide in other place of the change 0 model. As such, one of them must be kept.
 
 
 
