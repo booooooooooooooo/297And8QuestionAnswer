@@ -418,7 +418,7 @@ Tensorflow is an open source machine learning framework. The central idea of Ten
 
 Figure \ref{f:tf_graph} describes the concept of the Tensorflow graphs I use in this project. The cloud shape represents the {\tt Placeholders} whose values are to be fed in run time. The {\tt Variables} are included in {\tt Encoder} and {\tt Decoder}. The rectangles represent Tensors in the calculation process. The circles represent the final Tensors we use.
 
-Here is how to build the graph. In the embedding step, the model transforms tokens to word feature vectors using a given word feature vector matrix. This matrix is part of the graph is is constant. The {\tt Encoder} encodes vectors to $H_r$ using a lot of {\tt Variables}, and the {\tt Decoder} decoders $H_r$ using a lot of {\tt Variables} to two probability distributions $\beta _0$ and $\beta _1$. Recall that $\beta _0$ tells the likeliness of each token in passage to be the start of the answer and $\bet _1$ tells the likeliness of each token in passage to be the end of the answer. The loss is calculated using $\beta _0$, $\beta _1$ and ground truth answers feed through answer {\tt Placeholders}. From the loss, a train operation is calculated. It includes the gradients on all {\tt Variables}.
+Here is how to build the graph. In the embedding step, the model transforms tokens to word feature vectors using a given word feature vector matrix. This matrix is part of the graph is is constant. The {\tt Encoder} encodes vectors to $H_r$ using a lot of {\tt Variables}, and the {\tt Decoder} decoders $H_r$ using a lot of {\tt Variables} to two probability distributions $\beta _0$ and $\beta _1$. Recall that $\beta _0$ tells the likeliness of each token in passage to be the start of the answer and $\beta _1$ tells the likeliness of each token in passage to be the end of the answer. The loss is calculated using $\beta _0$, $\beta _1$ and ground truth answers feed through answer {\tt Placeholders}. From the loss, a train operation is calculated. It includes the gradients on all {\tt Variables}.
 
 Here is how the run time works. In training and validation process, the passages, questions and answers are fed into the graph. Running the train operation with data fed into through {\tt Placeholders} will update all the {\tt Variables}. In testing process, only passages and questions are fed into the graph. The predicted answers are determined from $\beta _0$ and $\beta _1$.
 
@@ -440,7 +440,7 @@ The train and validation process produces a brunch of Tensorflow graphs. The val
 
 \chapter{Experiments}
 \section{Data}
-I use Stanford Question Answering Dataset (SQuAD) to do experiemnts.  It contains 100,000+ question-answer pairs on 500+ articles. The training set and dev set are visible to users. However, the test set is hidden. To perform my experiments, I split the training set into my training and dev set, and use the dev set as my test set. After such splitting, my training set contains 78839 question-answer pairs, my dev set contains 8760 question-answer pairs, and my test set contains 10570 question-answer pairs.
+I use Stanford Question Answering Dataset (SQuAD) to do experiemnts. I use a Python natural language processing library {\tt nltk} to tokenize raw strings in json file into passage-question-answer triplets in the format of word token sequences. In total, I got a training set which contains 78839 question-answer pairs, a dev set which contains 8760 question-answer pairs, and a test set which contains 10570 question-answer pairs.
 
 \begin{table}[htbp]\centering
   \caption{Data Sets}
@@ -453,16 +453,7 @@ I use Stanford Question Answering Dataset (SQuAD) to do experiemnts.  It contain
   \end{tabular}
 \end{table}
 
-Regarding to data processing, I use a Python natural language processing library {\tt nltk} to tokenize raw strings in json file into passage-question-answer triplets in the format of word token sequences.
-
-Then I face two ways to represent the word tokens. The first way is to query the corresponding word vector of each token from the GloVe embedding matrix and turn the word sequences into vector sequences.  The second way is to make a vocabulary and turn each word sequence to an index sequence based on the vocabulary. At the same time, a smaller embedding matrix is made from the original GloVe embedding matrix. The index of each token in this matrix is same with that in vocabulary. The index sequences and the smaller embedding matrix is fed into the neural network. Since the index sequences require much less memory than the vector sequences, the second way saves a lot of memory than the first way when large data set is used.
-
-
-The next step is to pad passage and question, as mentioned in Section \ref{sect:padding}. There is a {\tt pad} token in vocabulary, and the corresponding word vector is zero vector.
-
-At last, split data into batches.
-
-After training, the embedding matrix becomes part of the tensorflow graph, and is unchanged during testing. Also, the vocabulary remains unchanged during testing. Words not found in vocabulary during testing are treated as unknown word. The word vector of unknown words is the average of all vectors of known words in my training and dev set.
+Then I face two ways to feed data into Tensorflow graph. The first way is to query the corresponding word vector of each token from the GloVe embedding matrix and turn the word sequences into vector sequences. The vector sequences are fed into the Tensorflow graph as {\tt Placeholders}. The second way includes several steps. A vocabulary is made from train and valid tokens and each word sequence is turned into an index sequence based on the vocabulary. Two special index is used to represent unknown token and padding token. The index sequences are fed into the Tensorflow graph as {\tt Placeholders}. At the same time, a smaller embedding matrix is made from the original GloVe embedding matrix based on the vocabulary. The unknown token is assigned an average of all the vectors of known tokens. The padding token is assigned zero vector. The index of each token in this matrix is same with that in vocabulary. The smaller embedding matrix is used as a constant value to build the Tensorflow graph. Since the index sequences require much less memory than the vector sequences especially when large data set is used, I choose the second way.
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=9cm]{figures/data.png}
@@ -470,9 +461,12 @@ After training, the embedding matrix becomes part of the tensorflow graph, and i
   \label{f:data}
 \end{figure}
 
-\section{Settings}
-At the first step, I refer to the experimental settings in InnerPeace-Wu's Github page to set some of my parameters. The dimension of GloVe word vectors is 100, the size of hidden units is 64, the regularization scale of L2-regularization is 0.001 and the batch size is 32. For passage length and question length, I plot out their distributions and find out that 400 is a reasonable cut point for passage, and 30 is a reasonable cut point for question.
+Before feeding index sequences to Tensorflow graph, the index sequences should be padded to fixed lengths, as mentioned in Section \ref{sect:padding}, and the whole training data should be split into mini batches to support stochastic gradient decent.
 
+
+\section{Settings}
+
+For passage length and question length, as showed in Figure \ref{f:passage_length} and Figure \ref{f:question_length}, I plot out their distributions and find out that 400 is a reasonable cut point for passage, and 30 is a reasonable cut point for question. The dimension of GloVe word vectors is set as 100. The size of hidden units is set as 64. The regularization scale of L2-regularization is set as 0.001. Tshe batch size is set as 32. The adam optimizer is set using the default settings of Tensorflow. The normalization boundary to clip gradients is set as 5. Two hundred sample instances from train set are used to estimate train accuracy. Two hundred sample instances from validation set are used to estimate validation accuracy. The learning rate is selected through several experiments, since it is the most important parameters. According to Figure \ref{f:lr}, setting learning rate to 0.002 makes the train loss descending most fast and keep descending in the first epoch.
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=10cm, height=7cm]{figures/passage_length.png}
@@ -486,23 +480,15 @@ At the first step, I refer to the experimental settings in InnerPeace-Wu's Githu
   \label{f:question_length}
 \end{figure}
 
-I use the default settings of tensorflow for adam optimizer. I sample out 200 instances from train set to estimate train error, and from dev set to estimate validation error. The normalization boundary to clip gradients is set as 5.
-
-Then I do several experiments on different learning rate, since this is the most important parameters. I initially planed to do this on the match architecture, but due to some code bugs at that time, I actually do the experiments on match\_change1 architecture. I started the experiments from 0.002, which is used in InnerPeace-Wu's Github page. It performs well. Then I try several larger value. However, all the larger values I try do not perform well. So I set learning rate to 0.002.
-
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=12cm]{figures/lr.png}
   \caption{Performance of Different Learning Rates}
   \label{f:lr}
 \end{figure}
 
-The settings that work well on one architectures also work well on other three architectures. This really sames a lot of time and money.
-
-The dimension of GloVe word vectors is 100, the size of hidden units is 64, the regularization scale of L2-regularization is 0.001 and the batch size is 32. For passage length and question length, I plot out their distributions and find out that 400 is a reasonable cut point for passage, and 30 is a reasonable cut point for question.
-
 \begin{table}[htbp]\centering
   \caption{Experimental Settings}
-  \label{tab:dataset}
+  \label{tab:settings}
   \begin{tabular}{|r|l|} \hline
     Hyperparameter Name& Value \\ \hline\hline
     WFC Dimension (d) & \ 100 \\
@@ -517,10 +503,10 @@ The dimension of GloVe word vectors is 100, the size of hidden units is 64, the 
   \end{tabular}
 \end{table}
 
-
-I use F1 score and exact match score to evaluate the performance of each architecture. TODO:explain F1 and em
+I used F1 score and exact match score to evaluate the performance of each architecture. F1 treats a predicted answer and a ground truth as bag of words and calculate a harmonic average of precision and recall ; exact match measures the percentage of exactly same predictions and ground truths. The testing data contains several ground truth answers for one passage-question pair. The best score is chose as the final score.
 
 I used Tesla K80 12 GB Memory 61 GB RAM 100 GB SSD GPU to train the four models.
+
 
 \section{Results}
 
