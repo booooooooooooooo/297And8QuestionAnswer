@@ -591,9 +591,9 @@ Comparing the testing results of change 3 with that of change 0, I found removin
 
 \chapter{Conclusion}
 
-In this project, I developed four models for the question answering task using the Stanford Question Answering (SQuAD) dataset based on Wang's match-LSTM and Pointer Network model. I successfully implemented the four models and got reasonable training and testing results. Through comparing the results of three changed models with the baseline model, I also found some redundant design in the baseline model - preprocessing layer and the $h_r$ in bidirecional match-lstm layer provides duplicate context information.
+This project presented a through implementation of a Question Answering (QA) system. Several models are tried. The baseline model is implemented to reproduce the results of the paper it refers to. Four changes on the baseline models are tried to understand the baseline model. The change 0 model outperforms the baseline model. Then change 1 and change 2 models have simplified structure but similar testing results with the change 0 model. By trying change 3 model it is shown change 1 and change 2 cannot be made simultaneously.
 
-In the future, I plan to research on the opposite direction - adding more context information to the existing model.
+Further work is required to find out why the baseline model fails to reproduce the testing results of the reference paper. At the same time, more parameter tuning and training are necessary to make the experiments more precise. The last but not the least, making novel architecture to bypass the state-of-art results are always a good way to move the research of question answering forward.
 
 
 % if you want to keep macros or chapters in separate files
