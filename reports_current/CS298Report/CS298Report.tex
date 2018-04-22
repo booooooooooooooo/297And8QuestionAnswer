@@ -73,7 +73,7 @@
 % NOTE: to get the front matter single spaced, put \singlespacing
 % at the start of the abstract text
 
-\abstract{Question Answering (QA) is about making a computer program that could answer questions in natural language. It is one of the most challenging tasks in natural language processing. At the present, the state-of-art performance of QA is produced by applying neural network models. In this project, I successfully build a QA system using an encoder-decode recurrent neural network architecture called match-lstm and answer pointer model. Based on it, I implement four changes to understand the model and try to reduce the size of the model. I get two interesting observations. First, the performance increases when quering attention using weighted input instead of lstm state. Second, preprocessing layer and the $h_r$ in bidirecional match-lstm layer might provide duplicate context information.
+\abstract{Question Answering (QA) is about making a computer program that could answer questions in natural language. It is one of the most challenging tasks in natural language processing. At the present, the state-of-art performance of QA is produced by applying neural network models. In this project, I successfully build a QA system using an encoder-decode recurrent neural network architecture. In total, I tried five different models including a baseline model called match-lstm and answer pointer model and four changes to it. Through experiments, I get two interesting observations. First, the performance increases when querying attention using weighted input instead of lstm state. Second, preprocessing layer and the $h_r$ in bidirectional match-lstm layer might provide duplicate context information.
 }
 
 
@@ -164,7 +164,7 @@ $$ f(w_t, ..., w_{t-n+1}) = \frac{e^{y_{w_t}}}{\sum_{i}^{}e^{y_i}}.$$
 The loss function to minimize is $$L = -\frac{1}{T}\sum _{t}^{} \log{f(w_t, ..., w_{t-n+1})}.$$
 
 
-WFC enables learning dependencies on longer sentences with reasonable computation resource and time. In comparison, although n-grams could lean long term dependency by choosing large n, in practice, current computation resource could only supports $n$ to be around 3. As such, a natural language model built on WFC can consider more context information than that built on n-grams. More context generally brings more accurate result.
+WFC enables learning dependencies on longer sentences using reasonable computation resource and time. In comparison, although n-grams could lean long term dependency by choosing large n, in practice, current computation resource could only supports $n$ to be around 3. As such, a natural language model built on WFC can consider more context information than that built on n-grams. More context generally brings more accurate result.
 
 The usage of WFC is far beyond simply predicting a word's neighbours. In practice, WFC is a common way to represent the words in a neural network model which does a natural language processing task. In this project, I use WFC to initialize each word input to models.
 
@@ -186,7 +186,7 @@ $$h_t = sigmoid(W_h h_{t-1} + W_x x_t + b).$$
 
 
 
-Despite the fitness of RNNs to sequential data, in practice, vanishing problem troubles the usage of RNNs. Vanishing means the gradients become smaller and smaller as the network going forward. When this happens, the networks are learning very slow or even stop learning. The main solution to vanishing problem is using a more complex learning unit. In 1997, hochreiter invented Long Short Term Momory (LSTM) cell \cite{hochreiter1997long}. LSTM has one more memory cell to remember long term context and use forget gate, input gate and output gate to control how much information into and out of the current unit. Aside from LSTM, Cho et al. invented Gated Recurrent Unit (GRU)\cite{cho2014learning} which has a simplified structure but similar function with LSTM.
+Despite the fitness of RNNs to sequential data, in practice, vanishing problem troubles the usage of RNNs. Vanishing means the gradients become smaller and smaller as the network going forward. When this happens, the networks are learning very slow or even stop learning. The main solution to vanishing problem is using a more complex learning unit. In 1997, hochreiter invented Long Short Term Momory (LSTM) cell \cite{hochreiter1997long} which decreases the vanishing problem. LSTM has one more memory cell to remember long term context and use forget gate, input gate and output gate to control how much information to flow into and out of the current unit. Aside from LSTM, Cho et al. invented Gated Recurrent Unit (GRU)\cite{cho2014learning} which has a simplified structure but similar function with LSTM.
 
 
 In this project, I use LSTM and GRU equally as learning unit. Among various RNN structures, I mainly use two types. The first type is a RNN with recurrent connections between hidden states. The sequence of hidden states are the output of the RNN. The second type is also a RNN with recurrent connections between hidden states. However, the last hidden state is the output of the RNN.
@@ -206,7 +206,7 @@ In this project, I use bidirectional RNNs in encoding part.
 
 \section{Encoder-Decoder Sequence-to-Sequence Architecture}
 
-Sequence-to-sequence means the input to the model is a sequence, and the output from the model is also a sequence. An encoder-decoder architecture can be applied to do this task. The process of understanding the input sequence is considered as encoding the input sequence to some vectors $Crypto$. The process of generating output is considered as decoding the $Crypto$. Figure \ref{f:encoderDecoder} shows the concept of encoder-decoder architecture . The $x$s are inputs, the $h$s are states in encoding process, the $y$s are outputs, and the $g$s are states of decoding process.
+Sequence-to-sequence means the input to the model is a sequence, and the output from the model is also a sequence. An encoder-decoder architecture can be applied to do this task. The process of understanding the input sequence is considered as encoding the input sequence to some vectors $Crypto$. The process of generating output is considered as decoding the $Crypto$. Figure \ref{f:encoderDecoder} shows the concept of encoder-decoder architecture . $x$ is input, $h$ is state in encoding process, $y$ is output, and $g$ is state of decoding process.
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=10cm, height=7cm]{figures/encoderDecoder.png}
@@ -249,7 +249,7 @@ Although the attention mechanism was invented for doing machine translation task
 
 \section{Pointer Network}\label{sect:pointerNet}
 
-Pointer Network\cite{vinyals2015pointer} was invented by Vinyals et al. in 2015. Pointer Network enables decoder to output tokens from input sequence. Attention mechanism is used in pointer network. However, aside from getting a weighted average of encoding states, the weights $\alpha$s is considered as a probability distribution based on which a token from input sequence is selected as the output. Then we have $y_2 = x_k$ when $k = argmax_i(\alpha _2,i)$. Note that $y_i$ is not considered as input to produce decoding state.
+Pointer Network\cite{vinyals2015pointer} was invented by Vinyals et al. in 2015. Pointer Network enables decoder to output tokens from input sequence. Attention mechanism is used in pointer network. However, aside from getting a weighted average of encoding states, the weight $\alpha$ is considered as a probability distribution based on which a token from input sequence is selected as the output. Then we have $y_2 = x_k$ where $k = argmax_i(\alpha _2,i)$. Note that compared with the machine translation architecture \ref{f:attention}, in pointer network, $y_i$ is not fed into the next decoding state, but the attention vector $c$ is still fed into the next decoding state.
 
 
 
@@ -384,7 +384,7 @@ The difference between change three and change zero is both preprocessing layer 
 
 \chapter{Implementation}
 
-\section{Adjust Data to Support Batch Training}\label{sect:padding}
+\section{Adjusting Data to Support Batch Training}\label{sect:padding}
 
 In practice, passages have different length. So do questions. However, in one specific model, the number of times to iterate encoding or decoding process is fixed. We are intended to use all training data to train the model instead of using a single instance. As such, adjusting all passages to a same length and adjusting all questions to another same length is necessary. For sequences longer than a fixed length, we cut some part of the sentence out. For sequences shorted than a fixed length, we use some special vector to pad them.
 
@@ -427,7 +427,7 @@ Here is how the run time works. In training and validation process, the passages
 
 
 
-\section{Implementation Pipelines}
+\section{Implementation Pipeline}
 
 The train and validation process produces a brunch of Tensorflow graphs. The validation loss is used to choose the best graph. Then the best graph is used to do testing.
 
