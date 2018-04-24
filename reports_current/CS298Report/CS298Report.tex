@@ -220,19 +220,13 @@ The question answering task in this project is a sequence-to-sequence task. Howe
 
 \section{Attention Mechanism}\label{sect:attention}
 
-Attention mechanism was first came up with by Bahdanau et al. \cite{bahdanau2014neural} in the application of neural machine translation. In the neural machine translation task, the input sequence is some words in one language, and the output sequence is the same content in another language. In the encoder-decoder sequence-to-sequence architecture for neural machine translation, a RNN encodes the input sequence to one state, and the decoder decodes the state to the output sequence. However, a big problem here is one state cannot contain all the information of a long input sequence. The attention mechanism was invented to enable the decoding process knows about the input sequence.
-
-Figure \ref{f:attention} shows how attention mechanism works in machine translation. $y$ is output, $g$ is state, and $c$ is attention vector. When getting $g_2$, aside from $g_1$, $y_1$ and $c_2$ are also inputs. We have
-
-$$g_2 =f(g_{1},y_{1},c_2).$$
-
-$c_2$ is produced by using $g_1$ to ``query'' the encoding states $h_1, ... h_n$.
-
-$$c_2 = \sum{\alpha _i h_i}$$
-$$\alpha _i = \exp{e_i} / \sum{\exp{e_i}}$$
-$$e_i = attention(h_i, g_1)$$
-
-Then function $attention$ could be a feed forward step of neural network such as $e_i = tanh(W_h h_i + W_g g_1 + b)$.
+Attention mechanism was firstly came up with by Bahdanau et al. \cite{bahdanau2014neural} in the application of neural machine translation. In the neural machine translation task, an encoder-decoder sequence-to-sequence model encodes each input sentence to some vectors and decodes the vectors to a sentence in another language with the same content. The attention mechanism was used to enable the decoding process know about the encoding states $h$. As shown in Figure \ref{f:attention}, $y$ is output, $g$ is state, and $c$ is attention vector. We have
+$$g_i =f(g_{i-1},y_{i-1},c_i).$$
+The attention vector $c_i$ is produced by using $g_{i-1}$ to ``query'' the encoding states $h_1, ... h_n$ through
+$$c_i = \sum _j {\alpha _{i,j} h_j}$$
+$$\alpha _{i,j} = \exp{e_{i,j}} / \sum _j {\exp{e_{i,j}}}$$
+$$e_{i,j} = attention(h_j, g_{i-1}).$$
+An example of the $attention$ function is $e_{i,j} = tanh(W_h h_j + W_g g_{i-1} + b)$.
 
 
 \begin{figure}[htbp]\centering
@@ -243,16 +237,20 @@ Then function $attention$ could be a feed forward step of neural network such as
 
 
 
+Indeed, attention mechanism is a way to ``be aware of a sequence''. Since being aware of more context is a basic need of natural language processing tasks, it is reasonable to use attention mechanism in other tasks besides machine translation.
 
-Although the attention mechanism was invented for doing machine translation task, it can be applied to many other tasks of natural language processing. We can simply understand ``attention'' as ``being aware of a sequence''. In machine translation, the decoding process needs to ``be aware of the encoding states''. In this project, we need the passage to ``be aware of the question'', and the answer to ``be aware of the encoding states of passage and question''. I will explain how the attention mechanism is used in this project in detail in Chapter \ref{chap:design}
+In this project, the passage is allowed to ``be aware of the question'' in encoding process. The detailed formulas is given in Chapter \ref{chap:design}. At the same time, the answer is allowed to ``be aware of the encoding states of passage and question''. The detailed formulas is also given in Chapter \ref{chap:design}.
 
 
 
 
 \section{Pointer Network}\label{sect:pointerNet}
 
-Pointer Network\cite{vinyals2015pointer} was invented by Vinyals et al. in 2015. Pointer Network enables decoder to output tokens from input sequence. Attention mechanism is used in pointer network. However, aside from getting a weighted average of encoding states, the weight $\alpha$ is considered as a probability distribution based on which a token from input sequence is selected as the output. Then we have $y_2 = x_k$ where $k = argmax_i(\alpha _2,i)$. Note that compared with the machine translation architecture \ref{f:attention}, in pointer network, $y_i$ is not fed into the next decoding state, but the attention vector $c$ is still fed into the next decoding state.
-
+Pointer Network\cite{vinyals2015pointer} was invented by Vinyals et al. in 2015. Pointer Network enables decoder to output tokens from input sequence. Attention mechanism is used in pointer network. However, aside from getting an attention vector, the attention weight $\alpha$ is considered as a probability distribution which indicates how likely each token in input sequence is the current output. That is,
+$$y_i = x_k$$
+where
+$$k = argmax_j(\alpha _{i,j}).$$
+Note that compared with the machine translation architecture \ref{f:attention}, in pointer network, $y_i$ is not fed into the next decoding state.
 
 
 \begin{figure}[htbp]\centering
@@ -260,6 +258,8 @@ Pointer Network\cite{vinyals2015pointer} was invented by Vinyals et al. in 2015.
   \caption{The concept of pointer network}
   \label{f:pointerNetwork}
 \end{figure}
+
+In this project, the decoding part of model used Pointer Network.
 
 
 \chapter{Design}\label{chap:design}
