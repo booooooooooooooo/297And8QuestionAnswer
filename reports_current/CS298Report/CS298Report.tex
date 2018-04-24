@@ -264,16 +264,16 @@ In this project, the decoding part of model used Pointer Network.
 
 \chapter{Design}\label{chap:design}
 
-In this chapter, I will review the baseline model - match lstm and answer pointer model, and my four changes on the baseline model. The baseline model is quite suitable for a master project. First, it reflects a general encoder-decoder sequence-to-sequence RNN architecture to do question answering task. Second, its network size is not too large to train given the limited computation resource I can access.
+In this chapter, I will review the baseline model - Match-LSTM and Answer Pointer model and four experiments based on the baseline model. The baseline model is quite suitable for this project. First, it reflects a general encoder-decoder sequence-to-sequence architecture to do question answering tasks. Second, its network size is not too large to train given the limited computation resource I can access.
 
 
-\section{Baseline Model: Match-lstm and Answer Pointer (MLAP) }
+\section{Baseline Model: Match-LSTM and Answer Pointer (MLAP) }
 
-Wang and Jiang  proposed an encoder-decoder sequence-to-sequence architecture for the question answering task on SQuAD dataset in \cite{wang2016machine}. Each instance of training data includes one passage, one question and one answer. The passage is a sequence of tokens, the question is a sequence of tokens, and the answer is two indices indicating the start and end position in passage. Recall that each answer is part of the corresponding passage in SQuAD dataset.
+Wang and Jiang  proposed an encoder-decoder sequence-to-sequence architecture for the question answering task on SQuAD dataset \cite{wang2016machine}. Each instance of training data includes one passage, one question and one answer. The passage is a sequence of tokens, the question is a sequence of tokens, and the answer is two indices indicating the start and end positions in passage. Recall that each answer is part of the corresponding passage in SQuAD.
 
 Before feeding training data into model, tokens in passages and questions are vectorized to word feature vectors. As such, some pre-trained word feature vector matrix is an additional dataset in need.
 
-The vectorized training data is feed into the encoder. The encoder includes two layers - preprocessing layer and bi-directional match-LSTM layer. In preprossing layer, a LSTM network runs over each passage word feature vector sequence and outputs a sequence of LSTM hidden states. The same LSTM is used to encode each question word vector sequence to a sequence of LSTM hidden states.
+The vectorized training data is fed into the encoder. The encoder includes two layers - Preprocessing layer and Bi-directional Match-LSTM layer. In Preprossing layer, a LSTM network runs over each passage word feature vector sequence and outputs a sequence of LSTM states. The same LSTM is used to encode each question word vector sequence to a sequence of LSTM states.
 
 $$H^p = \overrightarrow{LSTM}(P)$$
 $$H^q = \overrightarrow{LSTM}(Q)$$
@@ -286,10 +286,10 @@ where
  $$H^q\in R^{l \times q}: encoded\ question$$
  $$p: length \ of\ passage$$
  $$q: length\ of\ question$$
- $$l: dimension\ of\ LSTM\ hidden\ states$$
+ $$l: dimension\ of\ LSTM\ states$$
  $$d: dimension\ of\ word\ feature\ vector$$
 
-In bi-directional match-LSTM layer, a LSTM equipped with passage-question attention, which is called match-LSTM, is used to encode each sequence passage hidden states and the pairing sequence of question hidden states together to a sequence of hidden states of the match-LSTM. To be specific,
+In Bi-directional Match-LSTM layer, a LSTM equipped with passage-question attention, which is called Match-LSTM, is used to encode each sequence of passage states and the corresponding sequence of question states together to a sequence of Match-LSTM states. To be specific,
 
 $$\overrightarrow{G} = tanh(W^qH^q + (W^p{h_i}^p + W^r\overrightarrow{{h_{i-1}}^r} + b^p) \otimes e_q)$$
 $$\overrightarrow{\alpha _i} = softmax(w^t\overrightarrow{G_i} + b \otimes e_q)$$
@@ -300,7 +300,7 @@ where
 $$W^q, W^p, W^r\in R^{l \times l} $$
 $$b_p, w\in R^{l}  $$
 $$b \in R $$
-$$\overrightarrow{{h_{i-1}}^r}\in R^{l}: one\ column\ of\ H_p  $$
+$${{h_{i}}pr}\in R^{l}: one\ column\ of\ H^p  $$
 
 and
 
@@ -313,23 +313,23 @@ H^q\overrightarrow{ {\alpha _i}}^T \\
 \]
 $$\overrightarrow{{h_i}^r} = \overrightarrow{LSTM}(\overrightarrow{z_i}, \overrightarrow{{h_{i-1}}^r}).$$
 
-After iterating between getting attention vector $\overrightarrow{\alpha _i}$ and getting hidden state ${{h_{i}}^r}$ $p$ times, we get $[{{h_{1}}^r}, ..., {{h_{p}}^r}]$. Concatenate them to get
+After iterating between getting attention vector $\overrightarrow{\alpha _i}$ and getting Match-LSTM state ${{h_{i}}^r}$ $p$ times, we get $[{{h_{1}}^r}, ..., {{h_{p}}^r}]$. Concatenate them to get
 
-$$\overrightarrow{H_r} = [{{h_{1}}^r}, ..., {{h_{p}}^r}] \in R^{l \times p}.$$
+$$\overrightarrow{H^r} = [{{h_{1}}^r}, ..., {{h_{p}}^r}] \in R^{l \times p}.$$
 
-Then go over $H_p$ from right to left to get $\overleftarrow{H_r}$. Concatenate $\overrightarrow{H_r}$ and $\overleftarrow{H_r}$ to get the final output of encoding process
+Then go over $H^p$ from right to left to get $\overleftarrow{H^r}$. Concatenate $\overrightarrow{H^r}$ and $\overleftarrow{H^r}$ to get the final output of encoding process
 
-\[ H_r =
+\[ H^r =
 \begin{bmatrix}
-\overrightarrow{H_r} \\
-\overleftarrow{H_r} \\
+\overrightarrow{H^r} \\
+\overleftarrow{H^r} \\
 \end{bmatrix}
 \in R^{2l \times p}.
 \]
 
-The decoding process includes only one layer - Answer Pointer layer. This layer is motivated by the Pointer Net in \cite{vinyals2015pointer} I have discussed in Section \ref{sect:pointerNet}. Wang and Jiang proposed two ways to design this layer. Here I only explain the boundary way. In this way, each instance of the output of the decoding process is two probability distributions. The first probability tells how likely each token in passage to be the start of the answer. The second probability distribution tells how likely each token in passage to be the end of the answer. To be specific,
+The decoding process includes only one layer - Answer Pointer layer. This layer is motivated by the Pointer Net in \cite{vinyals2015pointer} discussed in Section \ref{sect:pointerNet}. Wang and Jiang proposed two ways to design this layer. Here I only explain the boundary way. In this way, each output of the decoding process includes two probability distributions. The first probability distribution tells how likely each token in passage to be the start of the answer. The second probability distribution tells how likely each token in passage to be the end of the answer. To be specific,
 
-$$F_k = tahn(VH_r + (W^a{h^a_{k-1}} +  b^a) \otimes e_p)$$
+$$F_k = tahn(VH^r + (W^a{h^a_{k-1}} +  b^a) \otimes e_p)$$
 $$\beta _k = softmax(v^tF_k + c \otimes e_p)$$
 
 
@@ -338,17 +338,17 @@ $$V \in R^{l \times 2l}$$
 $$W^a\in R^{l \times l} $$
 $$b_a, v\in R^{l}  $$
 $$c \in R $$
-$${h_{k-1}}^a\in R^{l}: hidden\ state\ at\ positiom\ i\ of\ answer\ LSTM  $$
+$${h_{k-1}}^a\in R^{l}: ith\ state\ of\ answer-LSTM  $$
 
-and answer LSTM is
+and answer-LSTM is
 
 
 $${h_k}^a = LSTM(H^r\beta _k^T, h_{k-1}^a)$$
 
-By iterating between the attention mechanism and the answer LSTM two times, we could get the output of the decoding process - $\beta _0$ and $\beta _1$.
+By iterating between the attention mechanism and the answer-LSTM two times, we could get the output of the decoding process - $\beta _0$ and $\beta _1$.
 
 
-Then we can get the loss function. Let $a_s$ denote the ground truth start index of the answer, and $a_e$ denote the ground truth end index, then we have
+Then we can get the loss function. Let $a_s$ denote the ground truth start index of the answer and $a_e$ denote the ground truth end index, we have
 
 $$p(a|H^r) = p(a_s|H_r)p(a_r|H_r)=\beta _{0, a_s} \times \beta_{1, a_e}$$
 
@@ -360,29 +360,27 @@ $$J(\theta) = -\frac{1}{N}\sum_{i=1}^{N} \log{p(a^n|H^r)} $$
 
 is minimized.
 
-\section{Change Zero to Baseline Model} \label{sect:change_0}
+\section{Experiment Zero} \label{sect:change_0}
 
-The difference from my Change Zero to baseline model is in the decoding part. In change zero, I use
-
+The difference from experiment zero to baseline model is in the decoding process. In experiment zero,
 $${h_k}^a = H^r\beta _{k}^T.$$
+That is, instead of the answer-LSTM state, the previous attention vector is used to query the current attention weight.
 
-That is, I use attention weights to calculate a weighted average of input states, then use this weighted average to query the next attention weights.
+\section{Experiment One}
 
-\section{Change One to Baseline Model}
-
-The difference between change one and change zero is removing the $W^r\overrightarrow{{h_{i-1}}^r}$ in bi-directional match-LSTM layer. I am interested in this experiments since I guess the $\overrightarrow{{h_{i-1}}^r}$ might carries some redundant information. After this change,
+The difference between experiment one and experiment zero is in experiment one the $W^r\overrightarrow{{h_{i-1}}^r}$ in Bi-directional Match-LSTM layer is removed. This modification aims at checking whether $\overrightarrow{{h_{i-1}}^r}$ carries some redundant context information. After this change,
 
 
 $$\overrightarrow{G} = tanh(W^qH^q + (W^p{h_i}^p + b^p) \otimes e_q)$$
 
 
-\section{Change Two to Baseline Model}
+\section{Experiment Two}
 
-The difference between chagne two and change zero is removing the preprocessing layer in encoding process. This is the check whether preprocessing layer carries some redundant information.
+The difference between experiment two and experiment zero is in experiment two the Preprocessing layer is removed. This modification aims at checking whether Preprocessing layer carries some redundant context information.
 
-\section{Change Three to Baseline Model}
+\section{Experiment Three}
 
-The difference between change three and change zero is both preprocessing layer and $W^r\overrightarrow{{h_{i-1}}^r}$ in bi-directional match-LSTM layer are removed. This is to experiment whether they context information of both is carried in some other place in the change zero model.
+The difference between experiment three and experiment zero is in experiment three both Preprocessing layer and $W^r\overrightarrow{{h_{i-1}}^r}$ in Bi-directional Match-LSTM layer are removed. This aims at checking whether context information carried by both is included in some other place.
 
 \chapter{Implementation}
 
