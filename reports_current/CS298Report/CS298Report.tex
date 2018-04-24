@@ -73,7 +73,7 @@
 % NOTE: to get the front matter single spaced, put \singlespacing
 % at the start of the abstract text
 
-\abstract{Question Answering (QA) is about making a computer program that could answer questions in natural language. It is one of the most challenging tasks in natural language processing. At the present, the state-of-art performance of QA is produced by applying neural network models. In this project, I successfully build a QA system using an encoder-decode recurrent neural network architecture. In total, I tried five different models including a baseline model called match-lstm and answer pointer model and four changes to it. Through experiments, I get two interesting observations. First, the performance increases when querying attention using weighted input instead of lstm state. Second, preprocessing layer and the $h_r$ in bidirectional match-lstm layer might provide duplicate context information.
+\abstract{Question Answering is about making computer programs that can answer natural language questions. It is one of the most challenging tasks in natural language processing. At the present, the state-of-art performance of Question Answering is produced by applying neural network models. In this project, I successfully built a Question Answering system using encoder-decode sequence-to-sequence recurrent neural networks. In total, I tried five different models including a baseline model called Match-lstm and Answer Pointer model and four experiments based on it. Through experiments, I got two interesting observations. First, the testing performance increases when querying attention using weighted encoding states instead of decoding state in Answer Pointer layer. Second, Preprocessing layer and the $h_r$ in Bidirectional Match-LSTM layer might provide duplicate context information.
 }
 
 
@@ -128,18 +128,18 @@ Thanks to my advisor Dr. Pollett for his patience, support and guidance during t
 
 \chapter{Introduction}
 
-Question Answering(QA) is about making a computer program that could answer questions in natural language. QA techniques are widely used among search engines, personal assistant applications on smart phones, voice control systems and a lot more other applications. QA is one of the most challenging tasks in natural language processing. In recent years, more neural network models are built to do question answering tasks. This approach gives more accurate result than traditional solutions, which use syntactic and semantic analyses and hand made features. Researchers keep designing new neural network models to seek for better results, although better results are usually achieved by making more complex neural networks.
-
-Encoder-decoder sequence-to-sequence recurrent neural networks are very efficient at modeling natural language processing tasks. Such networks encode the an input sequence to some vectors and then decode them to an output sequence. Recurrent neural networks are applicable here since they are good at processing sequence. Encoder-decoder sequence-to-sequence recurrent neural networks have been very successful at machine translation. Since question answering is also a sequence-to-sequence task, researching on how to apply the encoder-decoder sequence-to-sequence recurrent neural networks to do question answering is meaningful.
+Question Answering (QA) is about making computer programs that can answer natural language questions. QA techniques are widely used among search engines, personal assistant applications on smart phones, voice control systems and a lot more other applications. QA is one of the most challenging tasks in natural language processing. In recent years, more neural network models have been built to do natural language processing tasks. This approach gives more accurate result than traditional solutions, which use syntactic and semantic analysis and hand made features. Among various neural network architectures, encoder-decoder sequence-to-sequence recurrent neural networks are quite suitable for many natural language processing tasks. Such networks encode an input sequence to some vectors and then decode them to an output sequence. Since QA is also a sequence-to-sequence task, researching on how to apply the encoder-decoder sequence-to-sequence recurrent neural networks to do QA is meaningful.
 
 
-In this project, I choose the match lstm and answer pointer model which is designed by Wang and Jiang\cite{wang2016machine} as my baseline model. It is an encoder-decode sequence-to-sequence recurrent network model. Besides, the network size is not too big to train using the limited computation resource I could access. I first implement it to build a question answering system. Then I make four changes to understand it and try to improve it. The data used is the Stanford Question Answering Dataset (SQuAD). As described by \cite{rajpurkar2016squad}, it includes questions asked by human beings on Wikipedia articles. The answer to each question is a segment of the corresponding Wikipedia article. In total, SQuAD contains 100,000+ question-answer pairs on 500+ articles.
-
-I successfully process all raw data using Python and implement the five different models using a machine learning framework Tensorflow. Through comparing the results of 5 different models, I get two interesting observations. First, the performance increases when querying attention using a weighted input instead of a lstm state. Second, preprocessing layer and the $h_r$ in bidirecional match-lstm layer might provide duplicate context information.
+In this project, I successfully built a QA system using five different models. The baseline model is the Match-lstm and Answer pointer model which is designed by Wang and Jiang\cite{wang2016machine}. The model has a typical encoder-decode sequence-to-sequence recurrent network architecture and has a network size which is not too big to train using the limited computation resource I can access. Based on the baseline model, I designed four experiments to understand it and try to improve it. Through comparing the results of baseline model and 4 experiments, I got two interesting observations. First, the performance improves when querying attention using a weighted average of encoding states instead of a decoding lstm state in Answer Pointer layer. Second, Preprocessing layer and the $h_r$ in Bidirecional Match-LSTM layer might provide duplicate context information.
 
 
+The dataset used in this project is the Stanford Question Answering Dataset (SQuAD). As described by \cite{rajpurkar2016squad}, SQuAD includes questions asked by human beings on Wikipedia articles. The answer to each question is a segment of the corresponding Wikipedia article. In total, SQuAD contains 100,000+ question-answer pairs on 500+ articles.
 
-\chapter{Background}
+
+
+
+\chapter{Background}\label{chap:background}
 \section{Word Feature Vector}
 
 Word Feature Vector (WFC) was firstly came up by Bengio, Yoshua and Ducharme in \cite{bengio2003neural}. A word feature represents a word according to its relationship with all words in the vocabulary. This distance from a word feature vector to any other word feature vector tells how likely this word appears together with the other word.
@@ -220,7 +220,7 @@ In this project, the question answering task is a sequence-to-sequence task. How
 
 Attention mechanism was first came up with by Bahdanau et al. in \cite{bahdanau2014neural} in the application of neural machine translation. In the neural machine translation task, the input sequence is some words in one language, and the output sequence is the same content in another language. In the encoder-decoder sequence-to-sequence architecture for neural machine translation, a RNN encodes the input sequence to one state, and the decoder decodes the state to the output sequence. However, a big problem here is one state cannot contain all the information of a long input sequence. The attention mechanism was invented to enable the decoding process knows about the input sequence.
 
-Figure \ref{f:attention} shows how attention mechanism works in machine translation. $y$ is output, $g$ is state, and $c$ is attention vector. When geting $g_2$, aside from $g_1$, $y_1$ and $c_2$ are also inputs. We have
+Figure \ref{f:attention} shows how attention mechanism works in machine translation. $y$ is output, $g$ is state, and $c$ is attention vector. When getting $g_2$, aside from $g_1$, $y_1$ and $c_2$ are also inputs. We have
 
 $$g_2 =f(g_{1},y_{1},c_2).$$
 
