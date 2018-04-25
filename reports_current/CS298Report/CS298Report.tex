@@ -509,17 +509,17 @@ A machine that has Tesla K80 12 GB Memory, 61 GB RAM and 100 GB SSD is used to t
 \section{Results}
 \subsection{Training Process}
 
-Figure \ref{f:mlap}, \ref{f:baseline_change0}, \ref{f:baseline_change1}, \ref{f:baseline_change2} and \ref{f:baseline_change3} show the training process of the baseline match lstm and answer pointer model, baseline change zero model, baseline change one model, baseline change two model and  baseline change three model. One epoch contains roughly 25 * 100 mini batches. The train loss on the 200 sample train instances and the valid loss on the 200 sample valid instances are calculated every 100 mini batches. So do sample train scores and sample validation scores. Training one epoch roughly costs 100 minutes. A through training of each model requires around 10 epochs and costs around 17 hours.
+Figure \ref{f:mlap}, \ref{f:baseline_change0}, \ref{f:baseline_change1}, \ref{f:baseline_change2} and \ref{f:baseline_change3} show the training process of five different models. One epoch contains roughly 25 * 100 mini batches. The training loss and training scores are calculated every 100 mini batches using the 200 sample instances from training set. So do validation loss and scores. Training one epoch roughly costs 100 minutes. A through training of each model requires around 10 epochs and takes around 17 hours.
 
-As indicated by Figure \ref{f:mlap}, the baseline model converges after 3 epochs. The sample train f1 score converges to 0.5, the sample train exact match score converges to 0.35, the sample valid f1 score converges to 0.3, and the sample valid exact match score converges to 0.2.
+As indicated by Figure \ref{f:mlap}, the baseline model converges after 3 epochs. The training F1 score converges to around 0.5, the training exact match score converges to around 0.35, the validation F1 score converges to around 0.3, and the validation exact match score converges to around 0.2.
 
-As indicated by Figure \ref{f:baseline_change0}, the baseline change 0 model keeps learning in 10 epochs. The sample train f1 score converges to 0.6, the sample train exact match score converges to 0.5, the sample valid f1 score converges to 0.4, and the sample valid exact match score converges to 0.3.
+As indicated by Figure \ref{f:baseline_change0}, the experiment zero model keeps learning in 10 epochs. The training F1 score converges to around 0.6, the training exact match score converges to around 0.5, the validation F1 score converges to around 0.4, and the validation exact match score converges to around 0.3.
 
-As indicated by Figure \ref{f:baseline_change1}, the baseline change 1 model converges after 10 epochs. The sample train f1 score converges to 0.65, the sample train exact match score converges to 0.45, the sample valid f1 score converges to 0.4, and the sample valid exact match score converges to 0.3.
+As indicated by Figure \ref{f:baseline_change1}, the experiment one model converges after 10 epochs. The training F1 score converges to around 0.65, the training exact match score converges to around 0.45, the validation F1 score converges to around 0.4, and the validation exact match score converges to around 0.3.
 
-As indicated by Figure \ref{f:baseline_change2}, the baseline change 2 model converges after 4 epochs. The sample train f1 score converges to 0.6, the sample train exact match score converges to 0.4, the sample valid f1 score converges to 0.4, and the sample valid exact match score converges to 0.2.
+As indicated by Figure \ref{f:baseline_change2}, the experiment two model converges after 4 epochs. The training F1 score converges to around 0.6, the training exact match score converges to around 0.4, the validation F1 score converges to around 0.4, and the validation exact match score converges to around 0.2.
 
-As indicated by Figure \ref{f:baseline_change3}, the baseline change 3 model keeps learning in the 10 epochs. The sample train f1 score converges to 0.5, the sample train exact match score converges to 0.35, the sample valid f1 score converges to 0.3, and the sample valid exact match score converges to 0.2.
+As indicated by Figure \ref{f:baseline_change3}, the experiment three model keeps learning in the 10 epochs. The training F1 score converges to around 0.5, the training exact match score converges to around 0.35, the validation F1 score converges to around 0.3, and the validation exact match score converges to around 0.2.
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=12cm]{figures/match_corrected.png}
@@ -569,14 +569,14 @@ As indicated by Figure \ref{f:baseline_change3}, the baseline change 3 model kee
   \end{tabular}
 \end{table}
 
-Table \ref{tab:test_results} shows the testing results of all models. For the baseline MLAP model, I only get F1 score 33.6 and exact match score 23.4. This does not reproduce the F1 score 71.2 and the exact match score 61.1 of the reference paper\cite{wang2016machine}. The baseline change 0, baseline change 1 and baseline change 2 models behave similarly with F1 score around 46 and exact match score around 33. The baseline change 3 model behaves worse the baseline change 0, 1 and 2 with F1 score 33.9 and exact match score 24.3.
+Table \ref{tab:test_results} shows the testing results of all models. The baseline MLAP model gets F1 score 33.6 and exact match score 23.4. This does not reproduce the F1 score 71.2 and the exact match score 61.1 in the reference paper\cite{wang2016machine}. The experiment zero, one two models behave similarly with F1 score around 46 and exact match score around 33. The experiment 3 model behaves worse than the other three experiments with F1 score 33.9 and exact match score 24.3.
 
 
 
 
 \section{Analysis}
 
-Comparing testing results of the baseline model with that of the original paper, the difference is quite surprising. To find out why my implementation of baseline model does not reproduce the results of original paper, further debug, parameter tuning and training are needed.
+Comparing testing results of the baseline model with that of the original paper, the difference is quite surprising. To find out why my implementation of baseline model does not reproduce the results of the original paper, further debug and parameter tuning are needed.
 
 Comparing testing results change 0 model with baseline model, the scores increase. As I mentioned in Section \ref{sect:change_0}, the difference of two models is whether using state of decoding lstm or a weighted average of inputs to query the next attention weights. The subtle difference is whether adding one more nonlinear layer. It turns out not including the decoding lstm makes the model perform better.
 
