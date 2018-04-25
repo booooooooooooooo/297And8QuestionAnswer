@@ -578,11 +578,11 @@ Table \ref{tab:test_results} shows the testing results of all models. The baseli
 
 Comparing testing results of the baseline model with that of the original paper, the difference is quite surprising. To find out why my implementation of baseline model does not reproduce the results of the original paper, further debug and parameter tuning are needed.
 
-Comparing testing results change 0 model with baseline model, the scores increase. As I mentioned in Section \ref{sect:change_0}, the difference of two models is whether using state of decoding lstm or a weighted average of inputs to query the next attention weights. The subtle difference is whether adding one more nonlinear layer. It turns out not including the decoding lstm makes the model perform better.
+Comparing the testing results of experiment zero and the baseline model, the scores of experiment zero are better. As mentioned in Section \ref{sect:change_0}, experiment zero uses previous attention vector to query the current attention weights. However, the baseline model uses state of answer-LSTM to query the current attention weights. Using answer-LSTM means doing a non-linear transformation on attention vector. It turns out not including the non-linear transformation gives better results.
 
-Comparing the testing results of change 1 and 2 with that of change 0, I found remove either preprocessing layer or the $h_r$ in bidirectional match lstm layer does not decrease the model performance. A reasonable guess is the two provides duplicate context information.
+Experiments zero, one and two behave similarly. This means removing either Preprocessing layer or the $h_r$ in Bi-directional Match-LSTM layer does not decrease test results. A reasonable guess is the two parts provide duplicate context information.
 
-Comparing the testing results of change 3 with that of change 0, I found removing both preprocessing layer and the $h_r$ in bidirectional match lstm layer decreases performance a lot. This mean the context information provides by these two parts are not provide in other place of the change 0 model. As such, one of them must be kept.
+Experiment three performs worse than experiment zero, one and two. This means removing both Preprocessing layer and the $h_r$ in Bi-directional Match-LSTM layer decreases testing results. A reasonable guess is the context information provided by these two parts is not provided in other parts of the model. As such, one of the two must be kept.
 
 
 
@@ -590,9 +590,9 @@ Comparing the testing results of change 3 with that of change 0, I found removin
 
 \chapter{Conclusion}
 
-This project presented a through implementation of a Question Answering (QA) system. Several models are tried. The baseline model is implemented to reproduce the results of the paper it refers to. Four changes on the baseline models are tried to understand the baseline model. The change 0 model outperforms the baseline model. Then change 1 and change 2 models have simplified structure but similar testing results with the change 0 model. By trying change 3 model it is shown change 1 and change 2 cannot be made simultaneously.
+This project presents a through implementation of a Question Answering (QA) system. Several models were tried. The baseline model was implemented to reproduce the results of the paper it refers to. Four experiments on the baseline models were tried to understand the baseline model. The experiment zero model outperforms the baseline model by using attention vector instead of answer-LSTM state to query attention weights. The experiment one and experiment two models have simplified structures but similar testing results with the experiment zero model. By trying experiment three it is shown that the changes in experiment one and two cannot be made simultaneously.
 
-Further work is required to find out why the baseline model fails to reproduce the testing results of the reference paper. At the same time, more parameter tuning and training are necessary to make the experiments more precise. The last but not the least, making novel architecture to bypass the state-of-art results are always a good way to move the research of question answering forward.
+Further work is required to find out why the baseline model fails to reproduce the testing results of the reference paper. At the same time, more parameter tuning are needed to make the experiments more precise. The last but not the least, making novel architecture to bypass the state-of-art results is always a good way to move the research of question answering forward.
 
 
 % if you want to keep macros or chapters in separate files
