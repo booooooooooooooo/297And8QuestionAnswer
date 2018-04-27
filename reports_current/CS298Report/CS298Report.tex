@@ -73,17 +73,17 @@
 % NOTE: to get the front matter single spaced, put \singlespacing
 % at the start of the abstract text
 
-\abstract{Question Answering is about making computer programs that can answer natural language questions. It is one of the most challenging tasks in natural language processing. At the present, the state-of-art performance of Question Answering is produced by applying neural network models. In this project, I successfully built a Question Answering system using encoder-decode sequence-to-sequence recurrent neural networks. In total, I tried five different models including a baseline model called Match-lstm and Answer Pointer model and four experiments based on it. Through experiments, I got two interesting observations. First, the testing performance increases when querying attention using weighted encoding states instead of decoding state in Answer Pointer layer. Second, Preprocessing layer and the $h_r$ in Bidirectional Match-LSTM layer might provide duplicate context information.
+\abstract{Question answering is about making computer programs that can answer natural language questions. It is one of the most challenging tasks in the field of natural language processing. The present state-of-art question answering systems use neural network models. In this project, we successfully built a question answering system using encoder-decode sequence-to-sequence recurrent neural networks. In total, five different models were tried. Model 1 is the Match-LSTM \& Answer Pointer model. Model 2, 3, 4 and 5 were designed through making changes to model 1. Through comparing the results of different models, two interesting observations were found. First, the testing performance increases when querying attention using previous attention vector instead of the current answer LSTM state in the answer pointer layer. Second, the preprocessing layer and the $h_r$ in the bidirectional match LSTM layer might provide duplicate context information.
 }
 
 
 
 % acknowledgements page is optional
 
-\acknowledgements{
+% \acknowledgements{
 
-Thanks to my advisor Dr. Pollett for his patience, support and guidance during this project. Thanks to Dr. Kim and Dr. Taylor for their generous service in committee.
-}
+% Thanks to my advisor Dr. Pollett for his patience, support and guidance during this project. Thanks to Dr. Kim and Dr. Taylor for their generous service in committee.
+% }
 
 % the following options can be enabled or disabled
 
