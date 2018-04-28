@@ -384,14 +384,14 @@ The difference between model 5 and model 2 is in model 5 both the preprocessing 
 
 \section{Adjusting Models for Batch Training}\label{sect:padding}
 
-When training a model, all training data are fed into the model to update parameters. In one specific model, the number of times to iterate encoding process is fixed. However, passages have different lengths and questions also have different lengths. As such, adjusting all passages to a same length and adjusting all questions to another same length are necessary.
+When training a model, all of the training data is fed into the model to update the parameters. In one specific model, the number of times to iterate the encoding process is fixed. However, different passages have different lengths and different questions also have different lengths. As such, adjusting all passages to a same length and adjusting all questions to another same length are necessary.
 
-For sequences longer than a fixed length, some part of the sentence is cut out. For sequences shorter than a fixed length, a faking pad token is used to pad them. In practice, each passage is adjusted to $passage\_padding\_length$ and is paired with a mask vector $passage\_mask$ which has size $passage\_padding\_length$. Each question is adjusted to $question\_padding\_length$ and paired with a mask vector $question\_mask$ which has size $question\_padding\_length$. Each entry of mask vector is either 0 or 1. 0 indicates the current token does not exit in the original sequence. 1 indicates the opposite.
+For sequences longer than a fixed length, a part of the sentence is cut out. For sequences shorter than a fixed length, a faking pad token is used to pad them. In practice, each passage is adjusted to $passage\_padding\_length$ and is paired with a mask vector $passage\_mask$ which has size $passage\_padding\_length$. Each question is adjusted to $question\_padding\_length$ and paired with a mask vector $question\_mask$ which has size $question\_padding\_length$. Each entry of mask vector is either 0 or 1. 0 indicates that the current token does not exist in the original sequence. 1 indicates the opposite.
 
-When implementing a model, every effort is made to prevent the model from distracted by not existing tokens. This makes the model in implementation different from the theoretical one. Take model 1 as example. In the preprocessing layer, after getting a sequence of states, the mask vector is used to reset the values of not existing positions to zero by an additional step
+When implementing a model, every effort is made to prevent the model from distracted tokens that do not exist. This makes the model in implementation different from the theoretical one. Take model 1 as example. In the preprocessing layer, after getting a sequence of states, the mask vector is used to reset the values of positions that do not exist to zero in an additional step
 $$H^p = H^p \circ (passage\_mask \otimes l)$$
 $$H^q = H^q \circ (question\_mask \otimes l).$$
-In the match LSTM layer, the attention weights of not existing positions are also set to zero by an additional step
+In the match LSTM layer, the attention weights of positions that do not exist are also set to zero in an additional step
 $$\overrightarrow{\alpha _i} = softmax( (w^t\overrightarrow{G_i} + b \otimes e_q) ) \circ question\_mask .$$
 Similar to the preprocessing layer, we have
 $$H_r = H_r \circ (passage\_mask \otimes 2l).$$
@@ -401,7 +401,7 @@ $$\beta _k = softmax( (v^tF_k + c \otimes e_p) ) \circ passage\_mask.$$
 
 \section{Tensorflow Graphs}
 
-Tensorflow is an open source machine learning framework. The central idea of Tensorflow is describing a complex numeric computation as a graph.  {\tt Variables} are ``trainable'' nodes.  {\tt Placeholders} are nodes whose values are fed in run time. Taking model 1 as an example,  {\tt Variables} should be used to represent all the parameters of encoding and decoding layers and {\tt Placeholders} should be used to represent passages, questions, and answers. To train a graph, some APIs of Tensorflow are called to get a train operation. Then the training data are fed through {\tt Placeholders} to run the train operation. When the train operation is run, the {\tt Variables} are updated.
+Tensorflow is an open source machine learning framework. The central idea of Tensorflow is describing a complex numeric computation as a graph.  {\tt Variables} are ``trainable'' nodes.  {\tt Placeholders} are nodes whose values are fed in run time. Taking model 1 as an example,  {\tt Variables} should be used to represent all the parameters of the encoding and decoding layers and {\tt Placeholders} should be used to represent passages, questions, and answers. To train a graph, some APIs of Tensorflow are called to get a train operation. Then the training data is fed through {\tt Placeholders} to run the train operation. When the train operation is run, the {\tt Variables} are updated.
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=12cm]{figures/tf_graph.png}
@@ -411,7 +411,7 @@ Tensorflow is an open source machine learning framework. The central idea of Ten
 
 Figure \ref{f:tf_graph} describes the concept of the Tensorflow graphs for five different models used in this project. The cloud shapes represent the {\tt Placeholders}. The {\tt Variables} are included in {\tt Encoder} and {\tt Decoder}. The rectangles represent nodes in the calculation process. The circles represent the final outputs used in training or testing.
 
-Here is how to build the graph. In the embedding step, the model transforms word tokens to word feature vectors using a given word feature vector matrix. This matrix is part of the graph and is constant. The {\tt Encoder} encodes passage word feature vectors and question feature vectors to $H^r$. The {\tt Decoder} decoders $H^r$ to two probability distributions $\beta _0$ and $\beta _1$. Recall that $\beta _0$ tells how likely each token in a passage is the start of the answer and $\beta _1$ tells how likely each token in a passage is the end of the answer. The loss is calculated using $\beta _0$, $\beta _1$ and ground truth answers feed through answer {\tt Placeholders}. From the loss, a train operation is calculated.
+Here is how to build the graph. In the embedding step, the model transforms word tokens into word feature vectors using a given word feature vector matrix. This matrix is part of the graph and is constant. The {\tt Encoder} encodes passage word feature vectors and question feature vectors to $H^r$. The {\tt Decoder} decoders $H^r$ to two probability distributions $\beta _0$ and $\beta _1$. Recall that $\beta _0$ tells how likely each token in a passage is the start of the answer and $\beta _1$ tells how likely each token in a passage is the end of the answer. The loss is calculated using $\beta _0$, $\beta _1$ and ground truth answers feed through answer {\tt Placeholders}. From the loss, a train operation is calculated.
 
 Here is how the run time works. In training and validation process, the passages, questions and answers are fed into the graph. Running the train operation with data fed into through {\tt Placeholders} will update all the {\tt Variables}. In testing process, only passages and questions are fed into the graph. The predicted answers are determined from $\beta _0$ and $\beta _1$.
 
@@ -435,7 +435,7 @@ For a specific model, in the train and validation process, some Tensorflow graph
 \section{Data}
 The Stanford Question Answering Dataset (SQuAD) is used to do experiments. The GloVe word feature vectors\cite{pennington2014glove} are used to initialize words.
 
-In the first step, a Python natural language processing library {\tt nltk} is used to tokenize raw data into passage word token sequences, question word token sequences and answer spans. Each answer span includes the start index and the end index. In total, the training set contains 78839 instances, the validation set contains 8760 instances, and the test set contains 10570 instances.
+In the first step, a Python natural language processing library {\tt nltk} is used to tokenize raw data into passage word token sequences, question word token sequences and answer spans. Each answer span includes a start index and an end index. In total, our training set contains 78839 instances, our validation set contains 8760 instances, and our test set contains 10570 instances.
 
 \begin{table}[htbp]\centering
   \caption{Data sets}
@@ -448,9 +448,9 @@ In the first step, a Python natural language processing library {\tt nltk} is us
   \end{tabular}
 \end{table}
 
-The vocabulary is then made from the word token sequences from training set and validation set. After the vocabulary is made, each word token is turned into its corresponding index in vocabulary. Two special index is used to represent unknown token and padding token. Before feeding index sequences to Tensorflow graph, the index sequences should be padded to fixed lengths, as mentioned in Section \ref{sect:padding}. The whole training data set should be split into mini batches to support stochastic gradient decent.
+The vocabulary is then made from the word token sequences from the training set and validation set. After the vocabulary is made, each word token is turned into its corresponding index in the vocabulary. Two special indices are used to represent the unknown token and the padding token. Before feeding index sequences into the Tensorflow graph, the index sequences are padded to fixed lengths, as mentioned in Section \ref{sect:padding}. The whole training data set is then split into mini batches to support stochastic gradient decent.
 
-After the vocabulary is made, a smaller word feature vector matrix is made from the original GloVe word feature vectors. The smaller word feature vector matrix only includes vectors of word in the vocabulary. The unknown token is assigned an average of all the vectors of known tokens. The padding token is assigned a zero vector. The index of each token in the smaller word feature vector matrix is same with that in vocabulary.
+After the vocabulary is made, a smaller word feature vector matrix is made from the original GloVe word feature vectors. The smaller word feature vector matrix only includes vectors of words in the vocabulary. The unknown token is assigned an average of all the vectors of known tokens. The padding token is assigned a zero vector. The index of each token in the smaller word feature vector matrix is same as that in the vocabulary.
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=9cm]{figures/data.png}
@@ -463,7 +463,7 @@ After the vocabulary is made, a smaller word feature vector matrix is made from 
 
 \section{Settings}
 
-Figure \ref{f:passage_length} shows the distribution of passage lengths. Figure \ref{f:question_length} shows the distribution of question lengths. Based on the distributions, 400 is set as $passage\_padding\_length$ and 30 is set as $question\_padding\_length$. The GloVe word feature vectors with size 100 is used. The size of the LSTM state in the preprocessing layer, which is $l$ in theoretical model, is set as 64. The regularization scale of L2-regularization is set as 0.001. The batch size is set as 32. The adam optimizer is set using the default settings of Tensorflow. The normalization boundary to clip gradients is set as 5. 200 sample instances from training set are used to estimate training accuracy. 200 sample instances from validation set are used to estimate validation accuracy. The learning rate is selected through several experiments shown in Figure \ref{f:lr}. Based on these experiments, the learning rate is set as 0.002.
+Figure \ref{f:passage_length} shows the distribution of passage lengths. Figure \ref{f:question_length} shows the distribution of question lengths. Based on the distributions, 400 is set as $passage\_padding\_length$ and 30 is set as $question\_padding\_length$. We use the GloVe word feature vectors with size 100. The size of the LSTM state in the preprocessing layer, which is $l$ in theoretical model, is set at 64. The regularization scale of L2-regularization is set at 0.001. The batch size is set at 32. The adam optimizer is set using the default settings of Tensorflow. The normalization boundary to clip gradients is set at 5. 200 sample instances from training set are used to estimate training accuracy. 200 sample instances from validation set are used to estimate validation accuracy. The learning rate is selected through several experiments shown in Figure \ref{f:lr}. Based on these experiments, the learning rate is set at 0.002.
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=10cm, height=7cm]{figures/passage_length.png}
@@ -500,14 +500,14 @@ Figure \ref{f:passage_length} shows the distribution of passage lengths. Figure 
   \end{tabular}
 \end{table}
 
-F1 score and exact match score are used to evaluate the performance of each model. F1 treats a predicted answer and a ground truth as bag of words and calculate a harmonic average of precision and recall ; exact match measures the percentage of exactly same predictions and ground truths. The testing data contains several ground truth answers for one passage-question pair. The best score is chosen as the final score.
+F1 score and exact match score are used to evaluate the performance of each model. F1 treats a predicted answer and a ground truth as bag of words and calculate a harmonic average of precision and recall ; exact match measures the percentage of predictions and ground truths that are exactly the same. The testing data contains several ground truth answers for one passage-question pair. The best score is chosen as the final score.
 
 A machine that has Tesla K80 12 GB Memory, 61 GB RAM and 100 GB SSD is used to train the models.
 
 \section{Results}
 \subsection{Training Process}
 
-Figure \ref{f:mlap}, \ref{f:baseline_change0}, \ref{f:baseline_change1}, \ref{f:baseline_change2} and \ref{f:baseline_change3} show the training process of five different models. One epoch contains roughly 25 * 100 mini batches. The training loss and training scores are calculated every 100 mini batches using the 200 sample instances from training set. So do validation loss and scores. Training one epoch roughly costs 100 minutes. A through training of each model requires around 10 epochs and takes around 17 hours.
+Figure \ref{f:mlap}, \ref{f:baseline_change0}, \ref{f:baseline_change1}, \ref{f:baseline_change2} and \ref{f:baseline_change3} show the training process of five different models. One epoch contains roughly 25 * 100 mini batches. The training loss and training scores are calculated every 100 mini batches using the 200 sample instances from training set. We do the same for validation loss and scores. Training one epoch takes roughly 100 minutes. A thorough training of each model requires around 10 epochs and takes around 17 hours.
 
 As indicated by Figure \ref{f:mlap}, model 1 converges after 3 epochs. The training F1 score converges to around 0.5, the training exact match score converges to around 0.35, the validation F1 score converges to around 0.3, and the validation exact match score converges to around 0.2.
 
@@ -574,7 +574,7 @@ Table \ref{tab:test_results} shows the testing results of all models. Model 1 ge
 
 \section{Analysis}
 
-Comparing testing results of model 1 with that of the original paper, the difference is quite surprising. To find out why my implementation does not reproduce the results of the original paper, further debug and parameter tuning are needed.
+Comparing testing results of model 1 with that of the original paper, the difference is quite surprising. To find out why my implementation does not reproduce the results of the original paper, further debugging and parameter tuning are needed.
 
 Comparing the testing results of model 2 and model 1, the scores of model 2 are better. As mentioned in Section \ref{sect:change_0}, model 2 uses previous attention vector to query the current attention weight vector. However, model 1 uses the current answer LSTM state to query the attention weight vector. The answer LSTM state is produced by applying a non-linear transformation on the attention vector. It turns out not including the non-linear transformation gives better results.
 
