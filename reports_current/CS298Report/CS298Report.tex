@@ -388,20 +388,20 @@ When training a model, all training data are fed into the model to update parame
 
 For sequences longer than a fixed length, some part of the sentence is cut out. For sequences shorter than a fixed length, a faking pad token is used to pad them. In practice, each passage is adjusted to $passage\_padding\_length$ and is paired with a mask vector $passage\_mask$ which has size $passage\_padding\_length$. Each question is adjusted to $question\_padding\_length$ and paired with a mask vector $question\_mask$ which has size $question\_padding\_length$. Each entry of mask vector is either 0 or 1. 0 indicates the current token does not exit in the original sequence. 1 indicates the opposite.
 
-When implementing a model, every effort is made to prevent the model from distracted by not existing tokens. This makes the model in implementation different from the theoretical one. Take the baseline model as example. In Preprocessing layer, after getting a sequence of states, the mask vector is used to reset the values of not existing positions to zero by an additional step
+When implementing a model, every effort is made to prevent the model from distracted by not existing tokens. This makes the model in implementation different from the theoretical one. Take model 1 as example. In the preprocessing layer, after getting a sequence of states, the mask vector is used to reset the values of not existing positions to zero by an additional step
 $$H^p = H^p \circ (passage\_mask \otimes l)$$
 $$H^q = H^q \circ (question\_mask \otimes l).$$
-In Match-LSTM layer, the attention weights of not existing positions are also set to zero by an additional step
+In the match LSTM layer, the attention weights of not existing positions are also set to zero by an additional step
 $$\overrightarrow{\alpha _i} = softmax( (w^t\overrightarrow{G_i} + b \otimes e_q) ) \circ question\_mask .$$
-Similar to Preprocessing layer, we have
+Similar to the preprocessing layer, we have
 $$H_r = H_r \circ (passage\_mask \otimes 2l).$$
-In Answer Pointer layer, similar to Match-LSTM layer, we have
+In the answer pointer layer, similar to the match LSTM layer, we have
 $$\beta _k = softmax( (v^tF_k + c \otimes e_p) ) \circ passage\_mask.$$
 
 
 \section{Tensorflow Graphs}
 
-Tensorflow is an open source machine learning framework. The central idea of Tensorflow is describing a complex numeric computation as a graph.  {\tt Variables} are ``trainable'' nodes.  {\tt Placeholders} are nodes whose values are fed in run time. Taking the baseline model as an example,  {\tt Variables} should be used to represent all the parameters of encoding and decoding layers and {\tt Placeholders} should be used to represent passages, questions, and answers. To train a graph, some APIs of Tensorflow are called to get a train operation. Then the training data are fed through {\tt Placeholders} to run the train operation. When the train operation is run, the {\tt Variables} are updated.
+Tensorflow is an open source machine learning framework. The central idea of Tensorflow is describing a complex numeric computation as a graph.  {\tt Variables} are ``trainable'' nodes.  {\tt Placeholders} are nodes whose values are fed in run time. Taking model 1 as an example,  {\tt Variables} should be used to represent all the parameters of encoding and decoding layers and {\tt Placeholders} should be used to represent passages, questions, and answers. To train a graph, some APIs of Tensorflow are called to get a train operation. Then the training data are fed through {\tt Placeholders} to run the train operation. When the train operation is run, the {\tt Variables} are updated.
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=12cm]{figures/tf_graph.png}
@@ -409,9 +409,9 @@ Tensorflow is an open source machine learning framework. The central idea of Ten
   \label{f:tf_graph}
 \end{figure}
 
-Figure \ref{f:tf_graph} describes the concept of the Tensorflow graphs used in this project. The cloud shapes represent the {\tt Placeholders}. The {\tt Variables} are included in {\tt Encoder} and {\tt Decoder}. The rectangles represent nodes in the calculation process. The circles represent the final outputs used in training or testing.
+Figure \ref{f:tf_graph} describes the concept of the Tensorflow graphs for five different models used in this project. The cloud shapes represent the {\tt Placeholders}. The {\tt Variables} are included in {\tt Encoder} and {\tt Decoder}. The rectangles represent nodes in the calculation process. The circles represent the final outputs used in training or testing.
 
-Here is how to build the graph. In the embedding step, the model transforms tokens to word feature vectors using a given word feature vector matrix. This matrix is part of the graph and is constant. The {\tt Encoder} encodes passage word feature vectors and question feature vectors to $H^r$. The {\tt Decoder} decoders $H^r$ to two probability distributions $\beta _0$ and $\beta _1$. Recall that $\beta _0$ tells how likely each token in a passage is the start of the answer and $\beta _1$ tells how likely each token in a passage is the end of the answer. The loss is calculated using $\beta _0$, $\beta _1$ and ground truth answers feed through answer {\tt Placeholders}. From the loss, a train operation is calculated.
+Here is how to build the graph. In the embedding step, the model transforms word tokens to word feature vectors using a given word feature vector matrix. This matrix is part of the graph and is constant. The {\tt Encoder} encodes passage word feature vectors and question feature vectors to $H^r$. The {\tt Decoder} decoders $H^r$ to two probability distributions $\beta _0$ and $\beta _1$. Recall that $\beta _0$ tells how likely each token in a passage is the start of the answer and $\beta _1$ tells how likely each token in a passage is the end of the answer. The loss is calculated using $\beta _0$, $\beta _1$ and ground truth answers feed through answer {\tt Placeholders}. From the loss, a train operation is calculated.
 
 Here is how the run time works. In training and validation process, the passages, questions and answers are fed into the graph. Running the train operation with data fed into through {\tt Placeholders} will update all the {\tt Variables}. In testing process, only passages and questions are fed into the graph. The predicted answers are determined from $\beta _0$ and $\beta _1$.
 
