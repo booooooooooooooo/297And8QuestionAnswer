@@ -450,7 +450,7 @@ In the first step, a Python natural language processing library {\tt nltk} is us
 
 The vocabulary is then made from the word token sequences from training set and validation set. After the vocabulary is made, each word token is turned into its corresponding index in vocabulary. Two special index is used to represent unknown token and padding token. Before feeding index sequences to Tensorflow graph, the index sequences should be padded to fixed lengths, as mentioned in Section \ref{sect:padding}. The whole training data set should be split into mini batches to support stochastic gradient decent.
 
-After the vocabulary is made, a smaller word feature vector matrix is made from the original GloVe word feature vectors. The smaller WFV matrix only includes vectors of word in the vocabulary. The unknown token is assigned an average of all the vectors of known tokens. The padding token is assigned zero vector. The index of each token in the smaller WFV matrix is same with that in vocabulary.
+After the vocabulary is made, a smaller word feature vector matrix is made from the original GloVe word feature vectors. The smaller word feature vector matrix only includes vectors of word in the vocabulary. The unknown token is assigned an average of all the vectors of known tokens. The padding token is assigned a zero vector. The index of each token in the smaller word feature vector matrix is same with that in vocabulary.
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=9cm]{figures/data.png}
@@ -463,7 +463,7 @@ After the vocabulary is made, a smaller word feature vector matrix is made from 
 
 \section{Settings}
 
-Figure \ref{f:passage_length} shows the distribution of passage lengths. Figure \ref{f:question_length} shows the distribution of question lengths. Based on the distributions, 400 is set as $passage\_padding\_length$ and 30 is set as $question\_padding\_length$. The GloVe word feature vectors with size 100 is used. The size of LSTM state in Preprocessing layer, which is $l$ in theoretical model, is set as 64. The regularization scale of L2-regularization is set as 0.001. The batch size is set as 32. The adam optimizer is set using the default settings of Tensorflow. The normalization boundary to clip gradients is set as 5. 200 sample instances from training set are used to estimate training accuracy. 200 sample instances from validation set are used to estimate validation accuracy. The learning rate is selected through several experiments shown in Figure \ref{f:lr}. Based on these experiments, the learning rate is set as 0.002.
+Figure \ref{f:passage_length} shows the distribution of passage lengths. Figure \ref{f:question_length} shows the distribution of question lengths. Based on the distributions, 400 is set as $passage\_padding\_length$ and 30 is set as $question\_padding\_length$. The GloVe word feature vectors with size 100 is used. The size of the LSTM state in the preprocessing layer, which is $l$ in theoretical model, is set as 64. The regularization scale of L2-regularization is set as 0.001. The batch size is set as 32. The adam optimizer is set using the default settings of Tensorflow. The normalization boundary to clip gradients is set as 5. 200 sample instances from training set are used to estimate training accuracy. 200 sample instances from validation set are used to estimate validation accuracy. The learning rate is selected through several experiments shown in Figure \ref{f:lr}. Based on these experiments, the learning rate is set as 0.002.
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=10cm, height=7cm]{figures/passage_length.png}
@@ -488,7 +488,7 @@ Figure \ref{f:passage_length} shows the distribution of passage lengths. Figure 
   \label{tab:settings}
   \begin{tabular}{|r|l|} \hline
     Hyperparameter Name& Value \\ \hline\hline
-    WFV Dimension (d) & \ 100 \\
+    Word Feature Vector Dimension (d) & \ 100 \\
     Hidden State Size (l) & \ 64 \\
     L2\_regularization Scale & \ 10570\\
     Hidden State Size (l) & \ 64\\
@@ -509,15 +509,15 @@ A machine that has Tesla K80 12 GB Memory, 61 GB RAM and 100 GB SSD is used to t
 
 Figure \ref{f:mlap}, \ref{f:baseline_change0}, \ref{f:baseline_change1}, \ref{f:baseline_change2} and \ref{f:baseline_change3} show the training process of five different models. One epoch contains roughly 25 * 100 mini batches. The training loss and training scores are calculated every 100 mini batches using the 200 sample instances from training set. So do validation loss and scores. Training one epoch roughly costs 100 minutes. A through training of each model requires around 10 epochs and takes around 17 hours.
 
-As indicated by Figure \ref{f:mlap}, the baseline model converges after 3 epochs. The training F1 score converges to around 0.5, the training exact match score converges to around 0.35, the validation F1 score converges to around 0.3, and the validation exact match score converges to around 0.2.
+As indicated by Figure \ref{f:mlap}, model 1 converges after 3 epochs. The training F1 score converges to around 0.5, the training exact match score converges to around 0.35, the validation F1 score converges to around 0.3, and the validation exact match score converges to around 0.2.
 
-As indicated by Figure \ref{f:baseline_change0}, the experiment zero model keeps learning in 10 epochs. The training F1 score converges to around 0.6, the training exact match score converges to around 0.5, the validation F1 score converges to around 0.4, and the validation exact match score converges to around 0.3.
+As indicated by Figure \ref{f:baseline_change0}, model 2 keeps learning in 10 epochs. The training F1 score converges to around 0.6, the training exact match score converges to around 0.5, the validation F1 score converges to around 0.4, and the validation exact match score converges to around 0.3.
 
-As indicated by Figure \ref{f:baseline_change1}, the experiment one model converges after 10 epochs. The training F1 score converges to around 0.65, the training exact match score converges to around 0.45, the validation F1 score converges to around 0.4, and the validation exact match score converges to around 0.3.
+As indicated by Figure \ref{f:baseline_change1}, model 3 converges after 10 epochs. The training F1 score converges to around 0.65, the training exact match score converges to around 0.45, the validation F1 score converges to around 0.4, and the validation exact match score converges to around 0.3.
 
-As indicated by Figure \ref{f:baseline_change2}, the experiment two model converges after 4 epochs. The training F1 score converges to around 0.6, the training exact match score converges to around 0.4, the validation F1 score converges to around 0.4, and the validation exact match score converges to around 0.2.
+As indicated by Figure \ref{f:baseline_change2}, model 4 converges after 4 epochs. The training F1 score converges to around 0.6, the training exact match score converges to around 0.4, the validation F1 score converges to around 0.4, and the validation exact match score converges to around 0.2.
 
-As indicated by Figure \ref{f:baseline_change3}, the experiment three model keeps learning in the 10 epochs. The training F1 score converges to around 0.5, the training exact match score converges to around 0.35, the validation F1 score converges to around 0.3, and the validation exact match score converges to around 0.2.
+As indicated by Figure \ref{f:baseline_change3}, model 5 keeps learning in the 10 epochs. The training F1 score converges to around 0.5, the training exact match score converges to around 0.35, the validation F1 score converges to around 0.3, and the validation exact match score converges to around 0.2.
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=12cm]{figures/match_corrected.png}
@@ -558,29 +558,29 @@ As indicated by Figure \ref{f:baseline_change3}, the experiment three model keep
     \hline
     Model& Test Exact Match & Test F1 \\
     \hline\hline
-    Baseline: MLAP & \ 23.4 &\ 33.6 \\
-    Baseline Change 0& \ 33.0 &\ 45.8 \\
-    Baseline Change 1 & \ 33.0 &\ 46.2 \\
-    Baseline Change 2 & \ 33.0 &\ 45.6 \\
-    Baseline Change 3 & \ 24.3 &\ 33.9 \\
+    Model 1 & \ 23.4 &\ 33.6 \\
+    Model 2 & \ 33.0 &\ 45.8 \\
+    Model 3 & \ 33.0 &\ 46.2 \\
+    Model 4 & \ 33.0 &\ 45.6 \\
+    Model 5 & \ 24.3 &\ 33.9 \\
     \hline
   \end{tabular}
 \end{table}
 
-Table \ref{tab:test_results} shows the testing results of all models. The baseline MLAP model gets F1 score 33.6 and exact match score 23.4. This does not reproduce the F1 score 71.2 and the exact match score 61.1 in the reference paper\cite{wang2016machine}. The experiment zero, one two models behave similarly with F1 score around 46 and exact match score around 33. The experiment 3 model behaves worse than the other three experiments with F1 score 33.9 and exact match score 24.3.
+Table \ref{tab:test_results} shows the testing results of all models. Model 1 gets F1 score 33.6 and exact match score 23.4. This does not reproduce the F1 score 71.2 and the exact match score 61.1 in the reference paper\cite{wang2016machine}. Model 2, 3 and 4 behave similarly with F1 score around 46 and exact match score around 33. Model 5 behaves worse than the other three experiments with F1 score 33.9 and exact match score 24.3.
 
 
 
 
 \section{Analysis}
 
-Comparing testing results of the baseline model with that of the original paper, the difference is quite surprising. To find out why my implementation of baseline model does not reproduce the results of the original paper, further debug and parameter tuning are needed.
+Comparing testing results of model 1 with that of the original paper, the difference is quite surprising. To find out why my implementation does not reproduce the results of the original paper, further debug and parameter tuning are needed.
 
-Comparing the testing results of experiment zero and the baseline model, the scores of experiment zero are better. As mentioned in Section \ref{sect:change_0}, experiment zero uses previous attention vector to query the current attention weights. However, the baseline model uses state of answer-LSTM to query the current attention weights. Using answer-LSTM means doing a non-linear transformation on attention vector. It turns out not including the non-linear transformation gives better results.
+Comparing the testing results of model 2 and model 1, the scores of model 2 are better. As mentioned in Section \ref{sect:change_0}, model 2 uses previous attention vector to query the current attention weight vector. However, model 1 uses the current answer LSTM state to query the attention weight vector. The answer LSTM state is produced by applying a non-linear transformation on the attention vector. It turns out not including the non-linear transformation gives better results.
 
-Experiments zero, one and two behave similarly. This means removing either Preprocessing layer or the $h_r$ in Bi-directional Match-LSTM layer does not decrease test results. A reasonable guess is the two parts provide duplicate context information.
+Experiments 2, 3 and 4 behave similarly. This means removing either the preprocessing layer or the $h_r$ in the bidirectional match LSTM layer does not decrease test results. A reasonable guess is the two parts provide duplicate context information.
 
-Experiment three performs worse than experiment zero, one and two. This means removing both Preprocessing layer and the $h_r$ in Bi-directional Match-LSTM layer decreases testing results. A reasonable guess is the context information provided by these two parts is not provided in other parts of the model. As such, one of the two must be kept.
+Model 5 performs worse than model 2, 3 and 4. This means removing both the preprocessing layer and the $h_r$ in the bidirectional match LSTM layer decreases testing results. A reasonable guess is the context information provided by these two parts is not provided in other parts of model 1. As such, one of the two must be kept.
 
 
 
@@ -588,9 +588,8 @@ Experiment three performs worse than experiment zero, one and two. This means re
 
 \chapter{Conclusion}
 
-This project presents a through implementation of a Question Answering (QA) system. Several models were tried. The baseline model was implemented to reproduce the results of the paper it refers to. Four experiments on the baseline models were tried to understand the baseline model. The experiment zero model outperforms the baseline model by using attention vector instead of answer-LSTM state to query attention weights. The experiment one and experiment two models have simplified structures but similar testing results with the experiment zero model. By trying experiment three it is shown that the changes in experiment one and two cannot be made simultaneously.
+This project presents a thorough implementation of a question answering system. Five different models were tried and several interesting observations were found. Further work is required to find out why model 1 fails to reproduce the testing results of the reference paper.
 
-Further work is required to find out why the baseline model fails to reproduce the testing results of the reference paper. At the same time, more parameter tuning are needed to make the experiments more precise. The last but not the least, making novel architecture to bypass the state-of-art results is always a good way to move the research of question answering forward.
 
 
 % if you want to keep macros or chapters in separate files
