@@ -360,13 +360,13 @@ is minimized.
 
 \section{Model Two} \label{sect:change_0}
 
-The difference from model two to model one is in the decoding process. In model two,
+The difference from model two and model one is in the decoding process. In model two,
 $${h_k}^a = H^r\beta _{k}^T.$$
 That is, instead of the current state of answer LSTM, the previous attention vector is used to query the current attention weight vector.
 
 \section{Model Three}
 
-The difference between model three to model two is that in model three the $W^r\overrightarrow{{h_{i-1}}^r}$ in the bidirectional match LSTM layer is removed. This modification aims at checking whether $\overrightarrow{{h_{i-1}}^r}$ carries some redundant context information. After this change,
+The difference between model three and model two is that in model three the $W^r\overrightarrow{{h_{i-1}}^r}$ in the bidirectional match LSTM layer is removed. This modification aims at checking whether $\overrightarrow{{h_{i-1}}^r}$ carries some redundant context information. After this change,
 
 
 $$\overrightarrow{G} = tanh(W^qH^q + (W^p{h_i}^p + b^p) \otimes e_q)$$
@@ -374,7 +374,7 @@ $$\overrightarrow{G} = tanh(W^qH^q + (W^p{h_i}^p + b^p) \otimes e_q)$$
 
 \section{Model Four}
 
-The difference between model four to model two is that in model four the the preprocessing layer is removed. This modification aims at checking whether the preprocessing layer carries some redundant context information.
+The difference between model four and model two is that in model four the the preprocessing layer is removed. This modification aims at checking whether the preprocessing layer carries some redundant context information.
 
 \section{Model Five}
 
@@ -500,7 +500,7 @@ Figure \ref{f:passage_length} shows the distribution of passage lengths. Figure 
   \end{tabular}
 \end{table}
 
-F1 score and exact match score are used to evaluate the performance of each model. F1 treats a predicted answer and a ground truth as bag of words and calculate a harmonic average of precision and recall ; exact match measures the percentage of predictions and ground truths that are exactly the same. The testing data contains several ground truth answers for one passage-question pair. The best score is chosen as the final score.
+F1 score and exact match score are used to evaluate the performance of each model. F1 treats a predicted answer and a ground truth as bag of words and calculate a harmonic average of precision and recall; exact match measures the percentage of predictions and ground truths that are exactly the same. The testing data contains several ground truth answers for one passage-question pair. The best score is chosen as the final score.
 
 A machine that has Tesla K80 12 GB Memory, 61 GB RAM and 100 GB SSD is used to train the models.
 
