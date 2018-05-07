@@ -277,24 +277,172 @@ $x$ is the input, $h$ is the state in encoding process, $y$ is the output, and $
 \end{frame}
 \section{Design}
 
-\begin{frame} \frametitle{Model 1}
+\begin{frame}{}
+    In this chapter, I will explain the five models one by one. Recall that Model 1 is the Match LSTM \& Answer Pointer model which has a typical encoder-decoder sequence-to-sequence recurrent network architecture designed by Wang and Jiang. Model 2, 3, 4 and 5 are designed by making changes to Model 1.
+\end{frame}
 
+\begin{frame} \frametitle{Model 1}
+  \begin{itemize}
+      \item an encoder-decoder sequence-to-sequence architecture
+      \item on SQuAD dataset.Each instance of training data includes one passage, one question and one answer. The passage is a sequence of tokens, the question is a sequence of tokens, and the answer is a sequence of two indices indicating the start and end positions in passage.
+      \item Before feeding training data into the model, tokens in passages and questions are vectorized to word feature vectors.
+  \end{itemize}
+\end{frame}
+
+\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{Structure Overview}
+    \begin{itemize}
+        \item Encoder
+            \begin{itemize}
+                \item the preprocessing layer
+                \item the bidirectional match LSTM layer
+            \end{itemize}
+        \item Decoder
+            \begin{itemize}
+                \item the answer pointer layer
+            \end{itemize}
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{the preprocessing layer}
+
+    \begin{itemize}
+        \item a LSTM runs over each passage word feature vector sequence and outputs a sequence of LSTM states
+        \item The same LSTM is used to encode each question word feature vector sequence to a sequence of LSTM states.
+    \end{itemize}
+\end{frame}
+
+\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{the preprocessing layer}
+    $$H^p = \overrightarrow{LSTM}(P)$$
+    $$H^q = \overrightarrow{LSTM}(Q)$$
+
+    where
+
+    $$P\in R^{d \times p}: passage$$
+    $$Q\in R^{d \times q}: question$$
+    $$H^p\in R^{l \times p}: encoded\ passage$$
+    $$H^q\in R^{l \times q}: encoded\ question$$
+    $$p: length \ of\ passage$$
+    $$q: length\ of\ question$$
+    $$l: dimension\ of\ LSTM\ states$$
+    $$d: dimension\ of\ word\ feature\ vector$$
+
+\end{frame}
+
+\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{bidirectional match LSTM layer}
+
+a LSTM equipped with passage-question attention, which is called match LSTM, is used to encode each sequence of passage states and the corresponding sequence of question states together to a sequence of match LSTM states.
+
+
+\end{frame}
+
+\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{bidirectional match LSTM layer}
+
+    $$\overrightarrow{G} = tanh(W^qH^q + (W^p{h_i}^p + W^r\overrightarrow{{h_{i-1}}^r} + b^p) \otimes e_q)$$
+    $$\overrightarrow{\alpha _i} = softmax(w^t\overrightarrow{G_i} + b \otimes e_q)$$
+
+
+    where
+
+    $$W^q, W^p, W^r\in R^{l \times l} $$
+    $$b_p, w\in R^{l}  $$
+    $$b \in R $$
+    $${h_{i}^p}\in R^{l}: one\ column\ of\ H^p  $$
+
+    and
+
+    \[ \overrightarrow{z_i} =
+    \begin{bmatrix}
+    {h_i}^p \\
+    H^q\overrightarrow{ {\alpha _i}}^T \\
+    \end{bmatrix}
+    \in R^{2l}
+    \]
+    $$\overrightarrow{{h_i}^r} = \overrightarrow{LSTM}(\overrightarrow{z_i}, \overrightarrow{{h_{i-1}}^r}).$$
+
+\end{frame}
+
+\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{bidirectional match LSTM layer}
+    After iterating between getting attention weight vector $\overrightarrow{\alpha _i}$ and getting match LSTM state ${{h_{i}}^r}$ $p$ times, we get $[{{h_{1}}^r}, ..., {{h_{p}}^r}]$. Concatenate them to get
+
+    $$\overrightarrow{H^r} = [{{h_{1}}^r}, ..., {{h_{p}}^r}] \in R^{l \times p}.$$
+
+    Then go over $H^p$ from right to left to get $\overleftarrow{H^r}$. Concatenate $\overrightarrow{H^r}$ and $\overleftarrow{H^r}$ to get the final output of encoding process
+
+    \[ H^r =
+    \begin{bmatrix}
+    \overrightarrow{H^r} \\
+    \overleftarrow{H^r} \\
+    \end{bmatrix}
+    \in R^{2l \times p}.
+    \]
+\end{frame}
+
+\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{answer pointer layer}
+each output of the decoding process includes two probability distributions.
+   \begin{itemize}
+       \item The first probability distribution tells how likely each token in passage to be the start of the answer.
+       \item The second probability distribution tells how likely each token in passage to be the end of the answer
+   \end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{Model 1, cont.}\framesubtitle{answer pointer layer}
+    $$F_k = tahn(VH^r + (W^a{h^a_{k-1}} +  b^a) \otimes e_p)$$
+    $$\beta _k = softmax(v^tF_k + c \otimes e_p)$$
+
+
+    where
+    $$V \in R^{l \times 2l}$$
+    $$W^a\in R^{l \times l} $$
+    $$b_a, v\in R^{l}  $$
+    $$c \in R $$
+    $${h_{k-1}}^a\in R^{l}: ith\ state\ of\ answer\ LSTM  $$
+
+    and answer LSTM is
+
+
+    $${h_k}^a = LSTM(H^r\beta _k^T, h_{k-1}^a)$$
+\end{frame}
+
+\begin{frame}\frametitle{Model 1, cont.}\framesubtitle{answer pointer layer}
+    By iterating between the attention mechanism and the answer LSTM two times, we could get the output of the decoding process - $\beta _0$ and $\beta _1$.
+
+
+    Now we can get the loss function. Let $a_s$ denote the ground truth start index of the answer and $a_e$ denote the ground truth end index, we have
+
+    $$p(a|H^r) = p(a_s|H_r)p(a_r|H_r)=\beta _{0, a_s} \times \beta_{1, a_e}$$
+
+    where $$\beta_{k, j} = jth\ token\ of\ \beta _k$$
+
+\end{frame}
+
+\begin{frame}\frametitle{Model 1, cont.}\framesubtitle{loss function}
+    To train the model, the loss function
+
+    $$J(\theta) = -\frac{1}{N}\sum_{i=1}^{N} \log{p(a^n|H^r)} $$
+
+    is minimized.
 \end{frame}
 
 \begin{frame} \frametitle{Model 2}
-
+    The difference from Model 2 and Model 1 is in the decoding process. In Model 2,
+    $${h_k}^a = H^r\beta _{k}^T.$$
+    That is, instead of the current state of answer LSTM, the previous attention vector is used to query the current attention weight vector.
 \end{frame}
 
 \begin{frame} \frametitle{Model 3}
+    The difference between Model 3 and Model 2 is that in Model 3 the $W^r\overrightarrow{{h_{i-1}}^r}$ in the bidirectional match LSTM layer is removed. This modification aims at checking whether $\overrightarrow{{h_{i-1}}^r}$ carries some redundant context information. After this change,
 
+
+    $$\overrightarrow{G} = tanh(W^qH^q + (W^p{h_i}^p + b^p) \otimes e_q)$$
 \end{frame}
 
 \begin{frame} \frametitle{Model 4}
-
+    The difference between Model 4 and Model 2 is that in Model 4 the the preprocessing layer is removed. This modification aims at checking whether the preprocessing layer carries some redundant context information.
 \end{frame}
 
 \begin{frame} \frametitle{Model 5}
-
+    The difference between Model 5 and Model 2 is that in Model 5 both the preprocessing layer and $W^r\overrightarrow{{h_{i-1}}^r}$ in the bidirectional match LSTM layer are removed. This aims at checking whether context information carried by both is included in some other parts of Model 2.
 \end{frame}
 
 \section{Implementation}
