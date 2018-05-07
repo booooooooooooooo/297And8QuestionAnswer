@@ -194,17 +194,87 @@ Recurrent Neural Networks (RNNs) are used for modeling sequential data
 \end{frame}
 
 \begin{frame}{Encoder-decoder Sequence-to-sequence Architecture}
+\begin{itemize}
+    \item The process of understanding the input sequence is considered as encoding the input sequence to some vectors $Crypto$.
+    \item The process of generating output is considered as decoding the $Crypto$.
+\end{itemize}
+
+\begin{examples}
+$x$ is the input, $h$ is the state in encoding process, $y$ is the output, and $g$ is the state of decoding process.
+\end{examples}
+
+\end{frame}
+
+\begin{frame}{Encoder-decoder Sequence-to-sequence Architecture, Cont.}
+    \begin{center}
+        \includegraphics[width=10cm, height=7cm]{figures/encoderDecoder.png}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Encoder-decoder Sequence-to-sequence Architecture, Cont.}
+    \begin{itemize}
+        \item The question answering task in this project is a sequence-to-sequence task.
+        \item Each input actually includes two sequences - a question and a passage.
+            \begin{itemize}
+                \item attention mechanism is required to make each passage aware of the corresponding question and encode the two together
+            \end{itemize}
+        \item each output sequence is an answer which is represented by two indices for the input passage sequence.
+            \begin{itemize}
+                \item pointer network is required to make sure the output sequence comes from input sequence
+            \end{itemize}
+    \end{itemize}
 
 \end{frame}
 
 \begin{frame}{Attention Mechanism}
+    \begin{itemize}
+        \item first used in neural machine translation
+        \item is used to enable the decoding process aware of the encoding states
+    \end{itemize}
+\end{frame}
 
+\begin{frame}{Attention Mechanism, Cont.}
+    \begin{examples}
+        $y$ is the output, $g$ is the state, and $c$ is the attention vector. $$g_i =f(g_{i-1},y_{i-1},c_i).$$
+        The attention vector $c_i$ is produced by using $g_{i-1}$ to ``query'' the encoding states $h_1, ... h_n$ through
+        $$c_i = \sum _j {\alpha _{i,j} h_j}$$
+        $$\alpha _{i,j} = \exp{e_{i,j}} / \sum _j {\exp{e_{i,j}}}$$
+        $$e_{i,j} = tanh(W_h h_j + W_g g_{i-1} + b).$$
+    \end{examples}
+
+\end{frame}
+
+\begin{frame}{Attention Mechanism, Cont.}
+    \begin{center}
+        \includegraphics[width=8cm, height=8cm]{figures/attention}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Attention Mechanism, Cont.}
+    In this project, the passage is required to ``be aware of the question'' in encoding process. At the same time, the answer is required to ``be aware of the encoding states of passage and question''. The detailed formulas are given later.
 \end{frame}
 
 \begin{frame}{Pointer Network}
+    \begin{itemize}
+        \item Using the pointer network enables the decoder to output tokens from input sequence
+        \item The attention mechanism is used with the pointer network
+        \item However, aside from getting an attention vector, the attention weight vector $\alpha$ is considered as a probability distribution which indicates how likely each token in the input sequence is the current output.
+        $$y_i = x_k$$
+        where
+        $$k = argmax_j(\alpha _{i,j}).$$
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Pointer Network, Cont.}
+    \begin{center}
+        \includegraphics[width=8cm, height=8cm]{figures/pointerNetwork.png}
+    \end{center}
 
 \end{frame}
 
+\begin{frame}{Pointer Network, Cont.}
+    In this project, the pointer network was used in the decoding part of several models.
+\end{frame}
 \section{Design}
 
 \begin{frame} \frametitle{Model 1}
