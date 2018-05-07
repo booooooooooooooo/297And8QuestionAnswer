@@ -52,68 +52,75 @@
 
 \begin{frame} \frametitle{Question Answering}
     \begin{itemize}
-        \item the study of writing computer programs that can answer natural language questions
-        \item are widely used among search engines, personal assistant applications on smart phones, voice control systems and various other applications
+        \item is the study of writing computer programs that can answer natural language questions
+        \item is widely used among search engines, personal assistant applications on smart phones, voice control systems and various other applications
         \item  can be categorized into two types - open domain and close domain
+            \begin{itemize}
+                \item  For an open domain system, the questions can be about almost everything.
+                \item For a close domain system, the questions are about a specific domain.
+            \end{itemize}
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Open Domain \& Close Domain}
-    For an open domain system, the questions can be about almost everything; whereas, for a close domain system, the questions are about a specific domain.
-\end{frame}
 
 \begin{frame}{Topic of This Project}
     \begin{itemize}
         \item open domain
-        \item a scenario where a specific passage is assigned to a question and the answer is a segment of the passage
+        \item a scenario where a specific passage is already assigned to a question and the answer is a segment of the passage
         \item The Stanford Question Answering Dataset (SQuAD) used in this project is appropriate for such scenario
+            \begin{itemize}
+                \item includes questions asked by human beings on Wikipedia articles
+                \item The answer to each question is a segment of the corresponding Wikipedia passage
+                \item contains more than 100,000 question-answer pairs on more than 500 articles
+            \end{itemize}
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Stanford Question Answering Dataset (SQuAD)}
-    \begin{itemize}
-        \item includes questions asked by human beings on Wikipedia articles
-        \item The answer to each question is a segment of the corresponding Wikipedia passage
-        \item contains more than 100,000 question-answer pairs on more than 500 articles
-    \end{itemize}
-\end{frame}
 \begin{frame}{Encoder-decoder Sequence-to-sequence Recurrent Neural Networks}
    \begin{itemize}
-       \item These networks encode an input sequence to some vectors and then decode them to an output sequence. \item For question answering, the input sequence includes a passage and a question and the output sequence is the answer
+       \item Encoder-decoder:  encode an input to some vectors and then decode those vectors to an output.
+       \item Sequence-to-sequence: Input is a sequence; output is also a sequence
+            \begin{itemize}
+                \item For question answering, the input sequence includes a passage and a question and the output sequence is the answer
+            \end{itemize}
+       \item Recurrent Neural Networks: Networks used for modeling sequential data
+
    \end{itemize}
 \end{frame}
 
 \begin{frame}{Contribution of This Project}
     \begin{itemize}
-        \item successfully built a question answering system using five different models
+        \item We successfully built a question answering system using five different models
         \item By comparing the results of five different models, we got two interesting observations
     \end{itemize}
 \end{frame}
 
 \section{Background}
 
-\begin{frame} \frametitle{Word Feature Vector}
+\begin{frame} \frametitle{Word Feature Vector}\framesubtitle{Overview}
   \begin{itemize}
       \item A word feature vector represents a word according to its relationship with other words in a vocabulary.
       \item The distance from one word feature vector to any other word feature vector tells how likely the two words appear in a same context.
-      \item The word feature vector matrix for the vocabulary of a given text are learned by training a neural probabilistic language model on the text
-
+      \item The word feature vector matrix for the vocabulary of a given text are learned by training a neural probabilistic language model on the text.
   \end{itemize}
 \end{frame}
 
-\begin{frame}{Word Feature Vector, cont.}
-    neural probabilistic language model
+\begin{frame}{Word Feature Vector, cont.}\framesubtitle{Neural Probabilistic Language Model}
+
     \begin{itemize}
-        \item Denote V as the vocabulary, $w_t$ as a word from $V$, and the matrix $C$ as the word feature vectors of all words in $V$.
-        \item Each instance of the training set is a sequence of words $w_1,...,w_T$ which is a segment of the text.
+        \item Some notations
+            \begin{itemize}
+                \item V: vocabulary
+                \item $w_t$: as a word from $V$
+                \item $C$: the matrix which includes the word feature vectors of all words in $V$
+            \end{itemize}
+        \item Each instance of the training set is a sequence of words $w_t, ..., w_{t-n+1}$ which is a segment of the text.
         \item The purpose of a neural probabilistic language model is to learn a model $f$ such that
         $$ f(w_t, ..., w_{t-n+1}) = \hat{P}(w_t | w_{t-1},...,w_{t-n+1}).$$
-
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Word Feature Vector, cont.}
-    neural probabilistic language model
+\begin{frame}{Word Feature Vector, cont.}\framesubtitle{Neural Probabilistic Language Model}
     \begin{itemize}
         \item The computation of $f(w_t, ..., w_{t-n+1})$ is divided into two parts:
             \begin{itemize}
@@ -133,64 +140,67 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Word Feature Vector, cont.}
+\begin{frame}{Word Feature Vector, cont.}\framesubtitle{Usage in This Project}
    \begin{itemize}
-       \item In the neural probabilistic language model, the word feature vectors are used to predict the next word after a sequence. However, the usage of word feature vectors is far beyond this.
-       \item Using word feature vectors to represent words is common when applying neural network models on natural language processing tasks. This is how we used word feature vectors in this project.
+       \item In this project, we used the word feature vectors to represent words.
    \end{itemize}
 
 \end{frame}
-\begin{frame}{Recurrent Neural Networks}
+\begin{frame}{Recurrent Neural Networks}\framesubtitle{Overview}
 
-Recurrent Neural Networks (RNNs) are used for modeling sequential data
+Recurrent Neural Networks (RNNs) are used for modeling sequential data.
 
-    \begin{examples}{A simple recurrent network with no outputs}
+    \begin{examples}{A simple recurrent network with no outputs.}
         \begin{itemize}
             \item $x$ is the input. $h$ is the state. $\theta$ is the hyperparameter.
             \item The relation between $h$ and $x$ is
             $$h_t = f(h_{t-1}, x_t; \theta).$$
-
-            \item An example of $f$ is
-
-            $$h_t = sigmoid(W_h h_{t-1} + W_x x_t + b).$$
+                \begin{center}
+                  \includegraphics[width=5cm, height=2cm]{figures/rnnWithNoOutputs}
+                \end{center}
+            \item An example of $f$ is $h_t = sigmoid(W_h h_{t-1} + W_x x_t + b).$
         \end{itemize}
+
     \end{examples}
-
 \end{frame}
 
-\begin{frame}{Recurrent Neural Networks, cont.}
-    \begin{center}
-      \includegraphics[width=9cm, height=3cm]{figures/rnnWithNoOutputs}
-    \end{center}
-\end{frame}
 
-\begin{frame}{Recurrent Neural Networks, cont.}
+\begin{frame}{Recurrent Neural Networks, cont.}\framesubtitle{Long Short Term Memory (LSTM) cell}
     \begin{itemize}
-        \item the vanishing gradient problem exists
+        \item Vanishing gradient problem
             \begin{itemize}
                 \item the vanishing gradient means the gradients become smaller and smaller as their values are propagated forward in a network
                 \item When this happens, the network learns slowly or even stops learning
             \end{itemize}
-        \item The main solution to the vanishing problem is to use a more complex learning unit
+        \item The main solution to the vanishing problem: Use a more complex learning unit
         \item Long Short Term Memory (LSTM) cell is one such complex learning unit; Gated Recurrent Unit (GRU) has a simplified structure but similar function with LSTM
-        \item In this project, I used LSTM and GRU equally as learning unit
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Bidirectional Recurrent Neural Networks}
+\begin{frame}{Recurrent Neural Networks, cont.}\framesubtitle{Usage in This Project}
+    \begin{itemize}
+        \item In this project, we used LSTM and GRU equally as learning unit.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Bidirectional Recurrent Neural Networks}\framesubtitle{Overview }
     \begin{itemize}
         \item Problem of RNNs: $h_t$ only contains context information from $x_1$ to $x_t$
         \item Solution given by Bidirectional RNNs:
-        \begin{itemize}
-            \item one cell operates from left to right, and another cell operates from right to left
-            \item using both $h_t$ and $g_t$ can get context information of the whole sequence
-        \end{itemize}
+            \begin{itemize}
+                \item one cell operates from left to right, and another cell operates from right to left
+                \item using both $h_t$ and $g_t$ can get context information of the whole sequence
+            \end{itemize}
+             \begin{center}
+                  \includegraphics[width=8cm, height=4cm]{figures/bidirectionalRnn.png}
+            \end{center}
     \end{itemize}
+\end{frame}
 
-    \begin{center}
-        \includegraphics[width=8cm, height=5cm]{figures/bidirectionalRnn.png}
-    \end{center}
-
+\begin{frame}{Bidirectional Recurrent Neural Networks}\framesubtitle{Usage in This project}
+    \begin{itemize}
+        \item In this project, we used bidirectional RNNs in encoding part.
+    \end{itemize}
 \end{frame}
 
 \begin{frame}{Encoder-decoder Sequence-to-sequence Architecture}
