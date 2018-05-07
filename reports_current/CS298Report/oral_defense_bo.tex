@@ -447,49 +447,234 @@ each output of the decoding process includes two probability distributions.
 
 \section{Implementation}
 
-\begin{frame} \frametitle{Adjusting Models for Batch Training}
+\begin{frame} \frametitle{Adjusting Models for Batch Training}\framesubtitle{Why necessary?}
+    \begin{itemize}
+        \item When training a model, all of the training data is fed into the model to update the parameters.
+        \item In one specific model, the number of times to iterate the encoding process is fixed.
+        \item However, different passages have different lengths and different questions also have different lengths.
+        \item As such, adjusting all passages to a same length and adjusting all questions to another same length are necessary.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{Adjusting Models for Batch Training}\framesubtitle{How to pad?}
+    For sequences longer than a fixed length, a part of the sentence is cut out. For sequences shorter than a fixed length, a faking pad token is used to pad them. In practice, each passage is adjusted to $passage\_padding\_length$ and is paired with a mask vector $passage\_mask$ which has size $passage\_padding\_length$. Each question is adjusted to $question\_padding\_length$ and paired with a mask vector $question\_mask$ which has size $question\_padding\_length$. Each entry of mask vector is either zero or one. Zero indicates that the current token does not exist in the original sequence. One indicates the opposite.
+\end{frame}
+\begin{frame}\frametitle{Adjusting Models for Batch Training}\framesubtitle{Take Model 1 as an example}
+    In the preprocessing layer, after getting a sequence of states, the mask vector is used to reset the values of positions that do not exist to zero in an additional step
+    $$H^p = H^p \circ (passage\_mask \otimes l)$$
+    $$H^q = H^q \circ (question\_mask \otimes l).$$
+    In the match LSTM layer, the attention weights of positions that do not exist are also set to zero in an additional step
+    $$\overrightarrow{\alpha _i} = softmax( (w^t\overrightarrow{G_i} + b \otimes e_q) ) \circ question\_mask .$$
+    Similar to the preprocessing layer, we have
+    $$H_r = H_r \circ (passage\_mask \otimes 2l).$$
+    In the answer pointer layer, similar to the match LSTM layer, we have
+    $$\beta _k = softmax( (v^tF_k + c \otimes e_p) ) \circ passage\_mask.$$
+
 
 \end{frame}
 
-
 \begin{frame}{Tensorflow Graphs}
+    \begin{itemize}
+        \item Tensorflow is an open source machine learning framework.
+        \item The central idea of Tensorflow is describing a complex numeric computation as a graph.
+        \item {\tt Variables} are ``trainable'' nodes.
+        \item {\tt Placeholders} are nodes whose values are fed in run time.
+    \end{itemize}
+\end{frame}
 
+\begin{frame}{Tensorflow Graphs}\framesubtitle{Taking Model 1 as an example}
+     \begin{itemize}
+         \item {\tt Variables} should be used to represent all the parameters of the encoding and decoding layers
+         \item {\tt Placeholders} should be used to represent passages, questions, and answers.
+         \item To train a graph, some APIs of Tensorflow are called to get a train operation.
+         \item Then the training data is fed through {\tt Placeholders} to run the train operation. When the train operation is run, the {\tt Variables} are updated.
+     \end{itemize}
+\end{frame}
+
+\begin{frame}{Tensorflow Graphs}\framesubtitle{Taking Model 1 as an example}
+    \begin{center}
+        \includegraphics[width=8cm, height=6cm]{figures/tf_graph.png}
+    \end{center}
 \end{frame}
 
 \begin{frame}{Implementation Pipeline}
-
+    \begin{itemize}
+        \item For a specific model, in the train and validation process, some Tensorflow graphs that have same structure but different values for {\tt Variables} are saved.
+        \item The validation loss is used to choose the best graph. Then the best graph is used to do testing.
+    \end{itemize}
+    \begin{center}
+      \includegraphics[width=9cm, height=2.5cm]{figures/pipeline.png}
+    \end{center}
 \end{frame}
 
 \section{Experiments}
 
 \begin{frame} \frametitle{Data}
+    \begin{itemize}
+        \item The Stanford Question Answering Dataset (SQuAD) is used to do experiments.
+        \begin{table}[htbp]\centering
+          \begin{tabular}{|r|l|} \hline
+            Set Name & Number of Instances \\ \hline\hline
+            Train & \ 78,839 \\
+            Validation & \ 8,760 \\
+            Test & \ 10,570 \\ \hline
+          \end{tabular}
+        \end{table}
+        \item The pre-trained GloVe word feature vectors are used to initialize words.
+    \end{itemize}
+\end{frame}
 
+\begin{frame}\frametitle{Data}
+    \begin{center}
+        \includegraphics[width=8cm, height=6cm]{figures/data.png}
+    \end{center}
 \end{frame}
 
 \begin{frame}{Settings}
+    \begin{itemize}
+        \item 400 is set as $passage\_padding\_length$
+            \begin{center}
+                \includegraphics[width=6cm, height=4cm]{figures/passage_length.png}
+            \end{center}
+    \end{itemize}
+\end{frame}
 
+\begin{frame}{Settings}
+    \begin{itemize}
+        \item 30 is set as $question\_padding\_length$
+            \begin{center}
+                \includegraphics[width=6cm, height=4cm]{figures/question_length.png}
+            \end{center}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Settings}
+    \begin{itemize}
+        \item The learning rate is set at 0.002 through experiments.
+    \end{itemize}
+    \begin{center}
+        \includegraphics[width=7cm, height=7cm]{figures/lr.png}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Settings}
+    \begin{table}[htbp]\centering
+
+      \begin{tabular}{|r|l|} \hline
+        Hyperparameter Name& Value \\ \hline\hline
+        Word Feature Vector Dimension (d) & \ 100 \\
+        Hidden State Size (l) & \ 64 \\
+        L2\_regularization Scale & \ 10570\\
+        Hidden State Size (l) & \ 64\\
+        Batch Size & \ 64\\
+        Passage Length & \ 400\\
+        Question Length & \ 30\\
+        Clip Norm & \ 5\\
+        Learning Rate & \ 0.002 \\ \hline
+      \end{tabular}
+    \end{table}
+\end{frame}
+
+\begin{frame}{Settings}
+    \begin{itemize}
+        \item The F1 score and the exact match score are used to evaluate the performance of each model.
+            \begin{itemize}
+                \item F1 treats a predicted answer and a ground truth as bag of words and calculate a harmonic average of precision and recall;
+                \item exact match measures the percentage of predictions and ground truths that are exactly the same. The testing data contains several ground truth answers for one passage-question pair. The best score is chosen as the final score.
+            \end{itemize}
+        \item A machine that has Tesla K80 12 GB Memory, 61 GB RAM and 100 GB SSD is used to train the models.
+    \end{itemize}
 \end{frame}
 
 \begin{frame}{Training Process}
+    \begin{itemize}
+        \item One epoch contains roughly 25 * 100 mini batches.
+        \item The training loss and training scores are calculated every 100 mini batches using the 200 sample instances from training set. We do the same for validation loss and validation scores.
+        \item Training one epoch takes roughly 100 minutes. A thorough training of each model requires around 10 epochs and takes around 17 hours.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Training Process}\framesubtitle{Model 1}
+    \begin{center}
+        \includegraphics[width=8cm, height=7cm]{figures/match_corrected.png}
+    \end{center}
+
+\end{frame}
+
+\begin{frame}{Training Process}\framesubtitle{Model 2}
+    \begin{center}
+        \includegraphics[width=8cm, height=7cm]{figures/match_baseline.png}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Training Process}\framesubtitle{Model 3}
+    \begin{center}
+        \includegraphics[width=8cm, height=7cm]{figures/match_change1.png}
+    \end{center}
+
+\end{frame}
+
+\begin{frame}{Training Process}\framesubtitle{Model 4}
+    \begin{center}
+        \includegraphics[width=8cm, height=7cm]{figures/match_change2.png}
+    \end{center}
+
+\end{frame}
+
+\begin{frame}{Training Process}\framesubtitle{Model 5}
+    \begin{center}
+        \includegraphics[width=8cm, height=7cm]{figures/match_change3.png}
+    \end{center}
 
 \end{frame}
 
 \begin{frame}{Testing Results}
-
+    \begin{table}[htbp]\centering
+      \caption{Testing results}
+      \label{tab:test_results}
+      \begin{tabular}{|c|c|c|}
+        \hline
+        Model& Test Exact Match & Test F1 \\
+        \hline\hline
+        Model 1 & \ 23.4 &\ 33.6 \\
+        Model 2 & \ 33.0 &\ 45.8 \\
+        Model 3 & \ 33.0 &\ 46.2 \\
+        Model 4 & \ 33.0 &\ 45.6 \\
+        Model 5 & \ 24.3 &\ 33.9 \\
+        \hline
+      \end{tabular}
+    \end{table}
 \end{frame}
 
 \begin{frame}{Analysis}
+    \begin{itemize}
+        \item Model 1 didn't reproduce the results of the original paper.
+        \item Comparing the testing results of Model 2 and Model 1, the scores of Model 2 are better.  Model 2 uses previous attention vector to query the current attention weight vector. However, Model 1 uses the current answer LSTM state to query the attention weight vector. The answer LSTM state is produced by applying a non-linear transformation on the attention vector. It turns out not including the non-linear transformation gives better results.
+    \end{itemize}
+\end{frame}
 
+\begin{frame}{Analysis}
+    \begin{itemize}
+        \item Model 2, 3 and 4 behave similarly. This means removing either the preprocessing layer or the $h_r$ in the bidirectional match LSTM layer does not decrease test results. A reasonable guess is the two parts provide duplicate context information.
+
+        \item Model 5 performs worse than Model 2, 3 and 4. This means removing both the preprocessing layer and the $h_r$ in the bidirectional match LSTM layer decreases testing results. A reasonable guess is the context information provided by these two parts is not provided in other parts of Model 1. As such, one of the two must be kept.
+    \end{itemize}
 \end{frame}
 
 \section{Conclusion}
 
 \begin{frame}{Contribution of This Project}
+    \begin{itemize}
+        \item This project presented a thorough implementation of a question answering system. \item Five different models were tried and several interesting observations were found.
+    \end{itemize}
 
 \end{frame}
 
 \begin{frame} \frametitle{Future Work}
-
+    \begin{itemize}
+        \item Further work is required to find out why Model 1 failed to reproduce the testing results of the reference paper.
+        \item At the same time, more parameter tuning work is required to make the experiments more precise. \item Last but not the least, making novel architectures to bypass the state-of-art results is always a good way to move the question answering research forward.
+    \end{itemize}
 \end{frame}
 
 \begin{frame}
