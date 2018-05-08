@@ -52,12 +52,12 @@
 
 \begin{frame} \frametitle{Question Answering}
     \begin{itemize}
-        \item is the study of writing computer programs that can answer natural language questions
-        \item is widely used among search engines, personal assistant applications on smart phones, voice control systems and various other applications
-        \item  can be categorized into two types - open domain and close domain
+        \item Question answering is the study of writing computer programs that can answer natural language questions
+        \item Question answering is widely used among search engines, personal assistant applications on smart phones, voice control systems and various other applications
+        \item  Question answering tasks can be categorized into two types - open domain and close domain
             \begin{itemize}
-                \item  For an open domain system, the questions can be about almost everything.
-                \item For a close domain system, the questions are about a specific domain.
+                \item  Open domain: the questions can be about almost everything.
+                \item Close domain: the questions are about a specific domain.
             \end{itemize}
     \end{itemize}
 \end{frame}
@@ -65,14 +65,19 @@
 
 \begin{frame}{Topic of This Project}
     \begin{itemize}
-        \item open domain
-        \item a scenario where a specific passage is already assigned to a question and the answer is a segment of the passage
-        \item The Stanford Question Answering Dataset (SQuAD) used in this project is appropriate for such scenario
-            \begin{itemize}
-                \item includes questions asked by human beings on Wikipedia articles
-                \item The answer to each question is a segment of the corresponding Wikipedia passage
-                \item contains more than 100,000 question-answer pairs on more than 500 articles
-            \end{itemize}
+        \item About open domain question answering.
+        \item Instead of the whole complicated open domain question answering system, we focused on a scenario where a specific passage is already assigned to a question
+        \item The answer is a segment of the passage.
+
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Stanford Question Answering Dataset (SQuAD)}
+    \begin{itemize}
+        \item It includes questions asked by human beings on Wikipedia articles.
+        \item The answer to each question is a segment of the corresponding Wikipedia passage
+        \item It contains more than 100,000 question-answer pairs on more than 500 articles.
     \end{itemize}
 \end{frame}
 
@@ -295,7 +300,7 @@ The detailed formulas are given later.
 
 \begin{frame}{Relationship Between Five Different Models}
     \begin{itemize}
-        \item Model 1 is the Match LSTM \& Answer Pointer model which has a typical encoder-decoder sequence-to-sequence recurrent network architecture designed by Wang and Jiang.
+        \item Model 1 is the Match LSTM \& Answer Pointer model designed by Wang and Jiang.
         \item Model 2, 3, 4 and 5 are designed by making changes to Model 1.
     \end{itemize}
 \end{frame}
@@ -305,9 +310,12 @@ The detailed formulas are given later.
       \item Model 1 has an encoder-decoder sequence-to-sequence architecture.
       \item Model 1 is trained on SQuAD dataset.
             \begin{itemize}
-                \item Recall that each instance of training data includes one passage, one question and one answer. The passage is a sequence of tokens, the question is a sequence of tokens, and the answer is a sequence of two indices indicating the start and end positions in passage.
+                \item Each instance of training data includes one passage, one question and one answer.
+                \item The passage is a sequence of tokens.
+                \item The question is a sequence of tokens.
+                \item The answer is a sequence of two indices indicating the start and end positions in passage.
             \end{itemize}
-      \item Before feeding training data into the model, tokens in passages and questions are converted to word feature vectors.
+      \item Before feeding training data into the model, tokens are converted to word feature vectors.
   \end{itemize}
 \end{frame}
 
@@ -353,7 +361,8 @@ The detailed formulas are given later.
 
 \begin{frame} \frametitle{Model 1, cont.}\framesubtitle{The Bidirectional Match LSTM Layer}
     \begin{itemize}
-        \item A LSTM equipped with passage-question attention, which is called match LSTM, is used to encode each sequence of passage states and the corresponding sequence of question states together into a sequence of match LSTM states.
+        \item Match LSTM: A LSTM equipped with the attention mechanism
+        \item The match LSTM encodes each passage state sequence and the corresponding question state sequence into match LSTM state sequence.
     \end{itemize}
 \end{frame}
 
@@ -384,50 +393,59 @@ The detailed formulas are given later.
 \end{frame}
 
 \begin{frame} \frametitle{Model 1, cont.}\framesubtitle{The Bidirectional Match LSTM Layer}
-    After iterating between getting attention weight vector $\overrightarrow{\alpha _i}$ and getting match LSTM state ${{h_{i}}^r}$ $p$ times, we get $[{{h_{1}}^r}, ..., {{h_{p}}^r}]$. Concatenate them to get
+    \begin{itemize}
+        \item After iterating between getting attention weight vector $\overrightarrow{\alpha _i}$ and getting match LSTM state ${{h_{i}}^r}$ $p$ times, we get $[{{h_{1}}^r}, ..., {{h_{p}}^r}]$. Concatenate them to get
 
-    $$\overrightarrow{H^r} = [{{h_{1}}^r}, ..., {{h_{p}}^r}] \in R^{l \times p}.$$
+        $$\overrightarrow{H^r} = [{{h_{1}}^r}, ..., {{h_{p}}^r}] \in R^{l \times p}.$$
 
-    Then go over $H^p$ from right to left to get $\overleftarrow{H^r}$. Concatenate $\overrightarrow{H^r}$ and $\overleftarrow{H^r}$ to get the final output of encoding process
+        \item Then go over $H^p$ from right to left to get $\overleftarrow{H^r}$. Concatenate $\overrightarrow{H^r}$ and $\overleftarrow{H^r}$ to get the final output of encoding process
 
-    \[ H^r =
-    \begin{bmatrix}
-    \overrightarrow{H^r} \\
-    \overleftarrow{H^r} \\
-    \end{bmatrix}
-    \in R^{2l \times p}.
-    \]
+        \[ H^r =
+        \begin{bmatrix}
+        \overrightarrow{H^r} \\
+        \overleftarrow{H^r} \\
+        \end{bmatrix}
+        \in R^{2l \times p}.
+        \]
+    \end{itemize}
+
 \end{frame}
 
 \begin{frame} \frametitle{Model 1, cont.}\framesubtitle{The Answer Pointer Layer}
-Each output of the decoding process includes two probability distributions.
-   \begin{itemize}
-       \item The first probability distribution tells how likely each token in passage to be the start of the answer.
-       \item The second probability distribution tells how likely each token in passage to be the end of the answer
-   \end{itemize}
-\end{frame}
+    \begin{itemize}
+        \item Each output of the decoding process includes two probability distributions.
+           \begin{itemize}
+               \item The first probability distribution tells how likely each token in passage to be the start of the answer.
+               \item The second probability distribution tells how likely each token in passage to be the end of the answer
+           \end{itemize}
+    \end{itemize}
 
-\begin{frame}\frametitle{Model 1, cont.}\framesubtitle{The Answer Pointer Layer}
-    $$F_k = tahn(VH^r + (W^a{h^a_{k-1}} +  b^a) \otimes e_p)$$
-    $$\beta _k = softmax(v^tF_k + c \otimes e_p)$$
-
-
-    where
-    $$V \in R^{l \times 2l}$$
-    $$W^a\in R^{l \times l} $$
-    $$b_a, v\in R^{l}  $$
-    $$c \in R $$
-    $${h_{k-1}}^a\in R^{l}: ith\ state\ of\ answer\ LSTM  $$
-
-    and answer LSTM is
-
-
-    $${h_k}^a = LSTM(H^r\beta _k^T, h_{k-1}^a)$$
 \end{frame}
 
 \begin{frame}\frametitle{Model 1, cont.}\framesubtitle{The Answer Pointer Layer}
     \begin{itemize}
-        \item By iterating between the attention mechanism and the answer LSTM two times, we could get the output of the decoding process - $\beta _0$ and $\beta _1$.
+        \item The answer LSTM decodes match LSTM states to the two probability distributions.
+        $$F_k = tahn(VH^r + (W^a{h^a_{k-1}} +  b^a) \otimes e_p)$$
+        $$\beta _k = softmax(v^tF_k + c \otimes e_p)$$
+
+
+        where
+        $$V \in R^{l \times 2l}$$
+        $$W^a\in R^{l \times l} $$
+        $$b_a, v\in R^{l}  $$
+        $$c \in R $$
+        $${h_{k-1}}^a\in R^{l}: ith\ state\ of\ answer\ LSTM  $$
+
+        and
+
+
+        $${h_k}^a = LSTM(H^r\beta _k^T, h_{k-1}^a)$$
+    \end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{Model 1, cont.}\framesubtitle{The Answer Pointer Layer}
+    \begin{itemize}
+        \item By iterating two times, we could get the output of the decoding process - $\beta _0$ and $\beta _1$.
     \end{itemize}
 
 \end{frame}
@@ -667,8 +685,6 @@ Take a passage as an example.
 
 \begin{frame}{Testing Results}
     \begin{table}[htbp]\centering
-      \caption{Testing results}
-      \label{tab:test_results}
       \begin{tabular}{|c|c|c|}
         \hline
         Model& Test Exact Match & Test F1 \\
