@@ -203,103 +203,115 @@ Recurrent Neural Networks (RNNs) are used for modeling sequential data.
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Encoder-decoder Sequence-to-sequence Architecture}
+\begin{frame}{Encoder-decoder Sequence-to-sequence Architecture}\framesubtitle{Overview}
 \begin{itemize}
     \item The process of understanding the input sequence is considered as encoding the input sequence to some vectors $Crypto$.
     \item The process of generating output is considered as decoding the $Crypto$.
 \end{itemize}
 
+
+
+\end{frame}
+
+\begin{frame}{Encoder-decoder Sequence-to-sequence Architecture, Cont.}
 \begin{examples}
 $x$ is the input, $h$ is the state in encoding process, $y$ is the output, and $g$ is the state of decoding process.
+\begin{center}
+        \includegraphics[width=8cm, height=5cm]{figures/encoderDecoder.png}
+    \end{center}
 \end{examples}
 
 \end{frame}
 
-\begin{frame}{Encoder-decoder Sequence-to-sequence Architecture, Cont.}
-    \begin{center}
-        \includegraphics[width=10cm, height=7cm]{figures/encoderDecoder.png}
-    \end{center}
-\end{frame}
-
-\begin{frame}{Encoder-decoder Sequence-to-sequence Architecture, Cont.}
+\begin{frame}{Encoder-decoder Sequence-to-sequence Architecture, Cont.}\framesubtitle{Usage in This Project}
     \begin{itemize}
-        \item The question answering task in this project is a sequence-to-sequence task.
-        \item Each input actually includes two sequences - a question and a passage.
+        \item Each input sequence actually includes two sequences - a question and a passage.
             \begin{itemize}
-                \item attention mechanism is required to make each passage aware of the corresponding question and encode the two together
+                \item Attention mechanism is required to make each passage aware of the corresponding question.
             \end{itemize}
-        \item each output sequence is an answer which is represented by two indices for the input passage sequence.
+        \item Each output sequence is an answer which is represented by two indices for the input passage sequence.
             \begin{itemize}
-                \item pointer network is required to make sure the output sequence comes from input sequence
+                \item The pointer network is used to make sure the output sequence comes from input sequence.
             \end{itemize}
     \end{itemize}
-
 \end{frame}
 
-\begin{frame}{Attention Mechanism}
+\begin{frame}{Attention Mechanism}\framesubtitle{Overview}
     \begin{itemize}
-        \item first used in neural machine translation
-        \item is used to enable the decoding process aware of the encoding states
-    \end{itemize}
-\end{frame}
-
-\begin{frame}{Attention Mechanism, Cont.}
-    \begin{examples}
-        $y$ is the output, $g$ is the state, and $c$ is the attention vector. $$g_i =f(g_{i-1},y_{i-1},c_i).$$
-        The attention vector $c_i$ is produced by using $g_{i-1}$ to ``query'' the encoding states $h_1, ... h_n$ through
+        \item Attention mechanism was first used in neural machine translation to enable the decoding process aware of the encoding states.
+        \begin{itemize}
+            \item $y$ is the output, $g$ is the state, and $c$ is the attention vector. $$g_i =f(g_{i-1},y_{i-1},c_i).$$
+            \item The attention vector $c_i$ is produced by using $g_{i-1}$ to ``query'' the encoding states $h_1, ... h_n$ through
         $$c_i = \sum _j {\alpha _{i,j} h_j}$$
         $$\alpha _{i,j} = \exp{e_{i,j}} / \sum _j {\exp{e_{i,j}}}$$
         $$e_{i,j} = tanh(W_h h_j + W_g g_{i-1} + b).$$
-    \end{examples}
-
+        \end{itemize}
+    \end{itemize}
 \end{frame}
 
-\begin{frame}{Attention Mechanism, Cont.}
+\begin{frame}{Attention Mechanism, Cont.}\framesubtitle{Overview}
     \begin{center}
-        \includegraphics[width=8cm, height=8cm]{figures/attention}
+        \includegraphics[width=7cm, height=7cm]{figures/attention}
     \end{center}
+
+
 \end{frame}
 
-\begin{frame}{Attention Mechanism, Cont.}
-    In this project, the passage is required to ``be aware of the question'' in encoding process. At the same time, the answer is required to ``be aware of the encoding states of passage and question''. The detailed formulas are given later.
-\end{frame}
 
-\begin{frame}{Pointer Network}
+\begin{frame}{Attention Mechanism, Cont.}\framesubtitle{Usage in This Project}
     \begin{itemize}
-        \item Using the pointer network enables the decoder to output tokens from input sequence
-        \item The attention mechanism is used with the pointer network
-        \item However, aside from getting an attention vector, the attention weight vector $\alpha$ is considered as a probability distribution which indicates how likely each token in the input sequence is the current output.
+        \item Each passage is required to ``pay attention to'' the corresponding question.
+        \item Each answer is required to ``pay attention to'' the encoding states.
+    \end{itemize}
+The detailed formulas are given later.
+\end{frame}
+
+\begin{frame}{Pointer Network}\framesubtitle{Overview}
+    \begin{itemize}
+        \item The pointer network is used in decoding.
+        \item Using the pointer network enables the decoder to output tokens from input sequence.
+        \item The attention weight vector $\alpha$ is considered as a probability distribution which indicates how likely each token in the input sequence is the current output token.
         $$y_i = x_k$$
         where
         $$k = argmax_j(\alpha _{i,j}).$$
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Pointer Network, Cont.}
+\begin{frame}{Pointer Network, Cont.}\framesubtitle{Overview}
     \begin{center}
         \includegraphics[width=8cm, height=8cm]{figures/pointerNetwork.png}
     \end{center}
 
 \end{frame}
 
-\begin{frame}{Pointer Network, Cont.}
-    In this project, the pointer network was used in the decoding part of several models.
+\begin{frame}{Pointer Network, Cont.}\framesubtitle{Usage in This Project}
+    \begin{itemize}
+        \item In this project, the pointer network was used in the decoding part.
+    \end{itemize}
+
 \end{frame}
+
 \section{Design}
 
-\begin{frame}{}
-    In this chapter, I will explain the five models one by one. Recall that Model 1 is the Match LSTM \& Answer Pointer model which has a typical encoder-decoder sequence-to-sequence recurrent network architecture designed by Wang and Jiang. Model 2, 3, 4 and 5 are designed by making changes to Model 1.
+\begin{frame}{Relationship Between Five Different Models}
+    \begin{itemize}
+        \item Model 1 is the Match LSTM \& Answer Pointer model which has a typical encoder-decoder sequence-to-sequence recurrent network architecture designed by Wang and Jiang.
+        \item Model 2, 3, 4 and 5 are designed by making changes to Model 1.
+    \end{itemize}
 \end{frame}
 
-\begin{frame} \frametitle{Model 1}
+\begin{frame} \frametitle{Model 1}\framesubtitle{Overview}
   \begin{itemize}
-      \item an encoder-decoder sequence-to-sequence architecture
-      \item on SQuAD dataset.Each instance of training data includes one passage, one question and one answer. The passage is a sequence of tokens, the question is a sequence of tokens, and the answer is a sequence of two indices indicating the start and end positions in passage.
-      \item Before feeding training data into the model, tokens in passages and questions are vectorized to word feature vectors.
+      \item Model 1 has an encoder-decoder sequence-to-sequence architecture.
+      \item Model 1 is trained on SQuAD dataset.
+            \begin{itemize}
+                \item Recall that each instance of training data includes one passage, one question and one answer. The passage is a sequence of tokens, the question is a sequence of tokens, and the answer is a sequence of two indices indicating the start and end positions in passage.
+            \end{itemize}
+      \item Before feeding training data into the model, tokens in passages and questions are converted to word feature vectors.
   \end{itemize}
 \end{frame}
 
-\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{Structure Overview}
+\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{Structure}
     \begin{itemize}
         \item Encoder
             \begin{itemize}
@@ -314,15 +326,15 @@ $x$ is the input, $h$ is the state in encoding process, $y$ is the output, and $
 
 \end{frame}
 
-\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{the preprocessing layer}
+\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{The Preprocessing Layer}
 
     \begin{itemize}
-        \item a LSTM runs over each passage word feature vector sequence and outputs a sequence of LSTM states
+        \item A LSTM runs over each passage word feature vector sequence and outputs a sequence of LSTM states
         \item The same LSTM is used to encode each question word feature vector sequence to a sequence of LSTM states.
     \end{itemize}
 \end{frame}
 
-\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{the preprocessing layer}
+\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{The Preprocessing Layer}
     $$H^p = \overrightarrow{LSTM}(P)$$
     $$H^q = \overrightarrow{LSTM}(Q)$$
 
@@ -339,14 +351,13 @@ $x$ is the input, $h$ is the state in encoding process, $y$ is the output, and $
 
 \end{frame}
 
-\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{bidirectional match LSTM layer}
-
-a LSTM equipped with passage-question attention, which is called match LSTM, is used to encode each sequence of passage states and the corresponding sequence of question states together to a sequence of match LSTM states.
-
-
+\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{The Bidirectional Match LSTM Layer}
+    \begin{itemize}
+        \item A LSTM equipped with passage-question attention, which is called match LSTM, is used to encode each sequence of passage states and the corresponding sequence of question states together into a sequence of match LSTM states.
+    \end{itemize}
 \end{frame}
 
-\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{bidirectional match LSTM layer}
+\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{The Bidirectional Match LSTM Layer}
 
     $$\overrightarrow{G} = tanh(W^qH^q + (W^p{h_i}^p + W^r\overrightarrow{{h_{i-1}}^r} + b^p) \otimes e_q)$$
     $$\overrightarrow{\alpha _i} = softmax(w^t\overrightarrow{G_i} + b \otimes e_q)$$
@@ -372,7 +383,7 @@ a LSTM equipped with passage-question attention, which is called match LSTM, is 
 
 \end{frame}
 
-\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{bidirectional match LSTM layer}
+\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{The Bidirectional Match LSTM Layer}
     After iterating between getting attention weight vector $\overrightarrow{\alpha _i}$ and getting match LSTM state ${{h_{i}}^r}$ $p$ times, we get $[{{h_{1}}^r}, ..., {{h_{p}}^r}]$. Concatenate them to get
 
     $$\overrightarrow{H^r} = [{{h_{1}}^r}, ..., {{h_{p}}^r}] \in R^{l \times p}.$$
@@ -388,15 +399,15 @@ a LSTM equipped with passage-question attention, which is called match LSTM, is 
     \]
 \end{frame}
 
-\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{answer pointer layer}
-each output of the decoding process includes two probability distributions.
+\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{The Answer Pointer Layer}
+Each output of the decoding process includes two probability distributions.
    \begin{itemize}
        \item The first probability distribution tells how likely each token in passage to be the start of the answer.
        \item The second probability distribution tells how likely each token in passage to be the end of the answer
    \end{itemize}
 \end{frame}
 
-\begin{frame}\frametitle{Model 1, cont.}\framesubtitle{answer pointer layer}
+\begin{frame}\frametitle{Model 1, cont.}\framesubtitle{The Answer Pointer Layer}
     $$F_k = tahn(VH^r + (W^a{h^a_{k-1}} +  b^a) \otimes e_p)$$
     $$\beta _k = softmax(v^tF_k + c \otimes e_p)$$
 
@@ -414,24 +425,28 @@ each output of the decoding process includes two probability distributions.
     $${h_k}^a = LSTM(H^r\beta _k^T, h_{k-1}^a)$$
 \end{frame}
 
-\begin{frame}\frametitle{Model 1, cont.}\framesubtitle{answer pointer layer}
-    By iterating between the attention mechanism and the answer LSTM two times, we could get the output of the decoding process - $\beta _0$ and $\beta _1$.
-
-
-    Now we can get the loss function. Let $a_s$ denote the ground truth start index of the answer and $a_e$ denote the ground truth end index, we have
-
-    $$p(a|H^r) = p(a_s|H_r)p(a_r|H_r)=\beta _{0, a_s} \times \beta_{1, a_e}$$
-
-    where $$\beta_{k, j} = jth\ token\ of\ \beta _k$$
+\begin{frame}\frametitle{Model 1, cont.}\framesubtitle{The Answer Pointer Layer}
+    \begin{itemize}
+        \item By iterating between the attention mechanism and the answer LSTM two times, we could get the output of the decoding process - $\beta _0$ and $\beta _1$.
+    \end{itemize}
 
 \end{frame}
 
 \begin{frame}\frametitle{Model 1, cont.}\framesubtitle{loss function}
-    To train the model, the loss function
+    \begin{itemize}
+        \item Let $a_s$ denote the ground truth start index of the answer and $a_e$ denote the ground truth end index, we have
 
-    $$J(\theta) = -\frac{1}{N}\sum_{i=1}^{N} \log{p(a^n|H^r)} $$
+        $$p(a|H^r) = p(a_s|H_r)p(a_r|H_r)=\beta _{0, a_s} \times \beta_{1, a_e}$$
 
-    is minimized.
+        where $$\beta_{k, j} = jth\ token\ of\ \beta _k$$
+        \item To train the model, the loss function
+
+        $$J(\theta) = -\frac{1}{N}\sum_{i=1}^{N} \log{p(a^n|H^r)} $$
+
+        is minimized.
+
+    \end{itemize}
+
 \end{frame}
 
 \begin{frame} \frametitle{Model 2}
@@ -467,20 +482,32 @@ each output of the decoding process includes two probability distributions.
 \end{frame}
 
 \begin{frame}\frametitle{Adjusting Models for Batch Training}\framesubtitle{How to pad?}
-    For sequences longer than a fixed length, a part of the sentence is cut out. For sequences shorter than a fixed length, a faking pad token is used to pad them. In practice, each passage is adjusted to $passage\_padding\_length$ and is paired with a mask vector $passage\_mask$ which has size $passage\_padding\_length$. Each question is adjusted to $question\_padding\_length$ and paired with a mask vector $question\_mask$ which has size $question\_padding\_length$. Each entry of mask vector is either zero or one. Zero indicates that the current token does not exist in the original sequence. One indicates the opposite.
+Take a passage as an example.
+    \begin{itemize}
+        \item Each passage is adjusted to $passage\_padding\_length$.
+            \begin{itemize}
+                \item For sequences longer than the fixed length, a part of the sentence is cut out.
+                \item For sequences shorter than the fixed length, a faking pad token is used to pad them.
+            \end{itemize}
+        \item Each passage is paired with a mask vector $passage\_mask$ which has size $passage\_padding\_length$
+            \begin{itemize}
+                \item Each entry of mask vector is either zero or one. \item Zero indicates that the current token does not exist in the original sequence. One indicates the opposite.
+            \end{itemize}
+    \end{itemize}
 \end{frame}
-\begin{frame}\frametitle{Adjusting Models for Batch Training}\framesubtitle{Take Model 1 as an example}
-    In the preprocessing layer, after getting a sequence of states, the mask vector is used to reset the values of positions that do not exist to zero in an additional step
-    $$H^p = H^p \circ (passage\_mask \otimes l)$$
-    $$H^q = H^q \circ (question\_mask \otimes l).$$
-    In the match LSTM layer, the attention weights of positions that do not exist are also set to zero in an additional step
-    $$\overrightarrow{\alpha _i} = softmax( (w^t\overrightarrow{G_i} + b \otimes e_q) ) \circ question\_mask .$$
-    Similar to the preprocessing layer, we have
-    $$H_r = H_r \circ (passage\_mask \otimes 2l).$$
-    In the answer pointer layer, similar to the match LSTM layer, we have
-    $$\beta _k = softmax( (v^tF_k + c \otimes e_p) ) \circ passage\_mask.$$
 
-
+\begin{frame}\frametitle{Adjusting Models for Batch Training}\framesubtitle{How to Adjust Models?}
+    \begin{itemize}
+        \item In the preprocessing layer, after getting a sequence of states, the mask vector is used to reset the values of positions that do not exist to zero in an additional step
+        $$H^p = H^p \circ (passage\_mask \otimes l)$$
+        $$H^q = H^q \circ (question\_mask \otimes l).$$
+        \item In the match LSTM layer, the attention weights of positions that do not exist are also set to zero in an additional step
+        $$\overrightarrow{\alpha _i} = softmax( (w^t\overrightarrow{G_i} + b \otimes e_q) ) \circ question\_mask .$$
+        Similar to the preprocessing layer, we have
+        $$H_r = H_r \circ (passage\_mask \otimes 2l).$$
+        \item In the answer pointer layer, we have
+        $$\beta _k = softmax( (v^tF_k + c \otimes e_p) ) \circ passage\_mask.$$
+    \end{itemize}
 \end{frame}
 
 \begin{frame}{Tensorflow Graphs}
@@ -494,7 +521,7 @@ each output of the decoding process includes two probability distributions.
 
 \begin{frame}{Tensorflow Graphs}\framesubtitle{Taking Model 1 as an example}
      \begin{itemize}
-         \item {\tt Variables} should be used to represent all the parameters of the encoding and decoding layers
+         \item {\tt Variables} should be used to represent all the parameters of the encoding and decoding layers.
          \item {\tt Placeholders} should be used to represent passages, questions, and answers.
          \item To train a graph, some APIs of Tensorflow are called to get a train operation.
          \item Then the training data is fed through {\tt Placeholders} to run the train operation. When the train operation is run, the {\tt Variables} are updated.
