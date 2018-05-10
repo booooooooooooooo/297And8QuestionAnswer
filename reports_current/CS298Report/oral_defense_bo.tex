@@ -757,6 +757,7 @@ Take a passage as an example.
         \hline
         Model& Test Exact Match & Test F1 \\
         \hline\hline
+        Reference Paper & \ 64.7 &\ 73.7 \\
         Model 1 & \ 23.4 &\ 33.6 \\
         Model 2 & \ 33.0 &\ 45.8 \\
         Model 3 & \ 33.0 &\ 46.2 \\
@@ -770,15 +771,15 @@ Take a passage as an example.
 \begin{frame}{Analysis}
     \begin{itemize}
         \item Model 1 didn't reproduce the results of the original paper.
-        \item Comparing the testing results of Model 2 and Model 1, the scores of Model 2 are better.  Model 2 uses previous attention vector to query the current attention weight vector. However, Model 1 uses the current answer LSTM state to query the attention weight vector. The answer LSTM state is produced by applying a non-linear transformation on the attention vector. It turns out not including the non-linear transformation gives better results.
+        \item Model 2 has better score than Model 1. This indicates using attention vector to query attention weight might be better than using the LSTM state.
     \end{itemize}
 \end{frame}
 
 \begin{frame}{Analysis}
     \begin{itemize}
-        \item Model 2, 3 and 4 behave similarly. This means removing either the preprocessing layer or the $h_r$ in the bidirectional match LSTM layer does not decrease test results. A reasonable guess is the two parts provide duplicate context information.
+        \item Model 2, 3 and 4 have similar scores. This indicates either removing the preprocessing layer or not using LSTM state to query attention vector in the bidirectional match LSTM layer does not decrease test results.
 
-        \item Model 5 performs worse than Model 2, 3 and 4. This means removing both the preprocessing layer and the $h_r$ in the bidirectional match LSTM layer decreases testing results. A reasonable guess is the context information provided by these two parts is not provided in other parts of Model 1. As such, one of the two must be kept.
+        \item Model 5 performs worse than Model 2, 3 and 4. This means the change in Model 3 encoder and Model 4 encoder cannot be made together. A reasonable guess is the context information provided by these two parts is not provided in other parts of Model 2.
     \end{itemize}
 \end{frame}
 
