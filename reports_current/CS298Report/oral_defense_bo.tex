@@ -507,36 +507,53 @@ $x$ is the input, $h$ is the state in encoding process, $y$ is the output, and $
 
 \end{frame}
 
-\begin{frame}{Model 2}
-    \begin{center}
-        \includegraphics[width=10cm, height=5cm]{figures/model2_decoder.png}
-    \end{center}
-\end{frame}
-\begin{frame} \frametitle{Model 2, cont.}
+\begin{frame} \frametitle{Model 2}
     The difference from Model 2 and Model 1 is in the decoding process. In Model 2,
     $${h_k}^a = H^r\beta _{k}^T.$$
     That is, instead of the current state of answer LSTM, the previous attention vector is used to query the current attention weight vector.
 \end{frame}
 
-\begin{frame}{Model 3}
+
+\begin{frame}{Model 2, cont.}
     \begin{center}
-        \includegraphics[width=10cm, height=5cm]{figures/model3_encoder.png}
+        \includegraphics[width=10cm, height=5cm]{figures/model2_decoder.png}
     \end{center}
 \end{frame}
 
-\begin{frame} \frametitle{Model 3, cont.}
+
+
+\begin{frame} \frametitle{Model 3}
     The difference between Model 3 and Model 2 is that in Model 3 the $W^r\overrightarrow{{h_{i-1}}^r}$ in the bidirectional match LSTM layer is removed. This modification aims at checking whether $\overrightarrow{{h_{i-1}}^r}$ carries some redundant context information. After this change,
 
 
     $$\overrightarrow{G} = tanh(W^qH^q + (W^p{h_i}^p + b^p) \otimes e_q)$$
 \end{frame}
 
+\begin{frame}{Model 3, cont.}
+    \begin{center}
+        \includegraphics[width=10cm, height=7cm]{figures/model3_encoder.png}
+    \end{center}
+\end{frame}
+
 \begin{frame} \frametitle{Model 4}
     The difference between Model 4 and Model 2 is that in Model 4 the the preprocessing layer is removed. This modification aims at checking whether the preprocessing layer carries some redundant context information.
 \end{frame}
 
+\begin{frame}{Model 4, cont.}
+    \begin{center}
+        \includegraphics[width=10cm, height=7cm]{figures/model4_encoder.png}
+    \end{center}
+\end{frame}
+
 \begin{frame} \frametitle{Model 5}
     The difference between Model 5 and Model 2 is that in Model 5 both the preprocessing layer and $W^r\overrightarrow{{h_{i-1}}^r}$ in the bidirectional match LSTM layer are removed. This aims at checking whether context information carried by both is included in some other parts of Model 2.
+\end{frame}
+
+
+\begin{frame}{Model 5, cont.}
+    \begin{center}
+        \includegraphics[width=10cm, height=7cm]{figures/model5_encoder.png}
+    \end{center}
 \end{frame}
 
 \section{Implementation}
