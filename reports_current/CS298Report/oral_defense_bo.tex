@@ -97,7 +97,7 @@ The encoder-decoder sequence-to-sequence recurrent neural networks were used in 
 
 \section{Background}
 
-\begin{frame} \frametitle{Word Feature Vector}\framesubtitle{Overview}
+\begin{frame} \frametitle{Word Feature Vector}
   \begin{examples}
   An example from the GloVe word feature vectors.
     \begin{itemize}
@@ -107,13 +107,17 @@ The encoder-decoder sequence-to-sequence recurrent neural networks were used in 
   \end{examples}
 \end{frame}
 
-\begin{frame}{Word Feature Vector, cont.}\framesubtitle{Overview}
+
+\begin{frame}{Word Feature Vector, cont.}
 \begin{itemize}
       \item A word feature vector represents a word according to its relationship with other words in a vocabulary.
-      \item The distance from one word feature vector to any other word feature vector tells how likely the two words appear in a same context.
-      \item The word feature vector matrix for the vocabulary of a given text are learned by training a neural probabilistic language model on the text.
+      \item The word feature vectors for the vocabulary of a given text are learned by training a neural probabilistic language model on the text.
+      \item In practice, in neural network models for natural language processing, word feature vectors are used to represent words. This is how we use word feature vector in this project.
   \end{itemize}
 \end{frame}
+
+
+
 
 \begin{frame}{Word Feature Vector, cont.}\framesubtitle{Neural Probabilistic Language Model}
 
@@ -150,62 +154,35 @@ The encoder-decoder sequence-to-sequence recurrent neural networks were used in 
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Word Feature Vector, cont.}\framesubtitle{Usage in This Project}
-   \begin{itemize}
-       \item In this project, we used the word feature vectors to represent words.
-   \end{itemize}
+\begin{frame}{Recurrent Neural Networks}
+
+    \begin{itemize}
+        \item Recurrent Neural Networks (RNNs) are used for modeling sequential data.
+        \item In practice, due to vanishing problem, more complex learning unit such as Long Short Term Memory (LSTM) cell or Gated Recurrent Unit (GRU) are used. In this project, we used LSTM and GRU equally as learning unit.
+    \end{itemize}
+
+
 
 \end{frame}
-\begin{frame}{Recurrent Neural Networks}\framesubtitle{Overview}
 
-Recurrent Neural Networks (RNNs) are used for modeling sequential data.
 
-    \begin{examples}{A simple recurrent network with no outputs.}
+
+\begin{frame}{Recurrent Neural Networks, cont.}
+    \begin{examples}{A recurrent network with no outputs for encoding process.}
         \begin{itemize}
             \item $x$ is the input. $h$ is the state. $\theta$ is the hyperparameter.
-            \item The relation between $h$ and $x$ is
-            $$h_t = f(h_{t-1}, x_t; \theta).$$
+            \item The relation between $h$ and $x$ is $h_t = f(h_{t-1}, x_t; \theta).$
                 \begin{center}
                   \includegraphics[width=5cm, height=2cm]{figures/rnnWithNoOutputs}
                 \end{center}
             \item An example of $f$ is $h_t = sigmoid(W_h h_{t-1} + W_x x_t + b).$
+            \item An example of input sequence $x_1, ..., x_n$ is the word feature vector sequence which corresponds to the word sequence ``How many square miles does San Diego cover ?''.
+            \item An example of what we want after operating this RNN is $h_1, ..., h_n$.
         \end{itemize}
-
     \end{examples}
 \end{frame}
 
-
-\begin{frame}{Recurrent Neural Networks, cont.}\framesubtitle{Long Short Term Memory (LSTM) cell}
-    \begin{itemize}
-        \item Vanishing gradient problem
-            \begin{itemize}
-                \item the vanishing gradient means the gradients become smaller and smaller as their values are propagated forward in a network
-                \item When this happens, the network learns slowly or even stops learning
-            \end{itemize}
-        \item The main solution to the vanishing problem: Use a more complex learning unit
-        \item Long Short Term Memory (LSTM) cell is one such complex learning unit; Gated Recurrent Unit (GRU) has a simplified structure but similar function with LSTM
-    \end{itemize}
-\end{frame}
-
-\begin{frame}{Recurrent Neural Networks, cont.}\framesubtitle{Usage in This Project}
-    \begin{itemize}
-        \item In this project, we used LSTM and GRU equally as learning unit.
-    \end{itemize}
-    \begin{examples}{How a LSTM is used to encode a question in this project.}
-        \begin{itemize}
-            \item Question: How many square miles does San Diego cover ?
-            \item $x$ is each word feature vector which corresponds to each token in question sequence. $h$ is the state.
-            \item After iterating each token in question, we get a sequence of $h$.
-
-        \end{itemize}
-        \begin{center}
-                  \includegraphics[width=5cm, height=2cm]{figures/rnnWithNoOutputs}
-                \end{center}
-
-    \end{examples}
-\end{frame}
-
-\begin{frame}{Bidirectional Recurrent Neural Networks}\framesubtitle{Overview }
+\begin{frame}{Bidirectional Recurrent Neural Networks}
     \begin{itemize}
         \item Problem of RNNs: $h_t$ only contains context information from $x_1$ to $x_t$
         \item Solution given by Bidirectional RNNs:
@@ -219,14 +196,14 @@ Recurrent Neural Networks (RNNs) are used for modeling sequential data.
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Bidirectional Recurrent Neural Networks}\framesubtitle{Usage in This project}
+\begin{frame}{Bidirectional Recurrent Neural Networks}
     \begin{itemize}
-        \item In this project, we used bidirectional RNNs in encoding part.
-        \item Example: How a bidirectional LSTM is used to encode a question.
+        \item In this project, we used bidirectional RNNs in encoding part. But for simplicity in presentation, I might talk about RNNs instead of Bidirectional RNNs in some parts.
+
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Encoder-decoder Sequence-to-sequence Architecture}\framesubtitle{Overview}
+\begin{frame}{Encoder-decoder Sequence-to-sequence Architecture}
 \begin{itemize}
     \item The process of understanding the input sequence is considered as encoding the input sequence to some vectors $Crypto$.
     \item The process of generating output is considered as decoding the $Crypto$.
@@ -246,47 +223,59 @@ $x$ is the input, $h$ is the state in encoding process, $y$ is the output, and $
 
 \end{frame}
 
-\begin{frame}{Encoder-decoder Sequence-to-sequence Architecture, Cont.}\framesubtitle{Usage in This Project}
+\begin{frame}{Encoder-decoder Sequence-to-sequence Architecture, Cont.}
     \begin{itemize}
-        \item Each input sequence actually includes two sequences - a question and a passage.
+        \item In this project, each input sequence actually includes two sequences - a question and a passage.
             \begin{itemize}
                 \item Attention mechanism is required to make each passage aware of the corresponding question.
             \end{itemize}
-        \item Each output sequence is an answer which is represented by two indices for the input passage sequence.
+        \item In this project, each output sequence is an answer which is represented by two indices for the input passage sequence.
             \begin{itemize}
                 \item The pointer network is used to make sure the output sequence comes from input sequence.
             \end{itemize}
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Attention Mechanism}\framesubtitle{Overview}
+\begin{frame}{Attention Mechanism}
     \begin{itemize}
-        \item Attention mechanism was first used in neural machine translation to enable the decoding process aware of the encoding states.
+        \item Intuitively, attention mechanism is one way to pay attention to a sequence of vectors.
+        \item The key to understand attention mechanism is to understand how to get attention weight vector $\alpha$.
+        \item Using the attention weight vector $\alpha$, we can get a weighted average of the sequence of vectors. This weight average is called attention vector.
+    \end{itemize}
+    \begin{examples}
+    How attention mechanism was used in neural machine translation. In this scenario, the sequence of vectors to pay attention to is the encoding states.
         \begin{itemize}
             \item $y$ is the output, $g$ is the state, and $c$ is the attention vector. $$g_i =f(g_{i-1},y_{i-1},c_i).$$
+
+        \end{itemize}
+    \end{examples}
+\end{frame}
+
+\begin{frame}{Attention Mechanism, cont.}
+    \begin{examples}
+     \begin{center}
+        \includegraphics[width=7cm, height=6cm]{figures/attention}
+    \end{center}
+    \end{examples}
+\end{frame}
+
+\begin{frame}{Attention Mechanism, cont.}
+    \begin{examples}
+        \begin{itemize}
             \item The attention vector $c_i$ is produced by using $g_{i-1}$ to ``query'' the encoding states $h_1, ... h_n$ through
         $$c_i = \sum _j {\alpha _{i,j} h_j}$$
         $$\alpha _{i,j} = \exp{e_{i,j}} / \sum _j {\exp{e_{i,j}}}$$
         $$e_{i,j} = tanh(W_h h_j + W_g g_{i-1} + b).$$
         \end{itemize}
-    \end{itemize}
-\end{frame}
-
-\begin{frame}{Attention Mechanism, Cont.}\framesubtitle{Overview}
-    \begin{center}
-        \includegraphics[width=7cm, height=7cm]{figures/attention}
-    \end{center}
-
-
+    \end{examples}
 \end{frame}
 
 
-\begin{frame}{Attention Mechanism, Cont.}\framesubtitle{Usage in This Project}
+\begin{frame}{Attention Mechanism, cont.}
     \begin{itemize}
-        \item In this project, the attention mechanism is used in both encoding and decoding part. The graph below shows how each passage ``pays attention'' to the corresponding question in encoding part.
-        \begin{center}
-         \includegraphics[width=8cm, height=4.5cm]{figures/passage_question_attention.png}
-        \end{center}
+        \item In this project, the attention mechanism is used in both encoding and decoding part.
+        \item In the encoding part, each word feature vector in passage pays attention to the corresponding question word feature vector sequence.
+        \item In the decoding part, each decoding state pays attention to the sequence encoding states.
     \end{itemize}
 
 
@@ -296,33 +285,25 @@ $x$ is the input, $h$ is the state in encoding process, $y$ is the output, and $
 
 \end{frame}
 
-\begin{frame}{Pointer Network}\framesubtitle{Overview}
+\begin{frame}{Pointer Network}
     \begin{itemize}
-        \item The pointer network is used in decoding.
         \item Using the pointer network enables the decoder to output tokens from input sequence.
+        \item In this project, the pointer network was used in the decoding part which generates the answer.
         \item The attention weight vector $\alpha$ is considered as a probability distribution which indicates how likely each token in the input sequence is the current output token.
-        $$y_i = x_k$$
-        where
-        $$k = argmax_j(\alpha _{i,j}).$$
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Pointer Network, Cont.}\framesubtitle{Overview}
-    \begin{center}
-        \includegraphics[width=8cm, height=8cm]{figures/pointerNetwork.png}
-    \end{center}
-
-\end{frame}
-
-\begin{frame}{Pointer Network, Cont.}\framesubtitle{Usage in This Project}
-    \begin{itemize}
-        \item In this project, the pointer network was used in the decoding part which generates the answer, as shown in the graph below.
+\begin{frame}{Pointer Network, cont.}
+    \begin{examples}
+        $y_i = x_k$ where $k = argmax_j(\alpha _{i,j}).$
         \begin{center}
-           \includegraphics[width=9cm, height=5cm]{figures/answer_pointer.png}
+            \includegraphics[width=8cm, height=6cm]{figures/pointerNetwork.png}
         \end{center}
-    \end{itemize}
+    \end{examples}
+
 
 \end{frame}
+
 
 \section{Design}
 
