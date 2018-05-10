@@ -30,7 +30,7 @@
 
 \title{A Question Answering System Using Encoder-decoder Sequence-to-sequence Recurrent Neural Networks}
 \author{Bo Li}
-\date{May, 2018}
+\date{May 11, 2018}
 \institute[SJSU]{San Jos\'{e} State University}
 
 \begin{frame}
@@ -50,38 +50,33 @@
 
 \section{Introduction}
 
-\begin{frame} \frametitle{Question Answering}
+\begin{frame} \frametitle{Topic of This Project}
     \begin{itemize}
-        \item Question answering is the study of writing computer programs that can answer natural language questions
-        \item Question answering is widely used among search engines, personal assistant applications on smart phones, voice control systems and various other applications
-        \item  Question answering tasks can be categorized into two types - open domain and close domain
+        \item Question answering is the study of writing computer programs that can answer natural language questions.
+        \item In this project, we focused on a scenario where a specific passage is already assigned to a question and the answer is a segment of the passage.
+        \item Stanford Question Answering Dataset (SQuAD) is suitable for such scenario. It is used in this project.
+        \begin{itemize}
+            \item It includes questions asked by human beings on Wikipedia articles.
+            \item The answer to each question is a segment of the corresponding Wikipedia passage
+            \item It contains more than 100,000 question-answer pairs on more than 500 articles.
+        \end{itemize}
+
+
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{An example}
+    \begin{examples}
             \begin{itemize}
-                \item  Open domain: the questions can be about almost everything.
-                \item Close domain: the questions are about a specific domain.
+                \item Passage: The city had a population of 1,307,402 according to the 2010 census , distributed over a land area of 372.1 square miles ( 963.7 km2 ) . The urban area of San Diego extends beyond the administrative city limits and had a total population of 2,956,746 , making it the third-largest urban area in the state , after that of the Los Angeles metropolitan area and San Francisco metropolitan area . They , along with the Riverside–San Bernardino , form those metropolitan areas in California larger than the San Diego metropolitan area , with a total population of 3,095,313 at the 2010 census .
+                \item Question: How many square miles does San Diego cover ?
+                \item Answer: 372.1
             \end{itemize}
-    \end{itemize}
+        \end{examples}
 \end{frame}
 
-
-\begin{frame}{Topic of This Project}
-    \begin{itemize}
-        \item About open domain question answering.
-        \item Instead of the whole complicated open domain question answering system, we focused on a scenario where a specific passage is already assigned to a question
-        \item The answer is a segment of the passage.
-
-    \end{itemize}
-
-\end{frame}
-
-\begin{frame}{Stanford Question Answering Dataset (SQuAD)}
-    \begin{itemize}
-        \item It includes questions asked by human beings on Wikipedia articles.
-        \item The answer to each question is a segment of the corresponding Wikipedia passage
-        \item It contains more than 100,000 question-answer pairs on more than 500 articles.
-    \end{itemize}
-\end{frame}
-
-\begin{frame}{Encoder-decoder Sequence-to-sequence Recurrent Neural Networks}
+\begin{frame}{Technique Used in This Project}
+The encoder-decoder sequence-to-sequence recurrent neural networks were used in this project.
    \begin{itemize}
        \item Encoder-decoder:  encode an input to some vectors and then decode those vectors to an output.
        \item Sequence-to-sequence: Input is a sequence; output is also a sequence
@@ -95,15 +90,25 @@
 
 \begin{frame}{Contribution of This Project}
     \begin{itemize}
-        \item We successfully built a question answering system using five different models
-        \item By comparing the results of five different models, we got two interesting observations
+        \item We successfully built a question answering system using an existing model and four models that were designed by making changes to the existing model.
+        \item By comparing the results of five different models, we got two interesting observations. We will give details in Experiments part.
     \end{itemize}
 \end{frame}
 
 \section{Background}
 
 \begin{frame} \frametitle{Word Feature Vector}\framesubtitle{Overview}
-  \begin{itemize}
+  \begin{examples}
+  An example from the GloVe word feature vectors.
+    \begin{itemize}
+        \item Word: the
+        \item Word feature vector: [0.418 0.24968 -0.41242 0.1217 0.34527 -0.044457 -0.49688 -0.17862 -0.00066023 -0.6566 0.27843 -0.14767 -0.55677 0.14658 -0.0095095 0.011658 0.10204 -0.12792 -0.8443 -0.12181 -0.016801 -0.33279 -0.1552 -0.23131 -0.19181 -1.8823 -0.76746 0.099051 -0.42125 -0.19526 4.0071 -0.18594 -0.52287 -0.31681 0.00059213 0.0074449 0.17778 -0.15897 0.012041 -0.054223 -0.29871 -0.15749 -0.34758 -0.045637 -0.44251 0.18785 0.0027849 -0.18411 -0.11514 -0.78581]
+    \end{itemize}
+  \end{examples}
+\end{frame}
+
+\begin{frame}{Word Feature Vector, cont.}\framesubtitle{Overview}
+\begin{itemize}
       \item A word feature vector represents a word according to its relationship with other words in a vocabulary.
       \item The distance from one word feature vector to any other word feature vector tells how likely the two words appear in a same context.
       \item The word feature vector matrix for the vocabulary of a given text are learned by training a neural probabilistic language model on the text.
@@ -186,6 +191,18 @@ Recurrent Neural Networks (RNNs) are used for modeling sequential data.
     \begin{itemize}
         \item In this project, we used LSTM and GRU equally as learning unit.
     \end{itemize}
+    \begin{examples}{How a LSTM is used to encode a question in this project.}
+        \begin{itemize}
+            \item Question: How many square miles does San Diego cover ?
+            \item $x$ is each word feature vector which corresponds to each token in question sequence. $h$ is the state.
+            \item After iterating each token in question, we get a sequence of $h$.
+
+        \end{itemize}
+        \begin{center}
+                  \includegraphics[width=5cm, height=2cm]{figures/rnnWithNoOutputs}
+                \end{center}
+
+    \end{examples}
 \end{frame}
 
 \begin{frame}{Bidirectional Recurrent Neural Networks}\framesubtitle{Overview }
@@ -205,6 +222,7 @@ Recurrent Neural Networks (RNNs) are used for modeling sequential data.
 \begin{frame}{Bidirectional Recurrent Neural Networks}\framesubtitle{Usage in This project}
     \begin{itemize}
         \item In this project, we used bidirectional RNNs in encoding part.
+        \item Example: How a bidirectional LSTM is used to encode a question.
     \end{itemize}
 \end{frame}
 
@@ -265,10 +283,17 @@ $x$ is the input, $h$ is the state in encoding process, $y$ is the output, and $
 
 \begin{frame}{Attention Mechanism, Cont.}\framesubtitle{Usage in This Project}
     \begin{itemize}
-        \item Each passage is required to ``pay attention to'' the corresponding question.
-        \item Each answer is required to ``pay attention to'' the encoding states.
+        \item In this project, the attention mechanism is used in both encoding and decoding part. The graph below shows how each passage ``pays attention'' to the corresponding question in encoding part.
+        \begin{center}
+         \includegraphics[width=8cm, height=4.5cm]{figures/passage_question_attention.png}
+        \end{center}
     \end{itemize}
-The detailed formulas are given later.
+
+
+
+
+
+
 \end{frame}
 
 \begin{frame}{Pointer Network}\framesubtitle{Overview}
@@ -291,7 +316,10 @@ The detailed formulas are given later.
 
 \begin{frame}{Pointer Network, Cont.}\framesubtitle{Usage in This Project}
     \begin{itemize}
-        \item In this project, the pointer network was used in the decoding part.
+        \item In this project, the pointer network was used in the decoding part which generates the answer, as shown in the graph below.
+        \begin{center}
+           \includegraphics[width=9cm, height=5cm]{figures/answer_pointer.png}
+        \end{center}
     \end{itemize}
 
 \end{frame}
@@ -301,7 +329,7 @@ The detailed formulas are given later.
 \begin{frame}{Relationship Between Five Different Models}
     \begin{itemize}
         \item Model 1 is the Match LSTM \& Answer Pointer model designed by Wang and Jiang.
-        \item Model 2, 3, 4 and 5 are designed by making changes to Model 1.
+        \item Model 2, 3, 4 and 5 are designed by us through making changes to Model 1.
     \end{itemize}
 \end{frame}
 
@@ -332,6 +360,18 @@ The detailed formulas are given later.
             \end{itemize}
     \end{itemize}
 
+\end{frame}
+
+\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{Structure}
+    \begin{center}
+        \includegraphics[width=10cm, height=7cm]{figures/model1_encoder.png}
+    \end{center}
+\end{frame}
+
+\begin{frame} \frametitle{Model 1, cont.}\framesubtitle{Structure}
+    \begin{center}
+        \includegraphics[width=10cm, height=5cm]{figures/model1_decoder.png}
+    \end{center}
 \end{frame}
 
 \begin{frame} \frametitle{Model 1, cont.}\framesubtitle{The Preprocessing Layer}
@@ -467,13 +507,24 @@ The detailed formulas are given later.
 
 \end{frame}
 
-\begin{frame} \frametitle{Model 2}
+\begin{frame}{Model 2}
+    \begin{center}
+        \includegraphics[width=10cm, height=5cm]{figures/model2_decoder.png}
+    \end{center}
+\end{frame}
+\begin{frame} \frametitle{Model 2, cont.}
     The difference from Model 2 and Model 1 is in the decoding process. In Model 2,
     $${h_k}^a = H^r\beta _{k}^T.$$
     That is, instead of the current state of answer LSTM, the previous attention vector is used to query the current attention weight vector.
 \end{frame}
 
-\begin{frame} \frametitle{Model 3}
+\begin{frame}{Model 3}
+    \begin{center}
+        \includegraphics[width=10cm, height=5cm]{figures/model3_encoder.png}
+    \end{center}
+\end{frame}
+
+\begin{frame} \frametitle{Model 3, cont.}
     The difference between Model 3 and Model 2 is that in Model 3 the $W^r\overrightarrow{{h_{i-1}}^r}$ in the bidirectional match LSTM layer is removed. This modification aims at checking whether $\overrightarrow{{h_{i-1}}^r}$ carries some redundant context information. After this change,
 
 
