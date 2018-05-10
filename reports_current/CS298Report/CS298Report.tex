@@ -73,7 +73,7 @@
 % NOTE: to get the front matter single spaced, put \singlespacing
 % at the start of the abstract text
 
-\abstract{Question answering is the study of writing computer programs that can answer natural language questions. It is one of the most challenging tasks in the field of natural language processing. The present state-of-art question answering systems use neural network models. In this project, we successfully built a question answering system using encoder-decoder sequence-to-sequence recurrent neural networks. In total, five different models were tried. Our first model is the Match LSTM \& Answer Pointer model. Our second, third, fourth and fifth model were designed by making changes to the first model. By comparing the results of these different models, two interesting observations were found: First, test performance increases when querying the current attention weight vector using the previous attention vector instead of the current state of answer LSTM in the answer pointer layer. Second, the whole preprocessing layer and some part of the bidirectional match LSTM layer might provide duplicate information. The part is using the current state of match LSTM to query the current attention weight vector.
+\abstract{Question answering is the study of writing computer programs that can answer natural language questions. It is one of the most challenging tasks in the field of natural language processing. The present state-of-art question answering systems use neural network models. In this project, we successfully built a question answering system using encoder-decoder sequence-to-sequence recurrent neural networks. In total, five different models were tried. Our first model is an existing model called the Match Long Short Term Memory (LSTM) \& Answer Pointer model. Our second, third, fourth and fifth models were designed by making changes to the first model. By comparing the results of five different models, two interesting observations that might improve the first model were found.
 }
 
 
@@ -133,7 +133,7 @@ Question answering is the study of writing computer programs that can answer nat
 In recent years, more and more state-of-art natural language processing results are produced by using neural network models. Among various neural network architectures, the encoder-decoder sequence-to-sequence recurrent neural networks were chosen for this project. These networks encode an input sequence to some vectors and then decode them to an output sequence. For question answering, the input sequence includes a passage and a question and the output sequence is the answer.
 
 
-We successfully built a question answering system using five different models. Model 1 is Match-LSTM \& Answer Pointer model designed by Wang and Jiang\cite{wang2016machine}. This model has a typical encoder-decoder sequence-to-sequence recurrent network architecture and has a network size which is not too big to train. Model 2, 3, 4 and 5 are designed by deleting some parts or modifying some parts of Model 1. By comparing the results of five different models, we got two interesting observations. First, the testing performance increases when querying the current attention weight vector using the previous attention vector instead of the current state of answer LSTM in the answer pointer layer. Second, the whole preprocessing layer and some part of the bidirectional match LSTM layer might provide duplicate information. The part is using the current state of match LSTM to query the current attention weight vector.
+We successfully built a question answering system using five different models. Model 1 is Match-LSTM \& Answer Pointer model designed by Wang and Jiang\cite{wang2016machine}. This model has a typical encoder-decoder sequence-to-sequence recurrent network architecture and has a network size which is not too big to train. Model 2, 3, 4 and 5 are designed by deleting some parts or modifying some parts of Model 1. By comparing the results of five different models, two interesting observations that might improve Model 1 were found. The detailed explanation will be given in Chapter \ref{chap:design} and Section \ref{sect:analysis}.
 
 
 
@@ -267,7 +267,12 @@ In this chapter, I will explain the five models one by one. Recall that Model 1 
 
 \section{Model 1}
 
-Wang and Jiang  proposed an encoder-decoder sequence-to-sequence architecture for the question answering task on SQuAD dataset \cite{wang2016machine}. Each instance of training data includes one passage, one question and one answer. The passage is a sequence of tokens, the question is a sequence of tokens, and the answer is a sequence of two indices indicating the start and end positions in passage. Recall that each answer is part of the corresponding passage in SQuAD.
+Wang and Jiang  proposed an encoder-decoder sequence-to-sequence architecture for the question answering task on SQuAD dataset \cite{wang2016machine}. Each instance of training data includes one passage, one question and one answer. The passage is a sequence of tokens, the question is a sequence of tokens, and the answer is a sequence of two indices indicating the start and end positions in passage. Recall that each answer is part of the corresponding passage in SQuAD. Below is an example instance of training data:
+    \begin{itemize}
+        \item Passage: The city had a population of 1,307,402 according to the 2010 census , distributed over a land area of {\bf 372.1} square miles ( 963.7 km2 ) . The urban area of San Diego extends beyond the administrative city limits and had a total population of 2,956,746 , making it the third-largest urban area in the state , after that of the Los Angeles metropolitan area and San Francisco metropolitan area . They , along with the Riverside–San Bernardino , form those metropolitan areas in California larger than the San Diego metropolitan area , with a total population of 3,095,313 at the 2010 census .
+        \item Question: How many square miles does San Diego cover ?
+        \item Answer: 372.1
+    \end{itemize}
 
 Before feeding training data into the model, tokens in passages and questions are vectorized to word feature vectors. As such, one pre-trained word feature vector matrix is an additional dataset required.
 
@@ -434,7 +439,7 @@ $$\beta _k = softmax( (v^tF_k + c \otimes e_p) ) \circ passage\_mask.$$
 
 \section{Tensorflow Graphs}
 
-Tensorflow is an open source machine learning framework. The central idea of Tensorflow is describing a complex numeric computation as a graph.  {\tt Variables} are ``trainable'' nodes.  {\tt Placeholders} are nodes whose values are fed in run time. Taking Model 1 as an example,  {\tt Variables} should be used to represent all the parameters of the encoding and decoding layers and {\tt Placeholders} should be used to represent passages, questions, and answers. To train a graph, some APIs of Tensorflow are called to get a train operation. Then the training data is fed through {\tt Placeholders} to run the train operation. When the train operation is run, the {\tt Variables} are updated.
+Tensorflow is an open source software for numerical computation. It is most widely used for implementing neural networks. The central idea of Tensorflow is describing a complex numeric computation as a graph.  {\tt Variables} are ``trainable'' nodes.  {\tt Placeholders} are nodes whose values are fed in run time. Taking Model 1 as an example,  {\tt Variables} should be used to represent all the parameters of the encoding and decoding layers and {\tt Placeholders} should be used to represent passages, questions, and answers. Building a computation graph using Tensorflow is very convenient. First, the API provides some building blocks which speed up coding a lot. For example, to implement a special LSTM cell with attention mechanism, we could use the RNNCell interface instead of coding every formula from scratch. Second, we do not need to calculate gradients by hand. To train a graph, some APIs of Tensorflow are called to get a train operation. Then the training data is fed through {\tt Placeholders} to run the train operation. When the train operation is run, the {\tt Variables} are updated.
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=12cm]{figures/tf_graph.png}
@@ -601,12 +606,12 @@ As indicated by Figure \ref{f:baseline_change3}, Model 5 keeps learning in the 1
   \end{tabular}
 \end{table}
 
-Table \ref{tab:test_results} shows the testing results of all models. The reference paper gets F1 score 73.7 and exact match score 64.7. Model 1 gets F1 score 33.6 and exact match score 23.4. This does not reproduce the F1 score 71.2 and the exact match score 61.1 in the reference paper \cite{wang2016machine}. Model 2, 3 and 4 behave similarly with F1 score around 46 and exact match score around 33. Model 5 behaves worse than the other three experiments with F1 score 33.9 and exact match score 24.3.
+Table \ref{tab:test_results} shows the testing results of all models. The reference paper gets F1 score 73.7 and exact match score 64.7 \cite{wang2016machine}. Model 1 gets F1 score 33.6 and exact match score 23.4. It does not reproduce the scores of the reference paper. Model 2, 3 and 4 behave similarly with F1 score around 46 and exact match score around 33. Model 5 behaves worse than the other three experiments with F1 score 33.9 and exact match score 24.3.
 
 
 
 
-\section{Analysis}
+\section{Analysis}\label{sect:analysis}
 
 Comparing the test results of Model 1 with that of the reference paper, the difference is quite surprising. To find out why my implementation does not reproduce the results of the original paper, further debugging and parameter tuning are needed.
 
