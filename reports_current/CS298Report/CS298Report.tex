@@ -73,7 +73,7 @@
 % NOTE: to get the front matter single spaced, put \singlespacing
 % at the start of the abstract text
 
-\abstract{Question answering is about making computer programs that can answer natural language questions. It is one of the most challenging tasks in the field of natural language processing. The present state-of-art question answering systems use neural network models. In this project, we successfully built a question answering system using encoder-decode sequence-to-sequence recurrent neural networks. In total, five different models were tried. Model one is the Match LSTM \& Answer Pointer model. Model two, three, four and five were designed through making changes to model one. Through comparing the results of different models, two interesting observations were found. First, the testing performance increases when querying the current attention weight vector using the previous attention vector instead of the current state of answer LSTM in the answer pointer layer. Second, the whole preprocessing layer and some part of the bidirectional match LSTM layer might provide duplicate information. The part is using the current state of match LSTM to query the current attention weight vector.
+\abstract{Question answering is the study of writing computer programs that can answer natural language questions. It is one of the most challenging tasks in the field of natural language processing. The present state-of-art question answering systems use neural network models. In this project, we successfully built a question answering system using encoder-decoder sequence-to-sequence recurrent neural networks. In total, five different models were tried. Our first model is the Match LSTM \& Answer Pointer model. Our second, third, fourth and fifth model were designed by making changes to the first model. By comparing the results of these different models, two interesting observations were found: First, test performance increases when querying the current attention weight vector using the previous attention vector instead of the current state of answer LSTM in the answer pointer layer. Second, the whole preprocessing layer and some part of the bidirectional match LSTM layer might provide duplicate information. The part is using the current state of match LSTM to query the current attention weight vector.
 }
 
 
@@ -128,12 +128,12 @@
 
 \chapter{Introduction}
 
-Question answering is about making computer programs that can answer natural language questions. Question answering systems are widely used among search engines, personal assistant applications on smart phones, voice control systems and various other applications. Question answering systems can be categorized into two types - open domain and close domain. For an open domain, the questions can be about almost everything; whereas for a close domain, the questions are about a specific domain. In this project, we focused on open domain question answering. To simplify the research topic, we focus on a scenario where a specific passage is assigned to a question and the answer is a segment of the passage. The Stanford Question Answering Dataset (SQuAD) used in this project is appropriate for such scenario. SQuAD includes questions asked by human beings on Wikipedia articles\cite{rajpurkar2016squad}. The answer to each question is a segment of the corresponding Wikipedia passage. In total, SQuAD contains more than 100,000 question-answer pairs on more than 500 articles.
+Question answering is the study of writing computer programs that can answer natural language questions. Question answering systems are widely used among search engines, personal assistant applications on smart phones, voice control systems and various other applications. Question answering systems can be categorized into two types - open domain and close domain. For an open domain system, the questions can be about almost everything; whereas, for a close domain system, the questions are about a specific domain. In this project, we focused on open domain question answering. To simplify the research topic, we focused on a scenario where a specific passage is assigned to a question and the answer is a segment of the passage. The Stanford Question Answering Dataset (SQuAD) used in this project is appropriate for such scenario. SQuAD includes questions asked by human beings on Wikipedia articles \cite{rajpurkar2016squad}. The answer to each question is a segment of the corresponding Wikipedia passage. In total, SQuAD contains more than 100,000 question-answer pairs on more than 500 articles.
 
-In recent years, more and more state-of-art natural language processing results are produced by using neural network models. Among various neural network architectures, the encoder-decoder sequence-to-sequence recurrent neural networks are used in this project. These networks encode an input sequence to some vectors and then decode them to an output sequence. For question answering, the input sequence includes a passage and a question and the output sequence is the answer.
+In recent years, more and more state-of-art natural language processing results are produced by using neural network models. Among various neural network architectures, the encoder-decoder sequence-to-sequence recurrent neural networks were chosen for this project. These networks encode an input sequence to some vectors and then decode them to an output sequence. For question answering, the input sequence includes a passage and a question and the output sequence is the answer.
 
 
-We successfully built a question answering system using five different models. Model one is Match-LSTM \& Answer Pointer model designed by Wang and Jiang\cite{wang2016machine}. The model has a typical encoder-decoder sequence-to-sequence recurrent network architecture and has a network size which is not too big to train. Model two, three, four and five are designed by deleting some parts or modifying some parts of model one. By comparing the results of five different models, we got two interesting observations. First, the testing performance increases when querying the current attention weight vector using the previous attention vector instead of the current state of answer LSTM in the answer pointer layer. Second, the whole preprocessing layer and some part of the bidirectional match LSTM layer might provide duplicate information. The part is using the current state of match LSTM to query the current attention weight vector.
+We successfully built a question answering system using five different models. Model 1 is Match-LSTM \& Answer Pointer model designed by Wang and Jiang\cite{wang2016machine}. This model has a typical encoder-decoder sequence-to-sequence recurrent network architecture and has a network size which is not too big to train. Model 2, 3, 4 and 5 are designed by deleting some parts or modifying some parts of Model 1. By comparing the results of five different models, we got two interesting observations. First, the testing performance increases when querying the current attention weight vector using the previous attention vector instead of the current state of answer LSTM in the answer pointer layer. Second, the whole preprocessing layer and some part of the bidirectional match LSTM layer might provide duplicate information. The part is using the current state of match LSTM to query the current attention weight vector.
 
 
 
@@ -143,13 +143,13 @@ We successfully built a question answering system using five different models. M
 \chapter{Background}\label{chap:background}
 \section{Word Feature Vector}
 
-Word feature vector was firstly come up with by Bengio, Yoshua and Ducharme in \cite{bengio2003neural}. A word feature vector represents a word according to its relationship with other words in the vocabulary. The distance from one word feature vector to any other word feature vector tells how likely the two words appear in a same context.
+The concept of word feature vector was first described by Bengio, Yoshua and Ducharme in \cite{bengio2003neural}. A word feature vector represents a word according to its relationship with other words in a vocabulary. The distance from one word feature vector to any other word feature vector tells how likely the two words appear in a same context.
 
-The word feature vector matrix for the vocabulary of a given text are learned by training a neural probabilistic language model on the text. Denote V as the vocabulary, $w_t$ as a word from $V$, and the matrix $C$ as the word feature vectors of all words in $V$. Each instance of the training set is a sequence of words $w_1,...,w_T$ which is a segment of the text. The purpose of neural probabilistic language model is to learn a model $f$ such that
+The word feature vector matrix for the vocabulary of a given text are learned by training a neural probabilistic language model on the text. Denote V as the vocabulary, $w_t$ as a word from $V$, and the matrix $C$ as the word feature vectors of all words in $V$. Each instance of the training set is a sequence of words $w_1,...,w_T$ which is a segment of the text. The purpose of a neural probabilistic language model is to learn a model $f$ such that
 
 $$ f(w_t, ..., w_{t-n+1}) = \hat{P}(w_t | w_{t-1},...,w_{t-n+1}).$$
 
-The computation of $f(w_t, ..., w_{t-n+1})$ is divided into two parts.
+The computation of $f(w_t, ..., w_{t-n+1})$ is divided into two parts:
 First, each $w$ is mapped to a word feature vector by selecting the corresponding row in $C$ to get
 
 $$x=(C(w_{t-1}),... ,C(w_{t-n+1})).$$
@@ -186,7 +186,7 @@ $$h_t = sigmoid(W_h h_{t-1} + W_x x_t + b).$$
 
 
 
-Despite the fitness of applying RNNs to sequential data, the vanishing problem exists. Vanishing means the gradients become smaller and smaller as the network goes forward. When this happens, the networks are learning slowly or even stop learning. The main solution to the vanishing problem is using a more complex learning unit. In 1997, hochreiter invented Long Short Term Memory (LSTM) cell \cite{hochreiter1997long} which decreases the vanishing problem. LSTM has one more memory cell to remember long term context and uses a forget gate, a input gate and a output gate to control how much information to flow into and out of the current unit. Aside from LSTM, Cho et al. invented Gated Recurrent Unit (GRU)\cite{cho2014learning} which has a simplified structure but similar function with LSTM.
+Despite the suitability of applying RNNs to sequential data, the vanishing gradient problem exists. Here the vanishing gradient means the gradients become smaller and smaller as their values are propagated forward in a network. When this happens, the network learns slowly or even stops learning. The main solution to the vanishing problem is to use a more complex learning unit. In 1997, Hochreiter invented Long Short Term Memory (LSTM) cell \cite{hochreiter1997long} which reduces the vanishing problem. A LSTM has a memory cell to remember long term context and uses a forget gate, a input gate and a output gate to control how much information to flow into and out of the current unit. Aside from LSTM, Cho et al. invented Gated Recurrent Unit (GRU)\cite{cho2014learning} which has a simplified structure but similar function with LSTM.
 
 
 In this project, I used LSTM and GRU equally as learning unit. Among various RNN structures, I mainly used two types. The first type is a RNN with recurrent connections between hidden states as shown in Figure \ref{f:rnnWithNoOutputs}. The sequence of  states are needed. The second type is also a RNN with recurrent connections between hidden states. However, the last state is needed.
@@ -194,7 +194,7 @@ In this project, I used LSTM and GRU equally as learning unit. Among various RNN
 \section{Bidirectional Recurrent Neural Networks}
 
 The RNNs in Section \ref{sect:rnn}
-iterate from left to right. As such, the $h_t$ only contains context information from $x_1$ to $x_t$, but does not contain context information from $x_{t+1}$ to the end. However, in most sequence-to-sequence tasks, $h_t$ should contain the information of the whole sequence. Bidirectional RNNs make this possible. In a bidirectional RNN, one cell rolls from left to right, and another cell rolls from right to left. As illustrated in Figure \ref{f:bidirectionalRnn}, at time t, using both $h_t$ and $g_t$ can get context information of the whole sequence.
+operate from left to right. As such, the $h_t$ only contains context information from $x_1$ to $x_t$, but does not contain context information from $x_{t+1}$ to the end. However, in most sequence-to-sequence tasks, $h_t$ should contain the information of the whole sequence. Bidirectional RNNs make this possible. In a bidirectional RNN, one cell operates from left to right, and another cell operates from right to left. As illustrated in Figure \ref{f:bidirectionalRnn}, at time t, using both $h_t$ and $g_t$ can get context information of the whole sequence.
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=8cm, height=5cm]{figures/bidirectionalRnn.png}
@@ -202,7 +202,7 @@ iterate from left to right. As such, the $h_t$ only contains context information
   \label{f:bidirectionalRnn}
 \end{figure}
 
-In this project, I used bidirectional RNNs in encoding part.
+In this project, we used bidirectional RNNs in encoding part.
 
 \section{Encoder-Decoder Sequence-to-Sequence Architecture}
 
@@ -218,7 +218,7 @@ The question answering task in this project is a sequence-to-sequence task. Howe
 
 \section{Attention Mechanism}\label{sect:attention}
 
-Attention mechanism was firstly came up with by Bahdanau et al. in the application of neural machine translation\cite{bahdanau2014neural}. In a neural machine translation task, an encoder-decoder sequence-to-sequence model encodes each input sentence to some vectors and decodes the vectors to a sentence in another language with the same content. The attention mechanism is used to enable the decoding process aware of the encoding states $h_1, ... h_n$. As shown in Figure \ref{f:attention}, $y$ is the output, $g$ is the state, and $c$ is the attention vector. We have
+The attention mechanism in neural networks was first described by Bahdanau et al. in the application of neural machine translation\cite{bahdanau2014neural}. In a neural machine translation task, an encoder-decoder sequence-to-sequence model encodes each input sentence to some vectors and decodes the vectors to a sentence in another language with the same content. The attention mechanism is used to enable the decoding process aware of the encoding states $h_1, ... h_n$. As shown in Figure \ref{f:attention}, $y$ is the output, $g$ is the state, and $c$ is the attention vector. We have
 $$g_i =f(g_{i-1},y_{i-1},c_i).$$
 The attention vector $c_i$ is produced by using $g_{i-1}$ to ``query'' the encoding states $h_1, ... h_n$ through
 $$c_i = \sum _j {\alpha _{i,j} h_j}$$
@@ -235,7 +235,7 @@ An example of the $attention$ function is $e_{i,j} = tanh(W_h h_j + W_g g_{i-1} 
 
 
 
-Indeed, attention mechanism is a way to ``be aware of a sequence''. Since being aware of more context is a basic need of natural language processing tasks, it is reasonable to use attention mechanism in other tasks besides machine translation.
+The attention mechanism is a way to ``be aware of a sequence''. Since being aware of more context is a basic need of natural language processing tasks, it is reasonable to use the attention mechanism in other tasks besides machine translation.
 
 In this project, the passage is required to ``be aware of the question'' in encoding process. At the same time, the answer is required to ``be aware of the encoding states of passage and question''. The detailed formulas are given in Chapter \ref{chap:design}.
 
@@ -244,11 +244,11 @@ In this project, the passage is required to ``be aware of the question'' in enco
 
 \section{Pointer Network}\label{sect:pointerNet}
 
-Pointer network\cite{vinyals2015pointer} was invented by Vinyals et al. in 2015. Using pointer network enables decoder to output tokens from input sequence. Attention mechanism is used in pointer network. However, aside from getting an attention vector, the attention weight vector $\alpha$ is considered as a probability distribution which indicates how likely each token in input sequence is the current output. That is,
+The pointer network\cite{vinyals2015pointer} was invented by Vinyals et al. in 2015. Using the pointer network enables the decoder to output tokens from input sequence. The attention mechanism is used with the pointer network. However, aside from getting an attention vector, the attention weight vector $\alpha$ is considered as a probability distribution which indicates how likely each token in the input sequence is the current output. That is,
 $$y_i = x_k$$
 where
 $$k = argmax_j(\alpha _{i,j}).$$
-Note that compared with the machine translation architecture \ref{f:attention}, in pointer network, $y_i$ is not fed into the next decoding state.
+Note that compared with the machine translation architecture in Figure \ref{f:attention}, in the pointer network, $y_i$ is not fed into the next decoding state.
 
 
 \begin{figure}[htbp]\centering
@@ -257,21 +257,24 @@ Note that compared with the machine translation architecture \ref{f:attention}, 
   \label{f:pointerNetwork}
 \end{figure}
 
-In this project, pointer network was used in the decoding part of several models.
+In this project, the pointer network was used in the decoding part of several models.
 
 
 \chapter{Design}\label{chap:design}
 
-In this chapter, I will explain the five models one by one. Recall that model one is the Match LSTM \& Answer Pointer model which has a typical encoder-decoder sequence-to-sequence recurrent network architecture designed by Wang and Jiang\cite{wang2016machine}. Model two, three, four and five are designed by making changes to model one.
+In this chapter, I will explain the five models one by one. Recall that Model 1 is the Match LSTM \& Answer Pointer model which has a typical encoder-decoder sequence-to-sequence recurrent network architecture designed by Wang and Jiang\cite{wang2016machine}. Model 2, 3, 4 and 5 are designed by making changes to Model 1.
 
 
-\section{Model One}
+\section{Model 1}
 
 Wang and Jiang  proposed an encoder-decoder sequence-to-sequence architecture for the question answering task on SQuAD dataset \cite{wang2016machine}. Each instance of training data includes one passage, one question and one answer. The passage is a sequence of tokens, the question is a sequence of tokens, and the answer is a sequence of two indices indicating the start and end positions in passage. Recall that each answer is part of the corresponding passage in SQuAD.
 
 Before feeding training data into the model, tokens in passages and questions are vectorized to word feature vectors. As such, one pre-trained word feature vector matrix is an additional dataset required.
 
-The vectorized training data is fed into the encoder. The encoder includes two layers - the preprocessing layer and the bidirectional match LSTM layer. In the preprossing layer, a LSTM runs over each passage word feature vector sequence and outputs a sequence of LSTM states. The same LSTM is used to encode each question word feature vector sequence to a sequence of LSTM states.
+The vectorized training data is fed into the encoder. The encoder includes two layers - the preprocessing layer and the bidirectional match LSTM layer.
+In the preprocessing layer, a LSTM runs over each passage word feature vector sequence and outputs a sequence of LSTM states. The same LSTM is used to encode each question word feature vector sequence to a sequence of LSTM states.
+
+
 
 $$H^p = \overrightarrow{LSTM}(P)$$
 $$H^q = \overrightarrow{LSTM}(Q)$$
@@ -298,7 +301,7 @@ where
 $$W^q, W^p, W^r\in R^{l \times l} $$
 $$b_p, w\in R^{l}  $$
 $$b \in R $$
-$${{h_{i}}pr}\in R^{l}: one\ column\ of\ H^p  $$
+$${h_{i}^p}\in R^{l}: one\ column\ of\ H^p  $$
 
 and
 
@@ -358,27 +361,57 @@ $$J(\theta) = -\frac{1}{N}\sum_{i=1}^{N} \log{p(a^n|H^r)} $$
 
 is minimized.
 
-\section{Model Two} \label{sect:change_0}
+\begin{figure}[htbp]\centering
+  \includegraphics[width=12cm, height=9cm]{figures/model1_encoder.png}
+  \caption{Encoder part of Model 1}
+\end{figure}
 
-The difference from model two and model one is in the decoding process. In model two,
+\begin{figure}[htbp]\centering
+  \includegraphics[width=12cm, height=5cm]{figures/model1_decoder.png}
+  \caption{Decoder part of Model 1}
+\end{figure}
+
+
+\section{Model 2} \label{sect:change_0}
+
+The difference from Model 2 and Model 1 is in the decoding process. In Model 2,
 $${h_k}^a = H^r\beta _{k}^T.$$
 That is, instead of the current state of answer LSTM, the previous attention vector is used to query the current attention weight vector.
 
-\section{Model Three}
+\begin{figure}[htbp]\centering
+  \includegraphics[width=12cm, height=4cm]{figures/model2_decoder.png}
+  \caption{Decoder part of Model 2}
+\end{figure}
 
-The difference between model three and model two is that in model three the $W^r\overrightarrow{{h_{i-1}}^r}$ in the bidirectional match LSTM layer is removed. This modification aims at checking whether $\overrightarrow{{h_{i-1}}^r}$ carries some redundant context information. After this change,
+\section{Model 3}
+
+The difference between Model 3 and Model 2 is that in Model 3 the $W^r\overrightarrow{{h_{i-1}}^r}$ in the bidirectional match LSTM layer is removed. This modification aims at checking whether $\overrightarrow{{h_{i-1}}^r}$ carries some redundant context information. After this change,
 
 
 $$\overrightarrow{G} = tanh(W^qH^q + (W^p{h_i}^p + b^p) \otimes e_q)$$
 
+\begin{figure}[htbp]\centering
+  \includegraphics[width=12cm, height=9cm]{figures/model3_encoder.png}
+  \caption{Encoder part of Model 3}
+\end{figure}
 
-\section{Model Four}
+\section{Model 4}
 
-The difference between model four and model two is that in model four the the preprocessing layer is removed. This modification aims at checking whether the preprocessing layer carries some redundant context information.
+The difference between Model 4 and Model 2 is that in Model 4 the the preprocessing layer is removed. This modification aims at checking whether the preprocessing layer carries some redundant context information.
 
-\section{Model Five}
+\begin{figure}[htbp]\centering
+  \includegraphics[width=12cm, height=9cm]{figures/model4_encoder.png}
+  \caption{Encoder part of Model 4}
+\end{figure}
 
-The difference between model five and model two is that in model five both the preprocessing layer and $W^r\overrightarrow{{h_{i-1}}^r}$ in the bidirectional match LSTM layer are removed. This aims at checking whether context information carried by both is included in some other parts of model two.
+\section{Model 5}
+
+The difference between Model 5 and Model 2 is that in Model 5 both the preprocessing layer and $W^r\overrightarrow{{h_{i-1}}^r}$ in the bidirectional match LSTM layer are removed. This aims at checking whether context information carried by both is included in some other parts of Model 2.
+
+\begin{figure}[htbp]\centering
+  \includegraphics[width=12cm, height=9cm]{figures/model5_encoder.png}
+  \caption{Encoder part of Model 5}
+\end{figure}
 
 \chapter{Implementation}
 
@@ -388,7 +421,7 @@ When training a model, all of the training data is fed into the model to update 
 
 For sequences longer than a fixed length, a part of the sentence is cut out. For sequences shorter than a fixed length, a faking pad token is used to pad them. In practice, each passage is adjusted to $passage\_padding\_length$ and is paired with a mask vector $passage\_mask$ which has size $passage\_padding\_length$. Each question is adjusted to $question\_padding\_length$ and paired with a mask vector $question\_mask$ which has size $question\_padding\_length$. Each entry of mask vector is either zero or one. Zero indicates that the current token does not exist in the original sequence. One indicates the opposite.
 
-When implementing a model, every effort is made to prevent the model from distracted tokens that do not exist. This makes the model in implementation different from the theoretical one. Take model one as an example. In the preprocessing layer, after getting a sequence of states, the mask vector is used to reset the values of positions that do not exist to zero in an additional step
+When implementing a model, every effort is made to prevent the model from distracted by tokens that do not exist. This makes the model in implementation different from the theoretical one. Take Model 1 as an example. In the preprocessing layer, after getting a sequence of states, the mask vector is used to reset the values of positions that do not exist to zero in an additional step
 $$H^p = H^p \circ (passage\_mask \otimes l)$$
 $$H^q = H^q \circ (question\_mask \otimes l).$$
 In the match LSTM layer, the attention weights of positions that do not exist are also set to zero in an additional step
@@ -401,7 +434,7 @@ $$\beta _k = softmax( (v^tF_k + c \otimes e_p) ) \circ passage\_mask.$$
 
 \section{Tensorflow Graphs}
 
-Tensorflow is an open source machine learning framework. The central idea of Tensorflow is describing a complex numeric computation as a graph.  {\tt Variables} are ``trainable'' nodes.  {\tt Placeholders} are nodes whose values are fed in run time. Taking model one as an example,  {\tt Variables} should be used to represent all the parameters of the encoding and decoding layers and {\tt Placeholders} should be used to represent passages, questions, and answers. To train a graph, some APIs of Tensorflow are called to get a train operation. Then the training data is fed through {\tt Placeholders} to run the train operation. When the train operation is run, the {\tt Variables} are updated.
+Tensorflow is an open source machine learning framework. The central idea of Tensorflow is describing a complex numeric computation as a graph.  {\tt Variables} are ``trainable'' nodes.  {\tt Placeholders} are nodes whose values are fed in run time. Taking Model 1 as an example,  {\tt Variables} should be used to represent all the parameters of the encoding and decoding layers and {\tt Placeholders} should be used to represent passages, questions, and answers. To train a graph, some APIs of Tensorflow are called to get a train operation. Then the training data is fed through {\tt Placeholders} to run the train operation. When the train operation is run, the {\tt Variables} are updated.
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=12cm]{figures/tf_graph.png}
@@ -411,9 +444,9 @@ Tensorflow is an open source machine learning framework. The central idea of Ten
 
 Figure \ref{f:tf_graph} describes the concept of the Tensorflow graphs for five different models used in this project. The cloud shapes represent the {\tt Placeholders}. The {\tt Variables} are included in {\tt Encoder} and {\tt Decoder}. The rectangles represent nodes in the calculation process. The circles represent the final outputs used in training or testing.
 
-Here is how to build the graph. In the embedding step, the model transforms word tokens into word feature vectors using a given word feature vector matrix. This matrix is part of the graph and is constant. The {\tt Encoder} encodes passage word feature vectors and question feature vectors to $H^r$. The {\tt Decoder} decodes $H^r$ to two probability distributions $\beta _0$ and $\beta _1$. Recall that $\beta _0$ tells how likely each token in a passage is the start of the answer and $\beta _1$ tells how likely each token in a passage is the end of the answer. The loss is calculated using $\beta _0$, $\beta _1$ and ground truth answers fed through answer {\tt Placeholders}. From the loss, a train operation is calculated.
+We now describe how to build a Tensorflow graph: In the embedding step, the model transforms word tokens into word feature vectors using a given word feature vector matrix. This matrix is part of the graph and is constant. The {\tt Encoder} encodes passage word feature vectors and question feature vectors to $H^r$. The {\tt Decoder} decodes $H^r$ to two probability distributions $\beta _0$ and $\beta _1$. Recall that $\beta _0$ tells how likely each token in a passage is the start of the answer and $\beta _1$ tells how likely each token in a passage is the end of the answer. The loss is calculated using $\beta _0$, $\beta _1$ and ground truth answers fed through answer {\tt Placeholders}. From the loss, a train operation is calculated.
 
-Here is how the run time works. In training and validation process, the passages, questions and answers are fed into the graph. Running the train operation with data fed into through {\tt Placeholders} will update all the {\tt Variables}. In testing process, only passages and questions are fed into the graph. The predicted answers are determined from $\beta _0$ and $\beta _1$.
+The run time works as follow: In the training and validation process, the passages, questions and answers are fed into the graph. Running the train operation with data fed into through {\tt Placeholders} will update all the {\tt Variables}. In the testing process, only passages and questions are fed into the graph. The predicted answers are determined from $\beta _0$ and $\beta _1$.
 
 
 
@@ -500,7 +533,7 @@ Figure \ref{f:passage_length} shows the distribution of passage lengths. Figure 
   \end{tabular}
 \end{table}
 
-F1 score and exact match score are used to evaluate the performance of each model. F1 treats a predicted answer and a ground truth as bag of words and calculate a harmonic average of precision and recall; exact match measures the percentage of predictions and ground truths that are exactly the same. The testing data contains several ground truth answers for one passage-question pair. The best score is chosen as the final score.
+The F1 score and the exact match score are used to evaluate the performance of each model. F1 treats a predicted answer and a ground truth as bag of words and calculate a harmonic average of precision and recall; exact match measures the percentage of predictions and ground truths that are exactly the same. The testing data contains several ground truth answers for one passage-question pair. The best score is chosen as the final score.
 
 A machine that has Tesla K80 12 GB Memory, 61 GB RAM and 100 GB SSD is used to train the models.
 
@@ -509,43 +542,43 @@ A machine that has Tesla K80 12 GB Memory, 61 GB RAM and 100 GB SSD is used to t
 
 Figure \ref{f:mlap}, \ref{f:baseline_change0}, \ref{f:baseline_change1}, \ref{f:baseline_change2} and \ref{f:baseline_change3} show the training process of five different models. One epoch contains roughly 25 * 100 mini batches. The training loss and training scores are calculated every 100 mini batches using the 200 sample instances from training set. We do the same for validation loss and validation scores. Training one epoch takes roughly 100 minutes. A thorough training of each model requires around 10 epochs and takes around 17 hours.
 
-As indicated by Figure \ref{f:mlap}, model one converges after three epochs. The training F1 score converges to around 0.5, the training exact match score converges to around 0.35, the validation F1 score converges to around 0.3, and the validation exact match score converges to around 0.2.
+As indicated by Figure \ref{f:mlap}, Model 1 converges after three epochs. The training F1 score converges to around 0.5, the training exact match score converges to around 0.35, the validation F1 score converges to around 0.3, and the validation exact match score converges to around 0.2.
 
-As indicated by Figure \ref{f:baseline_change0}, model two keeps learning in 10 epochs. The training F1 score converges to around 0.6, the training exact match score converges to around 0.5, the validation F1 score converges to around 0.4, and the validation exact match score converges to around 0.3.
+As indicated by Figure \ref{f:baseline_change0}, Model 2 keeps learning in 10 epochs. The training F1 score converges to around 0.6, the training exact match score converges to around 0.5, the validation F1 score converges to around 0.4, and the validation exact match score converges to around 0.3.
 
-As indicated by Figure \ref{f:baseline_change1}, model three converges after 10 epochs. The training F1 score converges to around 0.65, the training exact match score converges to around 0.45, the validation F1 score converges to around 0.4, and the validation exact match score converges to around 0.3.
+As indicated by Figure \ref{f:baseline_change1}, Model 3 converges after 10 epochs. The training F1 score converges to around 0.65, the training exact match score converges to around 0.45, the validation F1 score converges to around 0.4, and the validation exact match score converges to around 0.3.
 
-As indicated by Figure \ref{f:baseline_change2}, model four converges after four epochs. The training F1 score converges to around 0.6, the training exact match score converges to around 0.4, the validation F1 score converges to around 0.4, and the validation exact match score converges to around 0.2.
+As indicated by Figure \ref{f:baseline_change2}, Model 4 converges after four epochs. The training F1 score converges to around 0.6, the training exact match score converges to around 0.4, the validation F1 score converges to around 0.4, and the validation exact match score converges to around 0.2.
 
-As indicated by Figure \ref{f:baseline_change3}, model five keeps learning in the 10 epochs. The training F1 score converges to around 0.5, the training exact match score converges to around 0.35, the validation F1 score converges to around 0.3, and the validation exact match score converges to around 0.2.
+As indicated by Figure \ref{f:baseline_change3}, Model 5 keeps learning in the 10 epochs. The training F1 score converges to around 0.5, the training exact match score converges to around 0.35, the validation F1 score converges to around 0.3, and the validation exact match score converges to around 0.2.
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=12cm]{figures/match_corrected.png}
-  \caption{Training process of model One}
+  \caption{Training process of Model 1}
   \label{f:mlap}
 \end{figure}
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=12cm]{figures/match_baseline.png}
-  \caption{Training process of model Two}
+  \caption{Training process of Model 2}
   \label{f:baseline_change0}
 \end{figure}
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=12cm]{figures/match_change1.png}
-  \caption{Training process of model Three}
+  \caption{Training process of Model 3}
   \label{f:baseline_change1}
 \end{figure}
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=12cm]{figures/match_change2.png}
-  \caption{Training process of model Four}
+  \caption{Training process of Model 4}
   \label{f:baseline_change2}
 \end{figure}
 
 \begin{figure}[htbp]\centering
   \includegraphics[width=12cm, height=12cm]{figures/match_change3.png}
-  \caption{Training process of model Five}
+  \caption{Training process of Model 5}
   \label{f:baseline_change3}
 \end{figure}
 
@@ -558,29 +591,30 @@ As indicated by Figure \ref{f:baseline_change3}, model five keeps learning in th
     \hline
     Model& Test Exact Match & Test F1 \\
     \hline\hline
-    Model One & \ 23.4 &\ 33.6 \\
-    Model Two & \ 33.0 &\ 45.8 \\
-    Model Three & \ 33.0 &\ 46.2 \\
-    Model Four & \ 33.0 &\ 45.6 \\
-    Model Five & \ 24.3 &\ 33.9 \\
+    Reference Paper & \ 64.7 &\ 73.7 \\
+    Model 1 & \ 23.4 &\ 33.6 \\
+    Model 2 & \ 33.0 &\ 45.8 \\
+    Model 3 & \ 33.0 &\ 46.2 \\
+    Model 4 & \ 33.0 &\ 45.6 \\
+    Model 5 & \ 24.3 &\ 33.9 \\
     \hline
   \end{tabular}
 \end{table}
 
-Table \ref{tab:test_results} shows the testing results of all models. Model one gets F1 score 33.6 and exact match score 23.4. This does not reproduce the F1 score 71.2 and the exact match score 61.1 in the reference paper\cite{wang2016machine}. Model two, three and four behave similarly with F1 score around 46 and exact match score around 33. Model five behaves worse than the other three experiments with F1 score 33.9 and exact match score 24.3.
+Table \ref{tab:test_results} shows the testing results of all models. The reference paper gets F1 score 73.7 and exact match score 64.7. Model 1 gets F1 score 33.6 and exact match score 23.4. This does not reproduce the F1 score 71.2 and the exact match score 61.1 in the reference paper \cite{wang2016machine}. Model 2, 3 and 4 behave similarly with F1 score around 46 and exact match score around 33. Model 5 behaves worse than the other three experiments with F1 score 33.9 and exact match score 24.3.
 
 
 
 
 \section{Analysis}
 
-Comparing testing results of model one with that of the original paper, the difference is quite surprising. To find out why my implementation does not reproduce the results of the original paper, further debugging and parameter tuning are needed.
+Comparing the test results of Model 1 with that of the reference paper, the difference is quite surprising. To find out why my implementation does not reproduce the results of the original paper, further debugging and parameter tuning are needed.
 
-Comparing the testing results of model two and model one, the scores of model two are better. As mentioned in Section \ref{sect:change_0}, model two uses previous attention vector to query the current attention weight vector. However, model one uses the current answer LSTM state to query the attention weight vector. The answer LSTM state is produced by applying a non-linear transformation on the attention vector. It turns out not including the non-linear transformation gives better results.
+Comparing the testing results of Model 2 and Model 1, the scores of Model 2 are better. As mentioned in Section \ref{sect:change_0}, Model 2 uses previous attention vector to query the current attention weight vector. However, Model 1 uses the current answer LSTM state to query the attention weight vector. The answer LSTM state is produced by applying a non-linear transformation on the attention vector. It turns out not including the non-linear transformation gives better results.
 
-Model two, three and four behave similarly. This means removing either the preprocessing layer or the $h_r$ in the bidirectional match LSTM layer does not decrease test results. A reasonable guess is the two parts provide duplicate context information.
+Model 2, 3 and 4 behave similarly. This means removing either the preprocessing layer or the $h_r$ in the bidirectional match LSTM layer does not decrease test results. A reasonable guess is the two parts provide duplicate context information.
 
-Model five performs worse than model two, three and four. This means removing both the preprocessing layer and the $h_r$ in the bidirectional match LSTM layer decreases testing results. A reasonable guess is the context information provided by these two parts is not provided in other parts of model one. As such, one of the two must be kept.
+Model 5 performs worse than Model 2, 3 and 4. This means removing both the preprocessing layer and the $h_r$ in the bidirectional match LSTM layer decreases testing results. A reasonable guess is the context information provided by these two parts is not provided in other parts of Model 1. As such, one of the two must be kept.
 
 
 
@@ -588,7 +622,10 @@ Model five performs worse than model two, three and four. This means removing bo
 
 \chapter{Conclusion}
 
-This project presented a thorough implementation of a question answering system. Five different models were tried and several interesting observations were found. Further work is required to find out why model one failed to reproduce the testing results of the reference paper.
+This project presented a thorough implementation of a question answering system. Five different models were tried and several interesting observations were found.
+
+
+Further work is required to find out why Model 1 failed to reproduce the testing results of the reference paper. At the same time, more parameter tuning work is required to make the experiments more precise. Last but not the least, making novel architectures to bypass the state-of-art results is always a good way to move the question answering research forward.
 
 
 
