@@ -118,42 +118,6 @@ The encoder-decoder sequence-to-sequence recurrent neural networks were used in 
 
 
 
-
-\begin{frame}{Word Feature Vector, cont.}\framesubtitle{Neural Probabilistic Language Model}
-
-    \begin{itemize}
-        \item Some notations
-            \begin{itemize}
-                \item V: vocabulary
-                \item $w_t$: as a word from $V$
-                \item $C$: the matrix which includes the word feature vectors of all words in $V$
-            \end{itemize}
-        \item Each instance of the training set is a sequence of words $w_t, ..., w_{t-n+1}$ which is a segment of the text.
-        \item The purpose of a neural probabilistic language model is to learn a model $f$ such that
-        $$ f(w_t, ..., w_{t-n+1}) = \hat{P}(w_t | w_{t-1},...,w_{t-n+1}).$$
-    \end{itemize}
-\end{frame}
-
-\begin{frame}{Word Feature Vector, cont.}\framesubtitle{Neural Probabilistic Language Model}
-    \begin{itemize}
-        \item The computation of $f(w_t, ..., w_{t-n+1})$ is divided into two parts:
-            \begin{itemize}
-                \item First, each $w$ is mapped to a word feature vector by selecting the corresponding row in $C$ to get
-
-                $$x=(C(w_{t-1}),... ,C(w_{t-n+1})).$$
-
-                \item Second, we get $f(w_t, ..., w_{t-n+1})$ through
-
-                $$y=b+W\cdot x + U\cdot tanh(d + H\cdot x)$$
-
-                and
-
-                $$ f(w_t, ..., w_{t-n+1}) = \frac{e^{y_{w_t}}}{\sum_{i}^{}e^{y_i}}.$$
-            \end{itemize}
-        \item The loss function to minimize is $$L = -\frac{1}{T}\sum _{t}^{} \log{f(w_t, ..., w_{t-n+1})}.$$
-    \end{itemize}
-\end{frame}
-
 \begin{frame}{Recurrent Neural Networks}
 
     \begin{itemize}
@@ -475,7 +439,7 @@ $x$ is the input, $h$ is the state in encoding process, $y$ is the output, and $
     \begin{itemize}
         \item Let $a_s$ denote the ground truth start index of the answer and $a_e$ denote the ground truth end index, we have
 
-        $$p(a|H^r) = p(a_s|H_r)p(a_r|H_r)=\beta _{0, a_s} \times \beta_{1, a_e}$$
+        $$p(a|H^r) = p(a_s|H_r)p(a_e|H_r)=\beta _{0, a_s} \times \beta_{1, a_e}$$
 
         where $$\beta_{k, j} = jth\ token\ of\ \beta _k$$
         \item To train the model, the loss function
@@ -668,7 +632,7 @@ Take a passage as an example.
         Hyperparameter Name& Value \\ \hline\hline
         Word Feature Vector Dimension (d) & \ 100 \\
         Hidden State Size (l) & \ 64 \\
-        L2\_regularization Scale & \ 10570\\
+        L2\_regularization Scale & \ 0.001\\
         Hidden State Size (l) & \ 64\\
         Batch Size & \ 64\\
         Passage Length & \ 400\\
@@ -684,8 +648,9 @@ Take a passage as an example.
         \item The F1 score and the exact match score are used to evaluate the performance of each model.
             \begin{itemize}
                 \item F1 treats a predicted answer and a ground truth as bag of words and calculate a harmonic average of precision and recall;
-                \item exact match measures the percentage of predictions and ground truths that are exactly the same. The testing data contains several ground truth answers for one passage-question pair. The best score is chosen as the final score.
+                \item exact match measures the percentage of predictions and ground truths that are exactly the same.
             \end{itemize}
+        \item The testing data contains several ground truth answers for one passage-question pair. The best score is chosen as the final score.
         \item A machine that has Tesla K80 12 GB Memory, 61 GB RAM and 100 GB SSD is used to train the models.
     \end{itemize}
 \end{frame}
